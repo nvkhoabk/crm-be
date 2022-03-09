@@ -1,12 +1,12 @@
 """
 Definition of authenticate config.
 """
-from aim.apps.common.common import Common
-from aim.apps.common.response import Response
+from api.common.common import Common
+from api.common.response import Response
 from django.http import JsonResponse
 from rest_framework import status
-from aim.apps.user.user_query import UserQuery
-from aim.const import Const
+# from api.user.user_query import UserQuery
+from api.const import Const
 from django.db import connection
 
 

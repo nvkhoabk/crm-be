@@ -4,7 +4,7 @@ Definition of common function.
 from random import randint
 from passlib.hash import sha256_crypt
 import jwt
-from aim.const import Const
+from api.const import Const
 import datetime
 import calendar
 from firebase_admin import messaging

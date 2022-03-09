@@ -38,12 +38,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'api',
-    'aim.apps.asset',
-    'aim.apps.trading',
-    'aim.apps.accounting',
-    'aim.apps.user',
-    'aim.apps.address'
-    # 'aim.apps.menu_web'
 ]
 
 TEMPLATES = [
@@ -68,33 +62,23 @@ MIDDLEWARE = [
 ]
 
 # Root url
-ROOT_URLCONF = 'aim.urls'
+ROOT_URLCONF = 'crm.urls'
 
 # WSGI
-WSGI_APPLICATION = 'aim.wsgi.application'
-ASGI_APPLICATION = 'aim.routing.application'
+WSGI_APPLICATION = 'crm.wsgi.application'
+ASGI_APPLICATION = 'crm.routing.application'
 
 # Database
 DATABASES = {
     # Server
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'aim',
-        'USER': 'postgres',
-        'PASSWORD': 'inet@123',
-        'HOST': '14.225.7.229',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'crm_db',
+        'HOST': 'crm_db',
+        'PORT': '3306',
+        'USER': 'root',
+        'PASSWORD': 'root',
     }
-
-    # Local
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': 'order_way',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'thaico7762160',
-    #     'HOST': 'localhost',
-    #     'PORT': '5432',
-    # }
 }
 
 

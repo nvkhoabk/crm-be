@@ -4,9 +4,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 from api.serializers import request_serializer
 from api.serializers import response_serializer
+from api.common.base_view import BaseAPIView
+from api.services.article import ArticleCreateService
 
 
-class ArticleCreateView(APIView):
+class ArticleCreateView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = request_serializer.ArticleCreateSerializer
@@ -19,5 +21,7 @@ class ArticleCreateView(APIView):
             status.HTTP_200_OK: response_serializer.ArticleSerializer(),
         }
     )
-    def post(self, request, serializer=None, *args, **kwargs):
-        pass
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        article_create_service = ArticleCreateService()
+        article = article_create_service.serve(cookies, *args, **serializer.validated_data)
+        return self.get_response(results=article, request=request, serializer=response_serializer.ArticleSerializer)

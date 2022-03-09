@@ -18,35 +18,17 @@ from django.conf.urls.static import static
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from aim import settings
-from aim.const import Const
+from crm import settings
+from crm.const import Const
 
 urlpatterns = [
-
-    # Staff
-    path('api/user/', include('aim.apps.user.urls')),
-
-    # Store role
-    path('api/group-role/', include('aim.apps.group_role.urls')),
-
-    # Asset
-    path('api/asset/', include(('aim.apps.asset.urls', 'asset'), namespace='asset')),
-
-    # Trading
-    path('api/trading/', include(('aim.apps.trading.urls', 'trading'), namespace='trading')),
-
-    # Accounting
-    path('api/accounting/', include(('aim.apps.accounting.urls', 'accounting'), namespace='accounting')),
-
-    # Address
-    path('api/address/', include(('aim.apps.address.urls', 'address'), namespace='address')),
-
+    path('api/', include('api.urls')),
 ] + static('files/', document_root=Const.FILE_ROOT)
 
 
 schema_view = get_schema_view(
     openapi.Info(
-        title='AIM',
+        title='CRM',
         default_version='v3',
         description='',
     ),
