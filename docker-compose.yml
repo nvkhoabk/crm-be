@@ -10,16 +10,12 @@ services:
        MYSQL_DATABASE: 'crm_db'
        MYSQL_PASSWORD: 'root'
        MYSQL_ROOT_PASSWORD: 'root'
-    volumes:
-      - 'db:/var/lib/mysql'
     command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
   crm_db_redis:
     container_name: 'crm_db_redis'
     image: 'redis:3.2.0'
     ports:
       - '6379:6379'
-    volumes:
-      - 'redisdata:/data'
   web:
     build: .
     command: python3 manage.py runserver 0.0.0.0:8001 
@@ -30,8 +26,3 @@ services:
     depends_on:
       - crm_db
       - crm_db_redis
-
-volumes:
-  redisdata:
-  db:
-  .:

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'api',
+    'api.models',
 ]
 
 TEMPLATES = [
@@ -84,7 +85,7 @@ DATABASES = {
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Bangkok'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = False
@@ -107,3 +108,5 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'token',
     'Access-Control-Allow-Origin'
 ]
+
+AUTH_USER_MODEL = 'models.CRMUser'

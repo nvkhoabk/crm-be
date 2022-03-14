@@ -1,5 +1,5 @@
 from api.common.base_service import BaseService
-from api.models import Article
+from api.models.article import Article
 from api.common.cookies import Cookies
 
 
