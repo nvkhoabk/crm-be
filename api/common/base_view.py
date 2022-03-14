@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
+from django.contrib.auth.middleware import get_user
+from django.utils.functional import SimpleLazyObject
 from .authenticate_config import authentication_staff
 from .cookies_serializer import CookiesSerializer
 from .cookies import Cookies
@@ -17,9 +18,11 @@ class BaseAPIView(APIView):
     serializer_many = False
 
     def authenticate(self, request):
+        request.user = SimpleLazyObject(lambda: get_user(request))
+
         return None
 
-    def get_response(self, results=None, request=None, serializer=None, many=False):
+    def get_response(self, request=None, results=None, serializer=None, many=False):
         if self.pagination_class is not None:
             try:
                 results = self.pagination_class.paginate_queryset(results, request)
@@ -56,8 +59,8 @@ class BaseAPIView(APIView):
                 handler = self.http_method_not_allowed
 
             authenticated = self.authenticate(request=request)
-            if authenticated is not None:
-                return authenticated
+            # if authenticated is not None:
+            #     return authenticated
 
             cookies_serializer = CookiesSerializer(data=request.COOKIES)
             cookies_serializer.is_valid(raise_exception=True)

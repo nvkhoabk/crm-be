@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 services:
   crm_db:
@@ -11,6 +11,11 @@ services:
        MYSQL_PASSWORD: 'root'
        MYSQL_ROOT_PASSWORD: 'root'
     command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=root --execute \"SHOW DATABASES;\""
+      interval: 2s
+      timeout: 20s
+      retries: 10
   crm_db_redis:
     container_name: 'crm_db_redis'
     image: 'redis:3.2.0'
@@ -24,5 +29,8 @@ services:
     ports:
       - "8001:8001"
     depends_on:
+      crm_db:
+        condition: service_healthy
+    links:
       - crm_db
-      - crm_db_redis
+  
