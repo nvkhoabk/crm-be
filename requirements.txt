@@ -80,3 +80,7 @@ uritemplate==4.1.1
 urllib3==1.26.8
 xlrd==1.2.0
 zope.interface==5.4.0
+django-groups-manager
+django-guardian
+django-bootstrap3
+jsonfield

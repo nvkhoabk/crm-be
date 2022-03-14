@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'drf_yasg',
+    'groups_manager',
+    'guardian',
     'api',
     'api.models',
 ]
@@ -141,9 +143,41 @@ SESSION_COOKIE_HTTPONLY = True
 
 AUTH_USER_MODEL = 'models.CRMUser'
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # this is default
+    'guardian.backends.ObjectPermissionBackend',
+)
+
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'api.common.exception.crm_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+GROUPS_MANAGER = {
+    # User and Groups sync settings
+    'AUTH_MODELS_SYNC': True,
+    'GROUP_NAME_PREFIX': 'crm_',
+    'GROUP_NAME_SUFFIX': '_$$random',
+    'USER_USERNAME_PREFIX': 'crm_',
+    'USER_USERNAME_SUFFIX': '_$$random',
+    # Permissions
+    'PERMISSIONS': {
+        'owner': ['view', 'change', 'delete'],
+        'group': ['view', 'change'],
+        'groups_upstream': ['view'],
+        'groups_downstream': [],
+        'groups_siblings': ['view'],
+    },
+}
+# company -> department -> title
+# roles
+# Super user group
+# Company owner group
+# Department groups & roles
+
+
+# Head of company -> 
+# Head of department
+# Normal user
