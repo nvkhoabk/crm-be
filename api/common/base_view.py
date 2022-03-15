@@ -32,7 +32,12 @@ class BaseAPIView(APIView):
                 return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
 
         if serializer is not None:
-            serializer = serializer(results, many=many)
+            data = {
+                'code': 0,
+                'msg': 'success',
+                'data': results,
+            }
+            serializer = serializer(data, many=many)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_200_OK)

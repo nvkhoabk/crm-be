@@ -18,10 +18,10 @@ class ArticleCreateView(BaseAPIView):
         operation_description='Description',
         request_body=serializer_class,
         response={
-            status.HTTP_200_OK: response_serializer.ArticleSerializer(),
+            status.HTTP_200_OK: response_serializer.ArticleResponseSerializer(),
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         article_create_service = ArticleCreateService()
         article = article_create_service.serve(cookies, *args, **serializer.validated_data)
-        return self.get_response(results=article, request=request, serializer=response_serializer.ArticleSerializer)
+        return self.get_response(results=article, request=request, serializer=response_serializer.ArticleResponseSerializer)

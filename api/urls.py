@@ -1,12 +1,17 @@
 from django.urls import path, include
 from api.views import article
 from api.views import auth
+from api.views import manage
 
 
 urlpatterns = [
     path('article/create/', article.ArticleCreateView.as_view(), name='article.create'),
     
-    # auth
+    # Auth
     path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
     path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
+
+    # Company management
+    path('manage/create_company/', manage.CreateCompanyView.as_view(), name='manage.create_company'),
+    path('manage/delete_company/', manage.DeleteCompanyView.as_view(), name='manage.delete_company'),
 ]

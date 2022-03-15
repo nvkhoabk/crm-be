@@ -20,7 +20,7 @@ class TestCreateArticle(TestCase):
         resp = self.client.post(create_func_url, json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         
-        record = resp.json()
+        record = resp.json()['data']
         
         self.assertEqual(record['title'], data['title']) 
         
