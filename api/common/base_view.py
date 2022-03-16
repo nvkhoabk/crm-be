@@ -37,6 +37,9 @@ class BaseAPIView(APIView):
                 'msg': 'success',
                 'data': results,
             }
+            if many:
+                print (results)
+                print (serializer(data, many=many))
             serializer = serializer(data, many=many)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 

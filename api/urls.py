@@ -13,5 +13,7 @@ urlpatterns = [
 
     # Company management
     path('manage/create_company/', manage.CreateCompanyView.as_view(), name='manage.create_company'),
+    path('manage/update_company/', manage.UpdateCompanyView.as_view(), name='manage.update_company'),
+    path('manage/filter_company/', manage.FilterCompanyView.as_view(), name='manage.filter_company'),
     path('manage/delete_company/', manage.DeleteCompanyView.as_view(), name='manage.delete_company'),
 ]
