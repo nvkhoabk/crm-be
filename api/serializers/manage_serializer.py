@@ -1,7 +1,7 @@
 from api.models.organization import Company
 from api.models.package import Package
 from api.models.param import Param
-from api.models.organization import Department
+from api.models.organization import Department, Role
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.utils import validate
 from rest_framework import serializers
@@ -193,4 +193,50 @@ class DeleteDepartmentRequestSerializer(serializers.Serializer):
 
 
 class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class CreateRoleRequestSerializer(serializers.Serializer):
+    department_id = serializers.IntegerField()
+    role_name = serializers.CharField(min_length=5)
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['id', 'department_id', 'role_name', ]
+
+
+class CreateRoleResponseSerializer(BaseResponseSerializer):
+    data = RoleSerializer()
+
+
+class UpdateRoleRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    role_name = serializers.CharField(min_length=5)
+
+
+class UpdateRoleResponseSerializer(BaseResponseSerializer):
+    data = RoleSerializer()
+
+
+class FilterRoleRequestParamSerializer(serializers.Serializer):
+    department_id = serializers.IntegerField(allow_null=True)
+    id = serializers.IntegerField(allow_null=True)
+    role_name = serializers.CharField(required=False, allow_blank=True)
+
+
+class FilterRoleRequestSerializer(BasePagingSerializer):
+    filter = FilterRoleRequestParamSerializer()
+
+
+class FilterRoleResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=RoleSerializer())
+
+
+class DeleteRoleRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class DeleteRoleResponseSerializer(BaseResponseSerializer):
     pass

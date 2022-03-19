@@ -39,3 +39,8 @@ class ManageCompanyNotFound(APIException):
 class ManageDepartmentNotFound(APIException):
     code = 2031
     msg = 'Not found department'
+
+
+class ManageRoleNotFound(APIException):
+    code = 2041
+    msg = 'Not found role'

@@ -18,3 +18,11 @@ class Department(BaseModel):
 
     class Meta:
         db_table = 'departments'
+
+
+class Role(BaseModel):
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    role_name = models.CharField(max_length=255, db_index=True)
+
+    class Meta:
+        db_table = 'roles'

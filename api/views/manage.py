@@ -277,7 +277,7 @@ class UpdateDepartmentView(BaseAPIView):
         department = update_department_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=department, request=request, serializer=manage_serializer.UpdateDepartmentResponseSerializer)
-    
+
 
 class FilterDepartmentView(BaseAPIView):
     authentication_classes = []
@@ -318,3 +318,103 @@ class DeleteDepartmentView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=department, request=request, serializer=manage_serializer.DeleteDepartmentResponseSerializer)
 
+
+class CreateRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.CreateRoleRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Create role',
+        operation_description='Create role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.CreateRoleResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_role_service = manage_service.CreateRoleService()
+        role = create_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=role, request=request, serializer=manage_serializer.CreateRoleResponseSerializer)
+
+
+class UpdateRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.UpdateRoleRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Update role',
+        operation_description='Update role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.UpdateRoleResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_role_service = manage_service.UpdateRoleService()
+        role = update_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=role, request=request, serializer=manage_serializer.UpdateRoleResponseSerializer)
+
+
+class UpdateRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.UpdateRoleRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Update role',
+        operation_description='Update role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.UpdateRoleResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_role_service = manage_service.UpdateRoleService()
+        role = update_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=role, request=request, serializer=manage_serializer.UpdateRoleResponseSerializer)
+
+
+class FilterRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.FilterRoleRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Filter role',
+        operation_description='Filter role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.FilterRoleResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_role_service = manage_service.FilterRoleService()
+        roles = filter_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=roles, request=request, serializer=manage_serializer.FilterRoleResponseSerializer)
+    
+
+class DeleteRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.DeleteRoleRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Delete role',
+        operation_description='Delete role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.DeleteRoleResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_role_service = manage_service.DeleteRoleService()
+        role = delete_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=role, request=request, serializer=manage_serializer.DeleteRoleResponseSerializer)
+    

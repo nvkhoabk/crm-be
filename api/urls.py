@@ -30,4 +30,9 @@ urlpatterns = [
     path('manage/update_department/', manage.UpdateDepartmentView.as_view(), name='manage.update_department'),
     path('manage/filter_department/', manage.FilterDepartmentView.as_view(), name='manage.filter_department'),
     path('manage/delete_department/', manage.DeleteDepartmentView.as_view(), name='manage.delete_department'),
+
+    path('manage/create_role/', manage.CreateRoleView.as_view(), name='manage.create_role'),
+    path('manage/update_role/', manage.UpdateRoleView.as_view(), name='manage.update_role'),
+    path('manage/filter_role/', manage.FilterRoleView.as_view(), name='manage.filter_role'),
+    path('manage/delete_role/', manage.DeleteRoleView.as_view(), name='manage.delete_role'),
 ]

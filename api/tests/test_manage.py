@@ -220,3 +220,97 @@ class TestManage(TestCase):
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0) 
+    
+    def test_role(self):
+        data = {
+            'name': 'Company A',
+            'type': 'electronic',
+            'owner': 'owner',
+            'phone': '0363930123',
+        }
+
+        resp = self.client.post(reverse('manage.create_company'), json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        company_id = resp.json()['data']['id']
+
+        create_department_func_url = reverse('manage.create_department')
+        self.assertEqual(create_department_func_url,
+                         '/api/manage/create_department/')
+
+        data = {
+            'company_id': company_id,
+            'department_name': 'department name',
+        }
+
+        resp = self.client.post(create_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        department_id = resp['data']['id']
+
+        create_role_func_url = reverse('manage.create_role')
+        self.assertEqual(create_role_func_url, '/api/manage/create_role/')
+
+        data = {
+            'department_id': department_id,
+            'role_name': 'Role name',
+        }
+
+        resp = self.client.post(create_role_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        role_id = resp['data']['id']
+
+        update_role_func_url = reverse('manage.update_role')
+        self.assertEqual(update_role_func_url, '/api/manage/update_role/')
+        data = {
+            'id': role_id,
+            'role_name': 'role name 2',
+        }
+         
+        resp = self.client.post(update_role_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+
+        filter_role_func_url = reverse('manage.filter_role')
+        self.assertEqual(filter_role_func_url,
+                         '/api/manage/filter_role/')
+
+        data = {
+            'filter': {
+                'department_id': department_id,
+                'id': role_id,
+                'role_name': 'name',
+            },
+            'paging': {
+                'page': 1,
+                'page_size': 10,
+            }
+        }
+
+        resp = self.client.post(filter_role_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+
+        delete_role_func_url = reverse('manage.delete_role')
+        self.assertEqual(delete_role_func_url,
+                         '/api/manage/delete_role/')
+
+        data = {
+           'id': role_id, 
+        }
+
+        resp = self.client.post(delete_role_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0) 
+    

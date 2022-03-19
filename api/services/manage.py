@@ -1,12 +1,13 @@
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.organization import Company, Department
+from api.models.organization import Company, Department, Role
 from api.models.param import Param
 from api.models.package import Package
 from api.services.exceptions import (ManageCreateCompanyDuplicated,
                                      ManageCreateParamDuplicated,
                                      ManageCompanyNotFound,
-                                     ManageDepartmentNotFound)
+                                     ManageDepartmentNotFound,
+                                     ManageRoleNotFound)
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 
@@ -149,8 +150,8 @@ class CreateDepartmentService(BaseService):
             company__id=company_id,
             department_name=department_name,
         ).first():
-            raise
-        
+            raise ManageDepartmentNotFound()        
+
         try:
             company = Company.objects.get(pk=company_id)
         except Company.DoesNotExist:
@@ -208,3 +209,71 @@ class DeleteDepartmentService(BaseService):
         except Department.DoesNotExist as e:
             raise ManageDepartmentNotFound()
     
+
+class CreateRoleService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        department_id = kwargs['department_id']
+        role_name = kwargs['role_name']
+
+        if Role.objects.filter(
+            department__id=department_id,
+            role_name=role_name,
+        ).first():
+            raise ManageRoleNotFound()
+        
+        try:
+            department = Department.objects.get(pk=department_id)
+        except Company.DoesNotExist:
+            raise ManageDepartmentNotFound()
+        
+        return Role.objects.create(
+            department=department,
+            role_name=role_name,
+        )
+    
+
+class UpdateRoleService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            role = Role.objects.get(pk=kwargs['id'])
+            role.role_name = kwargs['role_name']
+            role.save()
+            return role
+        except Role.DoesNotExist:
+            raise ManageRoleNotFound()
+
+
+class FilterRoleService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = Role.objects.all()
+
+        filters = ['department_id', 'id', 'role_name']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'department_id':
+                query_set = query_set.filter(
+                    department__id=value,
+                )
+            if key == 'id':
+                query_set = query_set.filter(
+                    pk=value,
+                )
+            if key == 'role_name':
+                query_set = query_set.filter(
+                    role_name__icontains=value,
+                )
+
+        return query_set
+
+
+class DeleteRoleService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Role.objects.get(
+                id=kwargs['id'],
+            ).delete()
+        except Role.DoesNotExist as e:
+            raise ManageRoleNotFound()
