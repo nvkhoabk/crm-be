@@ -1,0 +1,75 @@
+[
+    {
+      "model": "api.Param",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "key": "INTRODUCTION",
+        "value": "Introduction"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Marketing"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Quản lý data"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Quản lý nhân sự"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Sản phẩm và kho hàng"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Tài chính - kế toán"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Tuỳ chỉnh hệ thống"
+      }
+    },
+    {
+      "model": "api.Category",
+      "pk": 1,
+      "fields": {
+        "created_at": "2022-03-19 18:43:19.644096",
+        "updated_at": "2022-03-19 18:43:19.644096",
+        "category_name": "Báo cáo"
+      }
+    }
+]  

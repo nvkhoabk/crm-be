@@ -26,3 +26,22 @@ class Role(BaseModel):
 
     class Meta:
         db_table = 'roles'
+
+
+class Category(BaseModel):
+    category_name = models.CharField(max_length=255, db_index=True)
+
+    class Meta:
+        db_table = 'categories'
+
+
+class Permission(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    edit_permissions = models.TextField(max_length=4096)
+    read_permissions = models.TextField(max_length=4096)
+
+    class Meta:
+        db_table = 'permissions'
+        unique_together = ('company', 'department', 'role', )

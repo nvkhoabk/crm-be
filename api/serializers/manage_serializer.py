@@ -1,7 +1,8 @@
-from api.models.organization import Company
+import json
+
+from api.models.organization import Company, Department, Permission, Role
 from api.models.package import Package
 from api.models.param import Param
-from api.models.organization import Department, Role
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.utils import validate
 from rest_framework import serializers
@@ -239,4 +240,82 @@ class DeleteRoleRequestSerializer(serializers.Serializer):
 
 
 class DeleteRoleResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class CreatePermissionRequestSerializer(serializers.Serializer):
+    CATEGORY_CHOICES = (
+        ('Marketing', 'Marketing'),
+        ('Quản lý data', 'Quản lý data'),
+        ('Quản lý nhân sự', 'Quản lý nhân sự'),
+        ('Sản phẩm và kho hàng', 'Sản phẩm và kho hàng'),
+        ('Tài chính - kế toán', 'Tài chính - kế toán'),
+        ('Tuỳ chỉnh hệ thống', 'Tuỳ chỉnh hệ thống'),
+        ('Báo cáo', 'Báo cáo'),
+    )
+    company_id = serializers.IntegerField()
+    department_id = serializers.IntegerField()
+    role_id = serializers.IntegerField()
+    edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+
+
+class PermissionSerializer(serializers.ModelSerializer):
+    edit_permissions = serializers.SerializerMethodField()
+    read_permissions = serializers.SerializerMethodField()
+
+    def get_edit_permissions(self, obj):
+        return json.loads(obj.edit_permissions)
+    
+    def get_read_permissions(self, obj):
+        return json.loads(obj.read_permissions)
+
+    class Meta:
+        model = Permission
+        fields = ['id', 'company_id', 'department_id', 'role_id', 'edit_permissions', 'read_permissions']
+
+
+class CreatePermisionResponseSerializer(BaseResponseSerializer):
+    data = PermissionSerializer()
+
+
+class UpdatePermissionRequestSerializer(serializers.Serializer):
+    CATEGORY_CHOICES = (
+        ('Marketing', 'Marketing'),
+        ('Quản lý data', 'Quản lý data'),
+        ('Quản lý nhân sự', 'Quản lý nhân sự'),
+        ('Sản phẩm và kho hàng', 'Sản phẩm và kho hàng'),
+        ('Tài chính - kế toán', 'Tài chính - kế toán'),
+        ('Tuỳ chỉnh hệ thống', 'Tuỳ chỉnh hệ thống'),
+        ('Báo cáo', 'Báo cáo'),
+    )
+    id = serializers.IntegerField()
+    edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    
+
+class UpdatePermisionResponseSerializer(BaseResponseSerializer):
+    data = PermissionSerializer()
+    
+
+class FilterPermissionRequestParamSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField(allow_null=True)
+    department_id = serializers.IntegerField(allow_null=True)
+    role_id = serializers.IntegerField(allow_null=True)
+    id = serializers.IntegerField(allow_null=True)
+
+
+class FilterPermissionRequestSerializer(BasePagingSerializer):
+    filter = FilterPermissionRequestParamSerializer()
+
+
+class FilterPermissionResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=PermissionSerializer())
+
+
+class DeletePermissionRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class DeletePermissionResponseSerializer(BaseResponseSerializer):
     pass

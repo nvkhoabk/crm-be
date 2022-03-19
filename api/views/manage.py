@@ -418,3 +418,82 @@ class DeleteRoleView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=role, request=request, serializer=manage_serializer.DeleteRoleResponseSerializer)
     
+
+class CreatePermissionView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.CreatePermissionRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Create permission',
+        operation_description='Create permission api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.CreatePermisionResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_permission_service = manage_service.CreatePermissionService()
+        permission = create_permission_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=permission, request=request, serializer=manage_serializer.CreatePermisionResponseSerializer)
+
+
+class UpdatePermissionView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.UpdatePermissionRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Update permission',
+        operation_description='Update permission api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.UpdatePermisionResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_permission_service = manage_service.UpdatePermissionService()
+        permission = update_permission_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=permission, request=request, serializer=manage_serializer.UpdatePermisionResponseSerializer)
+
+class FilterPermissionView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.FilterPermissionRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Filter permission',
+        operation_description='Filter permission api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.FilterPermissionResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_permission_service = manage_service.FilterPermissionService()
+        permissions= filter_permission_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=permissions, request=request, serializer=manage_serializer.FilterPermissionResponseSerializer)
+
+
+class DeletePermissionView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.DeletePermissionRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Delete permission',
+        operation_description='Delete permission api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.DeletePermissionResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_permission_service = manage_service.DeletePermissionService()
+        permission= delete_permission_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=permission, request=request, serializer=manage_serializer.DeletePermissionResponseSerializer)
+    

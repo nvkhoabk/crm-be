@@ -1,13 +1,15 @@
+import json
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.organization import Company, Department, Role
+from api.models.organization import Company, Department, Role, Permission
 from api.models.param import Param
 from api.models.package import Package
 from api.services.exceptions import (ManageCreateCompanyDuplicated,
                                      ManageCreateParamDuplicated,
                                      ManageCompanyNotFound,
                                      ManageDepartmentNotFound,
-                                     ManageRoleNotFound)
+                                     ManageRoleNotFound,
+                                     ManagePermissionDuplicated, ManagePermissionNotFound)
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 
@@ -277,3 +279,79 @@ class DeleteRoleService(BaseService):
             ).delete()
         except Role.DoesNotExist as e:
             raise ManageRoleNotFound()
+
+
+class CreatePermissionService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            company = Company.objects.get(pk=kwargs['company_id'])
+            department = Department.objects.get(pk=kwargs['department_id'])
+            role = Role.objects.get(pk=kwargs['role_id'])
+        except Company.DoesNotExist:
+            raise ManageCompanyNotFound()
+        except Department.DoesNotExist:
+            raise ManageDepartmentNotFound()
+        except Role.DoesNotExist:
+            raise ManageRoleNotFound()
+
+        try:
+            return Permission.objects.create(
+                company=company,
+                department=department,
+                role=role,
+                edit_permissions=json.dumps(kwargs['edit_permissions']),
+                read_permissions=json.dumps(kwargs['read_permissions']),
+            )
+        except IntegrityError as e:
+            raise ManagePermissionDuplicated()
+
+
+class UpdatePermissionService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            permission = Permission.objects.get(pk=kwargs['id'])
+            permission.edit_permissions=json.dumps(kwargs['edit_permissions'])
+            permission.read_permissions=json.dumps(kwargs['read_permissions'])
+        except Permission.DoesNotExist:
+            raise ManagePermissionNotFound()
+
+
+class FilterPermissionService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = Permission.objects.all()
+
+        filters = ['company_id', 'department_id', 'role_id', 'id']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'company_id':
+                query_set = query_set.filter(
+                    company__id=value,
+                )
+            if key == 'department_id':
+                query_set = query_set.filter(
+                    department__id=value,
+                )
+            if key == 'role_id':
+                query_set = query_set.filter(
+                    role__id=value,
+                )
+            if key == 'id':
+                query_set = query_set.filter(
+                    pk=value,
+                )
+
+        return query_set
+
+
+class DeletePermissionService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Permission.objects.get(
+                id=kwargs['id'],
+            ).delete()
+        except Permission.DoesNotExist as e:
+            raise ManagePermissionNotFound()
+    

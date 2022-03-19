@@ -12,7 +12,7 @@ class AuthLogoutNotLoggedIn(APIException):
 
 
 class ManageCreateParamDuplicated(APIException):
-    code = 2001
+    code = 2000
     msg = 'Duplicate param name'
 
 
@@ -37,10 +37,20 @@ class ManageCompanyNotFound(APIException):
 
 
 class ManageDepartmentNotFound(APIException):
-    code = 2031
+    code = 2030
     msg = 'Not found department'
 
 
 class ManageRoleNotFound(APIException):
     code = 2041
     msg = 'Not found role'
+
+
+class ManagePermissionDuplicated(APIException):
+    code = 2050
+    msg = 'Duplicate permission'
+
+
+class ManagePermissionNotFound(APIException):
+    code = 2051
+    msg = 'Duplicate permission'

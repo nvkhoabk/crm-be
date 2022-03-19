@@ -35,4 +35,9 @@ urlpatterns = [
     path('manage/update_role/', manage.UpdateRoleView.as_view(), name='manage.update_role'),
     path('manage/filter_role/', manage.FilterRoleView.as_view(), name='manage.filter_role'),
     path('manage/delete_role/', manage.DeleteRoleView.as_view(), name='manage.delete_role'),
+
+    path('manage/create_permission/', manage.CreatePermissionView.as_view(), name='manage.create_permission'),
+    path('manage/update_permission/', manage.UpdatePermissionView.as_view(), name='manage.update_permission'),
+    path('manage/filter_permission/', manage.FilterPermissionView.as_view(), name='manage.filter_permission'),
+    path('manage/delete_permission/', manage.DeletePermissionView.as_view(), name='manage.delete_permission'),
 ]

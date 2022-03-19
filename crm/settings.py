@@ -155,6 +155,10 @@ REST_FRAMEWORK = {
     ]
 }
 
+FIXTURE_DIRS = (
+    os.path.join(BASE_DIR, 'fixtures'),
+)
+
 GROUPS_MANAGER = {
     # User and Groups sync settings
     'AUTH_MODELS_SYNC': True,
