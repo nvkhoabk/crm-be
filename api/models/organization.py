@@ -8,11 +8,13 @@ class Company(BaseModel):
     owner = models.CharField(max_length=255, db_index=True, unique=True)
     phone = models.CharField(max_length=255, db_index=True, unique=True)
     class Meta:
+        db_table = 'companies'
         unique_together = ('name', 'deleted_at',)
         
 
 class Department(BaseModel):
-    name = models.CharField(max_length=255, db_index=True, unique=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    department_name = models.CharField(max_length=255, db_index=True)
 
     class Meta:
-        unique_together = ('name', 'deleted_at',)
+        db_table = 'departments'

@@ -2,7 +2,7 @@ from django.contrib.auth.base_user import BaseUserManager
 
 
 class CRMUserManager(BaseUserManager):
-    def create_user(self, email, password, **extra_fields):
+    def create_user(self, username, password, **extra_fields):
         if not email:
             raise ValueError('Email must be set')
         email = self.normalize_email(email)

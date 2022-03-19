@@ -3,65 +3,72 @@ from django.test import TestCase
 from django.test import Client
 from django.urls import reverse
 from rest_framework import status as http_status
-from api.services.exceptions import ManageDeleteCompanyNotFound
+from api.services.exceptions import ManageCompanyNotFound
 
 
 class TestManage(TestCase):
     def setUp(self):
         self.client = Client()
-        
+
     def test_create_company(self):
         create_company_func_url = reverse('manage.create_company')
-        self.assertEqual(create_company_func_url, '/api/manage/create_company/')
-        
+        self.assertEqual(create_company_func_url,
+                         '/api/manage/create_company/')
+
         data = {
             'name': 'Company A',
             'type': 'electronic',
             'owner': 'owner',
             'phone': '0363930123',
         }
-        
-        resp = self.client.post(create_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(create_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
-        
+
         resp = resp.json()
-        
+
         self.assertEqual(resp['code'], 0)
         self.assertEqual(resp['data']['id'], 1)
 
         delete_company_func_url = reverse('manage.delete_company')
-        self.assertEqual(delete_company_func_url, '/api/manage/delete_company/')
-        
+        self.assertEqual(delete_company_func_url,
+                         '/api/manage/delete_company/')
+
         data = {
             'id': 1,
         }
-        
-        resp = self.client.post(delete_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(delete_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
 
     def test_update_company(self):
         create_company_func_url = reverse('manage.create_company')
-        self.assertEqual(create_company_func_url, '/api/manage/create_company/')
-        
+        self.assertEqual(create_company_func_url,
+                         '/api/manage/create_company/')
+
         data = {
             'name': 'Company A',
             'type': 'electronic',
             'owner': 'owner',
             'phone': '0363930123',
         }
-        
-        resp = self.client.post(create_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(create_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
-        
+
         resp = resp.json()
-        
+
         self.assertEqual(resp['code'], 0)
 
         update_company_func_url = reverse('manage.update_company')
-        self.assertEqual(update_company_func_url, '/api/manage/update_company/')
-        
+        self.assertEqual(update_company_func_url,
+                         '/api/manage/update_company/')
+
         data = {
             'id': resp['data']['id'],
             'name': 'Company B',
@@ -69,60 +76,147 @@ class TestManage(TestCase):
             'owner': 'owner',
             'phone': '0363930123',
         }
-        
-        resp = self.client.post(update_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(update_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
-        
+
         resp = resp.json()
-        
+
         self.assertEqual(resp['code'], 0)
-    
+
     def test_delete_company_fail(self):
         delete_company_func_url = reverse('manage.delete_company')
-        self.assertEqual(delete_company_func_url, '/api/manage/delete_company/')
-        
+        self.assertEqual(delete_company_func_url,
+                         '/api/manage/delete_company/')
+
         data = {
             'id': 1,
         }
-        
-        resp = self.client.post(delete_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(delete_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         resp = resp.json()
-        self.assertEqual(resp['code'], ManageDeleteCompanyNotFound.code)
+        self.assertEqual(resp['code'], ManageCompanyNotFound.code)
 
     def test_filter_company(self):
         create_company_func_url = reverse('manage.create_company')
-        self.assertEqual(create_company_func_url, '/api/manage/create_company/')
-        
+        self.assertEqual(create_company_func_url,
+                         '/api/manage/create_company/')
+
         data = {
             'name': 'Company A',
             'type': 'electronic',
             'owner': 'owner',
             'phone': '0363930123',
         }
-        
-        resp = self.client.post(create_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(create_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
-        
+
         resp = resp.json()
-        
+
         self.assertEqual(resp['code'], 0)
-    
+
         filter_company_func_url = reverse('manage.filter_company')
-        self.assertEqual(filter_company_func_url, '/api/manage/filter_company/')
-        
+        self.assertEqual(filter_company_func_url,
+                         '/api/manage/filter_company/')
+
         data = {
             'filter': {
                 'name': 'Company',
-            }, 
+            },
             'paging': {
-               'page': 1,
-               'page_size': 10, 
+                'page': 1,
+                'page_size': 10,
             }
         }
-        
-        resp = self.client.post(filter_company_func_url, json.dumps(data), content_type='application/json')
+
+        resp = self.client.post(filter_company_func_url, json.dumps(
+            data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
         self.assertEqual(len(resp['data']), 1)
+
+    def test_department(self):
+        data = {
+            'name': 'Company A',
+            'type': 'electronic',
+            'owner': 'owner',
+            'phone': '0363930123',
+        }
+
+        resp = self.client.post(reverse('manage.create_company'), json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        company_id = resp.json()['data']['id']
+
+        create_department_func_url = reverse('manage.create_department')
+        self.assertEqual(create_department_func_url,
+                         '/api/manage/create_department/')
+
+        data = {
+            'company_id': company_id,
+            'department_name': 'department name',
+        }
+
+        resp = self.client.post(create_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        department_id = resp['data']['id']
+
+        update_department_func_url = reverse('manage.update_department')
+        self.assertEqual(update_department_func_url,
+                         '/api/manage/update_department/')
+
+        data = {
+            'id': department_id,
+            'department_name': 'name 2',
+        }
+
+        resp = self.client.post(update_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+
+        filter_department_func_url = reverse('manage.filter_department')
+        self.assertEqual(filter_department_func_url,
+                         '/api/manage/filter_department/')
+
+        data = {
+            'filter': {
+                'company_id': company_id,
+                'id': department_id,
+                'department_name': 'name',
+            },
+            'paging': {
+                'page': 1,
+                'page_size': 10,
+            }
+        }
+
+        resp = self.client.post(filter_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+
+        delete_department_func_url = reverse('manage.delete_department')
+        self.assertEqual(delete_department_func_url,
+                         '/api/manage/delete_department/')
+
+        data = {
+           'id': department_id, 
+        }
+
+        resp = self.client.post(delete_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0) 

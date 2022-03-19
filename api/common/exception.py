@@ -1,7 +1,15 @@
 from rest_framework.views import exception_handler
 from rest_framework.views import set_rollback, Http404, PermissionDenied, exceptions, Response
+import rest_framework
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
 
+DEFAULT_PERMISSIONS = {
+    rest_framework.exceptions.PermissionDenied: {
+        'code': 1,
+        'msg': 'Permission denied',
+    } 
+}
 
 def crm_exception_handler(exc, context):
     if isinstance(exc, Http404):
@@ -21,6 +29,8 @@ def crm_exception_handler(exc, context):
                 data = exc.detail
             else:
                 data = {'detail': exc.detail}
+        elif isinstance(exc, rest_framework.exceptions.PermissionDenied):
+            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied] 
         else:
             data = {
                 'code': exc.code,

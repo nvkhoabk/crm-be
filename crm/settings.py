@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'groups_manager',
     'guardian',
     'api',
-    'api.models',
+    # 'api.models',
 ]
 
 TEMPLATES = [
@@ -141,7 +141,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 
-AUTH_USER_MODEL = 'models.CRMUser'
+# AUTH_USER_MODEL = 'models.CRMUser'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend', # this is default
@@ -171,13 +171,3 @@ GROUPS_MANAGER = {
         'groups_siblings': ['view'],
     },
 }
-# company -> department -> title
-# roles
-# Super user group
-# Company owner group
-# Department groups & roles
-
-
-# Head of company -> 
-# Head of department
-# Normal user

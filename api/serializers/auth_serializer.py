@@ -3,7 +3,7 @@ from api.serializers.base import BaseResponseSerializer
 
 
 class AuthLoginRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.EmailField()
     password = serializers.CharField(min_length=1)
 
 

@@ -8,23 +8,23 @@ class UserManagerTest(TestCase):
         
     def test_create_user(self) -> None:
         user = self.User.objects.create_user(
-            email='normal@user.com',
+            username='normal@user.com',
             password='password',
         )
         
         self.assertIsNotNone(user)
-        self.assertEqual(user.email, 'normal@user.com')
+        self.assertEqual(user.username, 'normal@user.com')
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
     
     def test_create_superuser(self) -> None:
         super_user = self.User.objects.create_superuser(
-            email='super@user.com',
+            username='super@user.com',
             password='password',
         )
         
         self.assertIsNotNone(super_user)
-        self.assertEqual(super_user.email, 'super@user.com')
+        self.assertEqual(super_user.username, 'super@user.com')
         self.assertTrue(super_user.is_staff)
         self.assertTrue(super_user.is_superuser)
  

@@ -17,7 +17,7 @@ class TestUserAuth(TestCase):
         self.assertEqual(login_func_url, '/api/auth/login/')
         
         data = {
-            'email': 'user@user.com',
+            'username': 'user@user.com',
             'password': '123456aA@',
         }
         
@@ -29,7 +29,7 @@ class TestUserAuth(TestCase):
     
     def test_login_success(self):
         user = self.User.objects.create_user(
-            email='user@user.com',
+            username='user@user.com',
             password='123456aA@',
         )
          
@@ -37,7 +37,7 @@ class TestUserAuth(TestCase):
         self.assertEqual(login_func_url, '/api/auth/login/')
         
         data = {
-            'email': 'user@user.com',
+            'username': 'user@user.com',
             'password': '123456aA@',
         }
         
@@ -48,7 +48,7 @@ class TestUserAuth(TestCase):
     
     def test_logout(self):
         user = self.User.objects.create_user(
-            email='user@user.com',
+            username='user@user.com',
             password='123456aA@',
         )
          
@@ -56,7 +56,7 @@ class TestUserAuth(TestCase):
         self.assertEqual(login_func_url, '/api/auth/login/')
         
         data = {
-            'email': 'user@user.com',
+            'username': 'user@user.com',
             'password': '123456aA@',
         }
         

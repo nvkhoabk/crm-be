@@ -17,6 +17,9 @@ class BaseAPIView(APIView):
     pagination_class = None
     serializer_many = False
 
+    def check_permissions(self, request):
+        pass
+
     def authenticate(self, request):
         request.user = SimpleLazyObject(lambda: get_user(request))
 
@@ -25,7 +28,8 @@ class BaseAPIView(APIView):
     def get_response(self, request=None, results=None, serializer=None, many=False):
         if self.pagination_class is not None:
             try:
-                results = self.pagination_class.paginate_queryset(results, request)
+                results = self.pagination_class.paginate_queryset(
+                    results, request)
                 serializer = serializer(results, many=many)
                 return self.pagination_class.get_paginated_response(serializer.data)
             except AttributeError as e:
@@ -38,8 +42,8 @@ class BaseAPIView(APIView):
                 'data': results,
             }
             if many:
-                print (results)
-                print (serializer(data, many=many))
+                print(results)
+                print(serializer(data, many=many))
             serializer = serializer(data, many=many)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -67,22 +71,26 @@ class BaseAPIView(APIView):
                 handler = self.http_method_not_allowed
 
             authenticated = self.authenticate(request=request)
-            # if authenticated is not None:
-            #     return authenticated
+            for permission in self.get_permissions():
+                if not permission.has_permission(request, self):
+                    self.permission_denied(request, message=getattr(permission, 'message', None))
 
             cookies_serializer = CookiesSerializer(data=request.COOKIES)
             cookies_serializer.is_valid(raise_exception=True)
             cookies = Cookies(**cookies_serializer.validated_data)
 
             if self.serializer_class is not None:
-                serializer = self.serializer_class(data=JSONParser().parse(request), many=self.serializer_many)
+                serializer = self.serializer_class(
+                    data=JSONParser().parse(request), many=self.serializer_many)
                 serializer.is_valid(raise_exception=True)
-                response = handler(request, serializer, cookies, *args, **kwargs)
+                response = handler(request, serializer,
+                                   cookies, *args, **kwargs)
             else:
                 response = handler(request, None, cookies, *args, **kwargs)
 
         except Exception as exc:
             response = self.handle_exception(exc)
 
-        self.response = self.finalize_response(request, response, *args, **kwargs)
+        self.response = self.finalize_response(
+            request, response, *args, **kwargs)
         return self.response
