@@ -187,7 +187,7 @@ class UpdateDepartmentResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDepartmentRequestParamSerializer(serializers.Serializer):
-    company_id = serializers.IntegerField(allow_null=True)
+    company_id = serializers.IntegerField()
     id = serializers.IntegerField(allow_null=True)
     department_name = serializers.CharField(required=False, allow_blank=True)
 
@@ -249,7 +249,8 @@ class UpdateRoleResponseSerializer(BaseResponseSerializer):
 
 
 class FilterRoleRequestParamSerializer(serializers.Serializer):
-    department_id = serializers.IntegerField(allow_null=True)
+    company_id = serializers.IntegerField()
+    department_id = serializers.IntegerField()
     id = serializers.IntegerField(allow_null=True)
     role_name = serializers.CharField(required=False, allow_blank=True)
 
@@ -342,7 +343,7 @@ class UpdatePermisionResponseSerializer(BaseResponseSerializer):
     
 
 class FilterPermissionRequestParamSerializer(serializers.Serializer):
-    company_id = serializers.IntegerField(allow_null=True)
+    company_id = serializers.IntegerField()
     department_id = serializers.IntegerField(allow_null=True)
     role_id = serializers.IntegerField(allow_null=True)
     id = serializers.IntegerField(allow_null=True)

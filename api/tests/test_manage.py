@@ -321,6 +321,7 @@ class TestManage(TestCase):
 
         data = {
             'filter': {
+                'company_id': company_id,
                 'department_id': department_id,
                 'id': role_id,
                 'role_name': 'name',
@@ -420,6 +421,7 @@ class TestManage(TestCase):
 
         data = {
             'filter': {
+                'company_id': company_id,
                 'department_id': department_id,
                 'id': role_id,
                 'role_name': 'name',
