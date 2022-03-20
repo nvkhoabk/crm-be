@@ -422,3 +422,36 @@ class CreateUserService(BaseService):
         
             return user
         
+
+class UpdateUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        with transaction.atomic():
+            try:
+                user = User.objects.get(pk=kwargs['id'])
+            except User.DoesNotExist:
+                raise ManageUserNotFound()
+
+            if kwargs.get('username'):
+                user.username = kwargs['username']
+                
+            if kwargs.get('password'):
+                user.set_password(kwargs['password'])
+
+            user_role = UserRole.objects.get(
+                user=user,
+            )
+
+            try:
+                if kwargs.get('department_id'):
+                    user_role.department = Department.objects.get(pk=kwargs['department_id']) 
+                if kwargs.get('role_id'):
+                    user_role.role = Role.objects.get(pk=kwargs['role_id'])
+            except Department.DoesNotExist:
+                raise ManageDepartmentNotFound()
+            except Role.DoesNotExist:
+                raise ManageRoleNotFound() 
+
+            user_role.save()
+            user.save()
+            return user
+            

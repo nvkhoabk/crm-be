@@ -7,9 +7,9 @@ class BaseModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(blank=True, null=True)
     
-    def delete(self):
-        self.deleted_at = timezone.now()
-        self.save()
+    # def delete(self):
+    #     self.deleted_at = timezone.now()
+    #     self.save()
 
     class Meta:
         abstract = True

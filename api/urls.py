@@ -35,6 +35,7 @@ urlpatterns = [
     path('manage/delete_permission/', manage.DeletePermissionView.as_view(), name='manage.delete_permission'),
 
     path('manage/create_user/', manage.CreateUserView.as_view(), name='manage.create_user'),
+    path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
 
     
      # Auth

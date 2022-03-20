@@ -10,7 +10,7 @@ class TestUser(TestCase):
     def setUp(self):
         self.client = Client()
 
-    def test_create_company(self):
+    def test_create_user(self):
         super_user = get_user_model().objects.create_user(username='testuser',
                                              password='12345',
                                              is_superuser=True,
@@ -53,13 +53,31 @@ class TestUser(TestCase):
 
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
+        uid = resp['data']['id']
+        self.assertGreater(uid, 0)
+
+        update_user_url = reverse('manage.update_user')
+        self.assertEqual(update_user_url, '/api/manage/update_user/')
+        data = {
+            'id': uid,
+            'username': 'username2',
+            'password': '123456aA@',
+            'status': 1,
+        }
+        
+        resp = self.client.post(update_user_url, json.dumps(data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        
+        record = resp.json()
+        self.assertEqual(record['code'], 0)
+    
 
         # Try to login
         login_func_url = reverse('auth.login')
         self.assertEqual(login_func_url, '/api/auth/login/')
         
         data = {
-            'username': 'username1',
+            'username': 'username2',
             'password': '123456aA@',
         }
         

@@ -100,7 +100,7 @@ class CreateCompanyRequestSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=5)
     type = serializers.CharField(min_length=5)
     owner = serializers.CharField(min_length=5)
-    phone = serializers.CharField(min_length=5)
+    phone = serializers.CharField(min_length=5, allow_blank=True, required=False)
 
     def validate_phone(self, value):
         value = validate.check_phone_number(value)
@@ -395,4 +395,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CreateUserResponseSerializer(BaseResponseSerializer):
+    data = UserSerializer()
+
+
+class UpdateUserRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    company_id = serializers.IntegerField(required=False)
+    department_id = serializers.IntegerField(required=False)
+    role_id = serializers.IntegerField(required=False)
+    username = serializers.CharField(required=False)
+    password = serializers.CharField(required=False, min_length=6)
+    # phone = serializers.CharField(required=False)
+
+    # def validate_phone(self, value):
+    #     value = validate.check_phone_number(value)
+    #     if not value:
+    #         raise serializers.ValidationError('Phone is not valid')
+    #     return value
+
+
+class UpdateUserResponseSerializer(BaseResponseSerializer):
     data = UserSerializer()
