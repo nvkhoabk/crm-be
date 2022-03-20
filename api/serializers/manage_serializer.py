@@ -6,6 +6,9 @@ from api.models.param import Param
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.utils import validate
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class CreateParamRequestSerializer(serializers.Serializer):
@@ -319,3 +322,28 @@ class DeletePermissionRequestSerializer(serializers.Serializer):
 
 class DeletePermissionResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class CreateUserRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    department_id = serializers.IntegerField(required=False)
+    role_id = serializers.IntegerField(required=False)
+    username = serializers.CharField()
+    password = serializers.CharField(min_length=6)
+    # phone = serializers.CharField(required=False)
+
+    # def validate_phone(self, value):
+    #     value = validate.check_phone_number(value)
+    #     if not value:
+    #         raise serializers.ValidationError('Phone is not valid')
+    #     return value
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', ) 
+
+
+class CreateUserResponseSerializer(BaseResponseSerializer):
+    data = UserSerializer()

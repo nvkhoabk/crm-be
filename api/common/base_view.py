@@ -41,13 +41,16 @@ class BaseAPIView(APIView):
                 'msg': 'success',
                 'data': results,
             }
-            if many:
-                print(results)
-                print(serializer(data, many=many))
             serializer = serializer(data, many=many)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
+        else:
+            data = {
+                'code': 0,
+                'msg': 'success',
+                'data': results,
+            }
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(data=data, status=status.HTTP_200_OK)
 
     def dispatch(self, request, *args, **kwargs):
         """

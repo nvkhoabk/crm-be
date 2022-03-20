@@ -497,3 +497,22 @@ class DeletePermissionView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=permission, request=request, serializer=manage_serializer.DeletePermissionResponseSerializer)
     
+
+class CreateUserView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.CreateUserRequestSerializer
+
+    @swagger_auto_schema(
+        operation_id='Create user',
+        operation_description='Create user',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.DeletePermissionResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_user_service = manage_service.CreateUserService()
+        user = create_user_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=user, request=request, serializer=manage_serializer.CreateUserResponseSerializer)

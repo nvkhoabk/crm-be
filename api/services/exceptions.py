@@ -53,4 +53,14 @@ class ManagePermissionDuplicated(APIException):
 
 class ManagePermissionNotFound(APIException):
     code = 2051
-    msg = 'Duplicate permission'
+    msg = 'Permission not found'
+
+
+class ManageUserDuplicated(APIException):
+    code = 2060
+    msg = 'User duplicated'
+
+
+class ManageUserNotFound(APIException):
+    code = 2061
+    msg = 'User not found'

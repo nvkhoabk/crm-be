@@ -5,11 +5,8 @@ from api.views import manage
 
 
 urlpatterns = [
+    # Template
     path('article/create/', article.ArticleCreateView.as_view(), name='article.create'),
-    
-    # Auth
-    path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
-    path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
 
     path('manage/create_param/', manage.CreateParamView.as_view(), name='manage.create_param'),
     path('manage/update_param/', manage.UpdateParamView.as_view(), name='manage.update_param'),
@@ -20,7 +17,6 @@ urlpatterns = [
     path('manage/filter_package/', manage.FilterPackageView.as_view(), name='manage.filter_package'),
     path('manage/delete_package/', manage.DeletePackageView.as_view(), name='manage.delete_package'),
 
-    # Company management
     path('manage/create_company/', manage.CreateCompanyView.as_view(), name='manage.create_company'),
     path('manage/update_company/', manage.UpdateCompanyView.as_view(), name='manage.update_company'),
     path('manage/filter_company/', manage.FilterCompanyView.as_view(), name='manage.filter_company'),
@@ -40,4 +36,12 @@ urlpatterns = [
     path('manage/update_permission/', manage.UpdatePermissionView.as_view(), name='manage.update_permission'),
     path('manage/filter_permission/', manage.FilterPermissionView.as_view(), name='manage.filter_permission'),
     path('manage/delete_permission/', manage.DeletePermissionView.as_view(), name='manage.delete_permission'),
+
+    path('manage/create_user/', manage.CreateUserView.as_view(), name='manage.create_user'),
+
+    
+     # Auth
+    path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
+    path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
+    path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
 ]

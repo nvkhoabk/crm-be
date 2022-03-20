@@ -1,17 +1,23 @@
 import json
+
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.organization import Company, Department, Role, Permission
-from api.models.param import Param
+from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
-from api.services.exceptions import (ManageCreateCompanyDuplicated,
+from api.models.param import Param
+from api.services.exceptions import (ManageCompanyNotFound,
+                                     ManageCreateCompanyDuplicated,
                                      ManageCreateParamDuplicated,
-                                     ManageCompanyNotFound,
                                      ManageDepartmentNotFound,
+                                     ManagePermissionDuplicated,
+                                     ManagePermissionNotFound,
                                      ManageRoleNotFound,
-                                     ManagePermissionDuplicated, ManagePermissionNotFound)
-from django.contrib.auth import authenticate, login, logout
-from django.db import IntegrityError
+                                     ManageUserDuplicated,
+                                     ManageUserNotFound,)
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.db import IntegrityError, transaction
+
+User = get_user_model()
 
 
 class CreateOrUpdateParamService(BaseService):
@@ -355,3 +361,39 @@ class DeletePermissionService(BaseService):
         except Permission.DoesNotExist as e:
             raise ManagePermissionNotFound()
     
+
+
+class CreateUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        with transaction.atomic():
+            if User.objects.filter(username=kwargs['username']).first():
+                raise ManageUserDuplicated()
+
+            user = User.objects.create_user(
+                username=kwargs['username'],
+                password=kwargs['password'],
+            )
+
+            try:
+                company = Company.objects.get(pk=kwargs['company_id'])
+                if kwargs.get('department_id'):
+                    department = Department.objects.get(pk=kwargs['department_id'])
+                if kwargs.get('role_id'):
+                    role = Role.objects.get(pk=kwargs['role_id'])
+            except Company.DoesNotExist:
+                raise ManageCompanyNotFound()
+            except Department.DoesNotExist:
+                raise ManageDepartmentNotFound()
+            except Role.DoesNotExist:
+                raise ManageRoleNotFound() 
+
+            # Role
+            UserRole.objects.create(
+                company=company,
+                department=department if kwargs.get('department_id') else None,
+                role=role if kwargs.get('role_id') else None,
+                user=user,
+            )
+        
+            return user
+        

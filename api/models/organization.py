@@ -1,5 +1,8 @@
 from api.models.base import BaseModel
 from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class Company(BaseModel):
@@ -45,3 +48,14 @@ class Permission(BaseModel):
     class Meta:
         db_table = 'permissions'
         unique_together = ('company', 'department', 'role', )
+
+
+class UserRole(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, null=True)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'user_roles'
+        
