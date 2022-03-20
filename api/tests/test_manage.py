@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.test import Client
 from django.urls import reverse
 from rest_framework import status as http_status
+from django.contrib.auth import get_user_model
 from api.services.exceptions import ManageCompanyNotFound
 
 
@@ -11,6 +12,12 @@ class TestManage(TestCase):
         self.client = Client()
 
     def test_create_company(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')
@@ -46,6 +53,12 @@ class TestManage(TestCase):
         self.assertEqual(resp['code'], 0)
 
     def test_update_company(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')
@@ -86,6 +99,12 @@ class TestManage(TestCase):
         self.assertEqual(resp['code'], 0)
 
     def test_delete_company_fail(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         delete_company_func_url = reverse('manage.delete_company')
         self.assertEqual(delete_company_func_url,
                          '/api/manage/delete_company/')
@@ -101,6 +120,12 @@ class TestManage(TestCase):
         self.assertEqual(resp['code'], ManageCompanyNotFound.code)
 
     def test_filter_company(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')
@@ -142,6 +167,12 @@ class TestManage(TestCase):
         self.assertEqual(len(resp['data']), 1)
 
     def test_department(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         data = {
             'name': 'Company A',
             'type': 'electronic',
@@ -222,6 +253,12 @@ class TestManage(TestCase):
         self.assertEqual(resp['code'], 0) 
     
     def test_role(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         data = {
             'name': 'Company A',
             'type': 'electronic',
@@ -315,6 +352,12 @@ class TestManage(TestCase):
         self.assertEqual(resp['code'], 0) 
     
     def test_permission(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+        
         data = {
             'name': 'Company A',
             'type': 'electronic',

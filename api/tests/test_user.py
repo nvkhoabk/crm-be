@@ -2,6 +2,7 @@ import json
 from django.test import TestCase
 from django.test import Client
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 from rest_framework import status as http_status
 
 
@@ -10,6 +11,12 @@ class TestUser(TestCase):
         self.client = Client()
 
     def test_create_company(self):
+        super_user = get_user_model().objects.create_user(username='testuser',
+                                             password='12345',
+                                             is_superuser=True,
+                                        )
+        self.assertTrue(self.client.login(username='testuser', password='12345'))
+    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')

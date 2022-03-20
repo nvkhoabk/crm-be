@@ -1,5 +1,5 @@
 from api.common.base_view import BaseAPIView
-from api.permissions import SuperAdminPermission
+from api.permissions import SuperAdminPermission, CompanyAdminPermission
 from api.serializers import manage_serializer
 from api.services import exceptions
 from api.services import manage as manage_service
@@ -170,7 +170,7 @@ class DeletePackageView(BaseAPIView):
 
 class CreateCompanyView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.CreateCompanyRequestSerializer
 
     @swagger_auto_schema(
@@ -193,7 +193,7 @@ class CreateCompanyView(BaseAPIView):
 
 class UpdateCompanyView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.UpdateCompanyRequestSerializer
 
     @swagger_auto_schema(
@@ -217,7 +217,7 @@ class UpdateCompanyView(BaseAPIView):
 
 class FilterCompanyView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.FilterCompanyRequestSerializer
 
     @swagger_auto_schema(
@@ -241,7 +241,7 @@ class FilterCompanyView(BaseAPIView):
 
 class DeleteCompanyView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.DeleteCompanyRequestSerializer
 
     @swagger_auto_schema(

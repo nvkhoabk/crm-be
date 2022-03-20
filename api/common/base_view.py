@@ -74,22 +74,27 @@ class BaseAPIView(APIView):
                 handler = self.http_method_not_allowed
 
             authenticated = self.authenticate(request=request)
-            for permission in self.get_permissions():
-                if not permission.has_permission(request, self):
-                    self.permission_denied(request, message=getattr(permission, 'message', None))
 
-            cookies_serializer = CookiesSerializer(data=request.COOKIES)
-            cookies_serializer.is_valid(raise_exception=True)
-            cookies = Cookies(**cookies_serializer.validated_data)
-
+            serializer = None
             if self.serializer_class is not None:
                 serializer = self.serializer_class(
                     data=JSONParser().parse(request), many=self.serializer_many)
                 serializer.is_valid(raise_exception=True)
-                response = handler(request, serializer,
-                                   cookies, *args, **kwargs)
-            else:
-                response = handler(request, None, cookies, *args, **kwargs)
+            
+            for permission in self.get_permissions():
+                if not permission.has_permission(request, self):
+                    self.permission_denied(request, message=getattr(permission, 'message', None))
+                if serializer:
+                    data = serializer.data
+                    data.Meta = self.serializer_class.Meta if hasattr(self.serializer_class, 'Meta') else None
+                    if not permission.has_object_permission(request, None, data):
+                        self.permission_denied(request, message=getattr(permission, 'message', None))
+    
+            cookies_serializer = CookiesSerializer(data=request.COOKIES)
+            cookies_serializer.is_valid(raise_exception=True)
+            cookies = Cookies(**cookies_serializer.validated_data)
+
+            response = handler(request, serializer, cookies, *args, **kwargs)
 
         except Exception as exc:
             response = self.handle_exception(exc)

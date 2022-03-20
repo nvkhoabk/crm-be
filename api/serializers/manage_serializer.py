@@ -158,6 +158,10 @@ class CreateDepartmentRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     department_name = serializers.CharField(min_length=5)
 
+    class Meta:
+        permission_field = 'company_id'
+        permission_class= 'company'
+
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -173,6 +177,10 @@ class UpdateDepartmentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     department_name = serializers.CharField(min_length=5)
 
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'department'
+
 
 class UpdateDepartmentResponseSerializer(BaseResponseSerializer):
     data = DepartmentSerializer()
@@ -182,6 +190,10 @@ class FilterDepartmentRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(allow_null=True)
     id = serializers.IntegerField(allow_null=True)
     department_name = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        permission_field = 'company_id'
+        permission_class= 'company'
 
 
 class FilterDepartmentRequestSerializer(BasePagingSerializer):
@@ -195,6 +207,10 @@ class FilterDepartmentResponseSerializer(BaseResponseSerializer):
 class DeleteDepartmentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
 
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'department'
+
 
 class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
     pass
@@ -203,6 +219,10 @@ class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
 class CreateRoleRequestSerializer(serializers.Serializer):
     department_id = serializers.IntegerField()
     role_name = serializers.CharField(min_length=5)
+
+    class Meta:
+        permission_field = 'department_id'
+        permission_class= 'department'
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -219,6 +239,10 @@ class UpdateRoleRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     role_name = serializers.CharField(min_length=5)
 
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'role'
+
 
 class UpdateRoleResponseSerializer(BaseResponseSerializer):
     data = RoleSerializer()
@@ -228,6 +252,10 @@ class FilterRoleRequestParamSerializer(serializers.Serializer):
     department_id = serializers.IntegerField(allow_null=True)
     id = serializers.IntegerField(allow_null=True)
     role_name = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'role'
 
 
 class FilterRoleRequestSerializer(BasePagingSerializer):
@@ -240,6 +268,10 @@ class FilterRoleResponseSerializer(BaseResponseSerializer):
 
 class DeleteRoleRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'role'
 
 
 class DeleteRoleResponseSerializer(BaseResponseSerializer):
@@ -261,6 +293,10 @@ class CreatePermissionRequestSerializer(serializers.Serializer):
     role_id = serializers.IntegerField()
     edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
     read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+
+    class Meta:
+        permission_field = 'company_id'
+        permission_class= 'company'
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -296,6 +332,10 @@ class UpdatePermissionRequestSerializer(serializers.Serializer):
     edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
     read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
     
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'permission'
+     
 
 class UpdatePermisionResponseSerializer(BaseResponseSerializer):
     data = PermissionSerializer()
@@ -306,6 +346,10 @@ class FilterPermissionRequestParamSerializer(serializers.Serializer):
     department_id = serializers.IntegerField(allow_null=True)
     role_id = serializers.IntegerField(allow_null=True)
     id = serializers.IntegerField(allow_null=True)
+
+    class Meta:
+        permission_field = 'company_id'
+        permission_class= 'company'
 
 
 class FilterPermissionRequestSerializer(BasePagingSerializer):
@@ -318,6 +362,11 @@ class FilterPermissionResponseSerializer(BaseResponseSerializer):
 
 class DeletePermissionRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+    class Meta:
+        permission_field = 'id'
+        permission_class= 'permission'
+
 
 
 class DeletePermissionResponseSerializer(BaseResponseSerializer):
