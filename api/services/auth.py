@@ -1,7 +1,7 @@
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from django.contrib.auth import authenticate, login, logout
-from api.services.exceptions import AuthLoginInvalid, AuthLogoutNotLoggedIn
+from api.services import exceptions
 from api.models.organization import UserRole, Permission
 
 
@@ -9,7 +9,7 @@ class AuthLoginService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         user = authenticate(**kwargs)
         if user is None:
-            raise AuthLoginInvalid()
+            raise exceptions.AuthLoginInvalid()
         login(request, user)
         return user
 
@@ -17,7 +17,7 @@ class AuthLoginService(BaseService):
 class AuthLogoutService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         if not request.user.is_authenticated:
-            raise AuthLogoutNotLoggedIn()
+            raise exceptions.AuthLogoutNotLoggedIn()
         logout(request)
 
 

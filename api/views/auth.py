@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from api.serializers import auth_serializer
 from api.common.base_view import BaseAPIView
+from api.services import exceptions
 from api.services.auth import AuthLoginService, AuthLogoutService, AuthGetUserInfoService
 from rest_framework.permissions import IsAuthenticated
 
@@ -18,7 +19,9 @@ class AuthLoginView(BaseAPIView):
         operation_description='Auth login api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: auth_serializer.AuthLoginResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: auth_serializer.AuthLoginResponseSerializer,
+            exceptions.AuthLoginInvalid.code: exceptions.AuthLoginInvalid.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -37,7 +40,9 @@ class AuthLogoutView(BaseAPIView):
         operation_description='Auth logout api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: auth_serializer.AuthLogoutResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: auth_serializer.AuthLogoutResponseSerializer,
+            exceptions.AuthLogoutNotLoggedIn.code: exceptions.AuthLogoutNotLoggedIn.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -56,10 +61,11 @@ class AuthGetUserInfoView(BaseAPIView):
         operation_description='Auth get user info api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: auth_serializer.AuthLoginResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: "{'code': 0, 'msg': 'success', 'data': \"{'is_superuser': False, 'roles': [{'company': {'id': 7, 'name': 'Company A'}, 'department': {'id': 1, 'department_name': 'name'}, 'role': None, 'edit_permissions': [], 'read_permissions': []}]}\"}"
         }
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
         auth_get_user_info = AuthGetUserInfoService()
         user_info = auth_get_user_info.serve(request, cookies, *args)
-        return self.get_response(results=user_info, request=request, serializer=auth_serializer.AuthLoginResponseSerializer)
+        return self.get_response(results=user_info, request=request)
