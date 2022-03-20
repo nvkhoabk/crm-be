@@ -437,6 +437,9 @@ class UpdateUserService(BaseService):
             if kwargs.get('password'):
                 user.set_password(kwargs['password'])
 
+            if kwargs.get('status') is not None:
+                user.is_active = kwargs['status']
+                
             user_role = UserRole.objects.get(
                 user=user,
             )

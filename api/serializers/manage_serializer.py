@@ -405,6 +405,7 @@ class UpdateUserRequestSerializer(serializers.Serializer):
     role_id = serializers.IntegerField(required=False)
     username = serializers.CharField(required=False)
     password = serializers.CharField(required=False, min_length=6)
+    status = serializers.BooleanField(required=False, default=True)
     # phone = serializers.CharField(required=False)
 
     # def validate_phone(self, value):
