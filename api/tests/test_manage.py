@@ -129,7 +129,7 @@ class TestManage(TestCase):
                 'name': 'Company',
             },
             'paging': {
-                'page': 1,
+                'page': 0,
                 'page_size': 10,
             }
         }

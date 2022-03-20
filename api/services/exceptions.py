@@ -11,22 +11,22 @@ class AuthLogoutNotLoggedIn(APIException):
     msg = 'User not loggedin'
 
 
-class ManageCreateParamDuplicated(APIException):
+class ManageParamDuplicated(APIException):
     code = 2000
     msg = 'Duplicate param name'
 
 
-class ManageCreatePackageDuplicated(APIException):
+class ManagePackageDuplicated(APIException):
     code = 2010
     msg = 'Duplicate param name'
 
 
-class ManageDeletePackageNotFound(APIException):
+class ManagePackageNotFound(APIException):
     code = 2011
     msg = 'Not found package'
 
 
-class ManageCreateCompanyDuplicated(APIException):
+class ManageCompanyDuplicated(APIException):
     code = 2020
     msg = 'Duplicate company name'
  
@@ -39,6 +39,11 @@ class ManageCompanyNotFound(APIException):
 class ManageDepartmentNotFound(APIException):
     code = 2030
     msg = 'Not found department'
+
+
+class ManageRoleDuplicated(APIException):
+    code = 2040
+    msg = 'Duplicate role'
 
 
 class ManageRoleNotFound(APIException):

@@ -6,11 +6,12 @@ from api.models.organization import Company, Department, Permission, Role, UserR
 from api.models.package import Package
 from api.models.param import Param
 from api.services.exceptions import (ManageCompanyNotFound,
-                                     ManageCreateCompanyDuplicated,
-                                     ManageCreateParamDuplicated,
+                                     ManageCompanyDuplicated,
+                                     ManageParamDuplicated,
                                      ManageDepartmentNotFound,
                                      ManagePermissionDuplicated,
                                      ManagePermissionNotFound,
+                                     ManageRoleDuplicated,
                                      ManageRoleNotFound,
                                      ManageUserDuplicated,
                                      ManageUserNotFound,)
@@ -23,12 +24,16 @@ User = get_user_model()
 class CreateOrUpdateParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            return Param.objects.get_or_create(
+            param, created = Param.objects.get_or_create(
                 key=kwargs['key'],
                 defaults={
                     'value': kwargs['value'],
                 }
             )
+            if not created:
+                param.value = kwargs['value']
+                param.save()
+            return param
         except IntegrityError as e:
             raise ManageCreateParamDuplicated()
 
@@ -42,13 +47,19 @@ class FilterParamService(BaseService):
 class CreateOrUpdatePackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            package, _ = Package.objects.get_or_create(
+            package, created = Package.objects.get_or_create(
                 pk=kwargs.get('id'),
                 defaults={
                     'name': kwargs['name'],
                     'price': kwargs['price'],
                 }
             )
+
+            if not created:
+                package.name = kwargs['name']
+                package.price = kwargs['price']
+                package.save()
+            
             return package
         except IntegrityError as e:
             raise ManageCreatePackageDuplicated()
@@ -66,10 +77,12 @@ class FilterPackageService(BaseService):
 
             if key == 'name':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    name__contains=value,
                 )
-
-        return query_set
+        
+        offset = kwargs['page'] * kwargs['page_size']
+        limit = kwargs['page_size']
+        return query_set[offset:offset+limit]
 
 
 class DeletePackageService(BaseService):
@@ -97,7 +110,7 @@ class UpdateCompanyService(BaseService):
         try:
             Company.objects.get(pk=kwargs['id'])
         except Company.DoesNotExist:
-            raise ManageDeleteCompanyNotFound()
+            raise ManageCompanyNotFound()
 
         try:
             Company.objects.filter(pk=kwargs['id']).update(**kwargs)
@@ -131,22 +144,25 @@ class FilterCompanyService(BaseService):
 
             if key == 'name':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    name__contains=value,
                 )
             if key == 'type':
                 query_set = query_set.filter(
-                    type__icontains=value,
+                    type__contains=value,
                 )
             if key == 'owner':
                 query_set = query_set.filter(
-                    owner__icontains=value,
+                    owner__contains=value,
                 )
             if key == 'phone':
                 query_set = query_set.filter(
-                    phone__icontains=value,
+                    phone__contains=value,
                 )
 
-        return query_set
+        offset = kwargs['page'] * kwargs['page_size']
+        limit = kwargs['page_size']
+
+        return query_set[offset:offset+limit]
 
 
 class CreateDepartmentService(BaseService):
@@ -202,10 +218,13 @@ class FilterDepartmentService(BaseService):
                 )
             if key == 'department_name':
                 query_set = query_set.filter(
-                    department_name__icontains=value,
+                    department_name__contains=value,
                 )
 
-        return query_set
+        offset = kwargs['page'] * kwargs['page_size']
+        limit = kwargs['page_size']
+
+        return query_set[offset:offset+limit]
 
 
 class DeleteDepartmentService(BaseService):
@@ -227,7 +246,7 @@ class CreateRoleService(BaseService):
             department__id=department_id,
             role_name=role_name,
         ).first():
-            raise ManageRoleNotFound()
+            raise ManageRoleDuplicated()
         
         try:
             department = Department.objects.get(pk=department_id)
@@ -271,10 +290,13 @@ class FilterRoleService(BaseService):
                 )
             if key == 'role_name':
                 query_set = query_set.filter(
-                    role_name__icontains=value,
+                    role_name__contains=value,
                 )
 
-        return query_set
+        offset = kwargs['page'] * kwargs['page_size']
+        limit = kwargs['page_size']
+
+        return query_set[offset:offset+limit]
 
 
 class DeleteRoleService(BaseService):
@@ -349,7 +371,10 @@ class FilterPermissionService(BaseService):
                     pk=value,
                 )
 
-        return query_set
+        offset = kwargs['page'] * kwargs['page_size']
+        limit = kwargs['page_size']
+
+        return query_set[offset:offset+limit]
 
 
 class DeletePermissionService(BaseService):

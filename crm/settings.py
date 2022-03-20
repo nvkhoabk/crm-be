@@ -159,6 +159,16 @@ FIXTURE_DIRS = (
     os.path.join(BASE_DIR, 'fixtures'),
 )
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {
+            'type': 'basic'
+        }
+    },
+    'OPERATIONS_SORTER': 'method',
+}
+
+
 GROUPS_MANAGER = {
     # User and Groups sync settings
     'AUTH_MODELS_SYNC': True,

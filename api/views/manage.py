@@ -1,7 +1,7 @@
 from api.common.base_view import BaseAPIView
 from api.permissions import SuperAdminPermission
 from api.serializers import manage_serializer
-from api.services.exceptions import ManageCreatePackageDuplicated, ManageDeletePackageNotFound
+from api.services import exceptions
 from api.services import manage as manage_service
 from django.shortcuts import render
 from drf_yasg.utils import swagger_auto_schema
@@ -16,11 +16,14 @@ class CreateParamView(BaseAPIView):
     serializer_class = manage_serializer.CreateParamRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Param'],
         operation_id='Create param',
         operation_description='Create param api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.CreateParamResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateParamResponseSerializer,
+            exceptions.ManageParamDuplicated.code: exceptions.ManageParamDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -36,11 +39,14 @@ class UpdateParamView(BaseAPIView):
     serializer_class = manage_serializer.UpdateParamRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Param'],
         operation_id='Update param',
         operation_description='Update param api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.UpdateParamResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateParamResponseSerializer,
+            exceptions.ManageParamDuplicated.code: exceptions.ManageParamDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -56,6 +62,7 @@ class FilterParamView(BaseAPIView):
     serializer_class = manage_serializer.FilterParamRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Param'],
         operation_id='Filter param',
         operation_description='Filter param api',
         request_body=serializer_class,
@@ -76,13 +83,14 @@ class CreatePackageView(BaseAPIView):
     serializer_class = manage_serializer.CreatePackageRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Package'],
         operation_id='Create package',
         operation_description='Create package api',
         request_body=serializer_class,
         responses={
             status.HTTP_201_CREATED: None,
             0: manage_serializer.CreatePackageResponseSerializer,
-            ManageCreatePackageDuplicated.code: ManageCreatePackageDuplicated.msg,
+            exceptions.ManagePackageDuplicated.code: exceptions.ManagePackageDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -98,13 +106,14 @@ class UpdatePackageView(BaseAPIView):
     serializer_class = manage_serializer.UpdatePackageRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Package'],
         operation_id='Update package',
         operation_description='Update package api',
         request_body=serializer_class,
         responses={
             status.HTTP_201_CREATED: None,
             0: manage_serializer.UpdatePackageResponseSerializer,
-            ManageCreatePackageDuplicated.code: ManageCreatePackageDuplicated.msg,
+            exceptions.ManagePackageDuplicated.code: exceptions.ManagePackageDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -117,9 +126,10 @@ class UpdatePackageView(BaseAPIView):
 class FilterPackageView(BaseAPIView):
     authentication_classes = []
     permission_classes = [SuperAdminPermission, ]
-    serializer_class = manage_serializer.FilterPackageRequestParamSerializer
+    serializer_class = manage_serializer.FilterPackageRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Package'],
         operation_id='Filter package',
         operation_description='Filter package api',
         request_body=serializer_class,
@@ -141,13 +151,14 @@ class DeletePackageView(BaseAPIView):
     serializer_class = manage_serializer.DeletePackageRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Package'],
         operation_id='Delete package',
         operation_description='Delete package api',
         request_body=serializer_class,
         responses={
             status.HTTP_201_CREATED: None,
             0: manage_serializer.DeletePackageResponseSerializer,
-            ManageDeletePackageNotFound.code: ManageDeletePackageNotFound.msg,
+            exceptions.ManagePackageNotFound.code: exceptions.ManagePackageNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -163,11 +174,14 @@ class CreateCompanyView(BaseAPIView):
     serializer_class = manage_serializer.CreateCompanyRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Company'],
         operation_id='Create company',
         operation_description='Create company api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.CreateCompanyResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateCompanyResponseSerializer,
+            exceptions.ManageCompanyDuplicated.code: exceptions.ManageCompanyDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -183,11 +197,15 @@ class UpdateCompanyView(BaseAPIView):
     serializer_class = manage_serializer.UpdateCompanyRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Company'],
         operation_id='Update company',
         operation_description='Update company api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.UpdateCompanyResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateCompanyResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+            exceptions.ManageCompanyDuplicated.code: exceptions.ManageCompanyDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -203,11 +221,13 @@ class FilterCompanyView(BaseAPIView):
     serializer_class = manage_serializer.FilterCompanyRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Company'],
         operation_id='Filter company',
         operation_description='Filter company api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.FilterCompanyResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterCompanyResponseSerializer,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -225,11 +245,14 @@ class DeleteCompanyView(BaseAPIView):
     serializer_class = manage_serializer.DeleteCompanyRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Company'],
         operation_id='Delete company',
         operation_description='Delete company api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.DeleteCompanyRequestSerializer(),
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.DeleteCompanyRequestSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -245,11 +268,15 @@ class CreateDepartmentView(BaseAPIView):
     serializer_class = manage_serializer.CreateDepartmentRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Department'],
         operation_id='Create department',
         operation_description='Create department api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.CreateDepartmentResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateDepartmentResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -265,11 +292,14 @@ class UpdateDepartmentView(BaseAPIView):
     serializer_class = manage_serializer.UpdateDepartmentRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Department'],
         operation_id='Update department',
         operation_description='Update department api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.UpdateDepartmentResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateDepartmentResponseSerializer,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -285,11 +315,13 @@ class FilterDepartmentView(BaseAPIView):
     serializer_class = manage_serializer.FilterDepartmentRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Department'],
         operation_id='Filter department',
         operation_description='Filter department api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.FilterDepartmentResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterDepartmentResponseSerializer,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -305,11 +337,14 @@ class DeleteDepartmentView(BaseAPIView):
     serializer_class = manage_serializer.DeleteDepartmentRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Department'],
         operation_id='Delete department',
         operation_description='Delete department api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.DeleteDepartmentResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateDepartmentResponseSerializer,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -325,11 +360,15 @@ class CreateRoleView(BaseAPIView):
     serializer_class = manage_serializer.CreateRoleRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Role'],
         operation_id='Create role',
         operation_description='Create role api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.CreateRoleResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateRoleResponseSerializer,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
+            exceptions.ManageRoleDuplicated.code: exceptions.ManageRoleDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -345,31 +384,14 @@ class UpdateRoleView(BaseAPIView):
     serializer_class = manage_serializer.UpdateRoleRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Role'],
         operation_id='Update role',
         operation_description='Update role api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.UpdateRoleResponseSerializer,
-        }
-    )
-    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        update_role_service = manage_service.UpdateRoleService()
-        role = update_role_service.serve(
-            request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=role, request=request, serializer=manage_serializer.UpdateRoleResponseSerializer)
-
-
-class UpdateRoleView(BaseAPIView):
-    authentication_classes = []
-    permission_classes = []
-    serializer_class = manage_serializer.UpdateRoleRequestSerializer
-
-    @swagger_auto_schema(
-        operation_id='Update role',
-        operation_description='Update role api',
-        request_body=serializer_class,
-        responses={
-            status.HTTP_200_OK: manage_serializer.UpdateRoleResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateRoleResponseSerializer,
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -385,11 +407,13 @@ class FilterRoleView(BaseAPIView):
     serializer_class = manage_serializer.FilterRoleRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Role'],
         operation_id='Filter role',
         operation_description='Filter role api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.FilterRoleResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterRoleResponseSerializer, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -397,7 +421,7 @@ class FilterRoleView(BaseAPIView):
         roles = filter_role_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=roles, request=request, serializer=manage_serializer.FilterRoleResponseSerializer)
-    
+
 
 class DeleteRoleView(BaseAPIView):
     authentication_classes = []
@@ -405,11 +429,14 @@ class DeleteRoleView(BaseAPIView):
     serializer_class = manage_serializer.DeleteRoleRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Role'],
         operation_id='Delete role',
         operation_description='Delete role api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.DeleteRoleResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.DeleteRoleResponseSerializer,
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -417,7 +444,7 @@ class DeleteRoleView(BaseAPIView):
         role = delete_role_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=role, request=request, serializer=manage_serializer.DeleteRoleResponseSerializer)
-    
+
 
 class CreatePermissionView(BaseAPIView):
     authentication_classes = []
@@ -425,11 +452,16 @@ class CreatePermissionView(BaseAPIView):
     serializer_class = manage_serializer.CreatePermissionRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Permission'],
         operation_id='Create permission',
         operation_description='Create permission api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.CreatePermisionResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreatePermisionResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg, 
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg, 
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -445,11 +477,14 @@ class UpdatePermissionView(BaseAPIView):
     serializer_class = manage_serializer.UpdatePermissionRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Permission'],
         operation_id='Update permission',
         operation_description='Update permission api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.UpdatePermisionResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdatePermisionResponseSerializer,
+            exceptions.ManagePermissionNotFound.code: exceptions.ManagePermissionNotFound.msg, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -458,22 +493,25 @@ class UpdatePermissionView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=permission, request=request, serializer=manage_serializer.UpdatePermisionResponseSerializer)
 
+
 class FilterPermissionView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = manage_serializer.FilterPermissionRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Permission'],
         operation_id='Filter permission',
         operation_description='Filter permission api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.FilterPermissionResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterPermissionResponseSerializer,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         filter_permission_service = manage_service.FilterPermissionService()
-        permissions= filter_permission_service.serve(
+        permissions = filter_permission_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=permissions, request=request, serializer=manage_serializer.FilterPermissionResponseSerializer)
 
@@ -484,19 +522,22 @@ class DeletePermissionView(BaseAPIView):
     serializer_class = manage_serializer.DeletePermissionRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Permission'],
         operation_id='Delete permission',
         operation_description='Delete permission api',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.DeletePermissionResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.DeletePermissionResponseSerializer,
+            exceptions.ManagePermissionNotFound.code: exceptions.ManagePermissionNotFound.msg, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         delete_permission_service = manage_service.DeletePermissionService()
-        permission= delete_permission_service.serve(
+        permission = delete_permission_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=permission, request=request, serializer=manage_serializer.DeletePermissionResponseSerializer)
-    
+
 
 class CreateUserView(BaseAPIView):
     authentication_classes = []
@@ -504,11 +545,16 @@ class CreateUserView(BaseAPIView):
     serializer_class = manage_serializer.CreateUserRequestSerializer
 
     @swagger_auto_schema(
+        tags=['Manage User'],
         operation_id='Create user',
         operation_description='Create user',
         request_body=serializer_class,
         responses={
-            status.HTTP_200_OK: manage_serializer.DeletePermissionResponseSerializer,
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateUserResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg, 
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg, 
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg, 
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):

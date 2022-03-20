@@ -15,6 +15,7 @@ class AuthLoginView(BaseAPIView):
     serializer_class = auth_serializer.AuthLoginRequestSerializer
     
     @swagger_auto_schema(
+        tags=['Auth'],
         operation_id='Auth login',
         operation_description='Auth login api',
         request_body=serializer_class,
@@ -36,6 +37,7 @@ class AuthLogoutView(BaseAPIView):
     serializer_class = auth_serializer.AuthLogoutRequestSerializer
     
     @swagger_auto_schema(
+        tags=['Auth'],
         operation_id='Auth logout',
         operation_description='Auth logout api',
         request_body=serializer_class,
@@ -57,6 +59,7 @@ class AuthGetUserInfoView(BaseAPIView):
     serializer_class = None 
     
     @swagger_auto_schema(
+        tags=['Auth'],
         operation_id='Auth get user info',
         operation_description='Auth get user info api',
         request_body=serializer_class,
