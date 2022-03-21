@@ -4,6 +4,7 @@ import rest_framework
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 from rest_framework_simplejwt.exceptions import InvalidToken
+from api.services.exceptions import AuthLoginInvalid
 
 
 DEFAULT_PERMISSIONS = {
@@ -35,6 +36,11 @@ def crm_exception_handler(exc, context):
             data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied] 
         elif isinstance(exc, InvalidToken):
             data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied]  
+        elif isinstance(exc, rest_framework.exceptions.AuthenticationFailed):
+            data = {
+                'code': AuthLoginInvalid.code,
+                'msg': AuthLoginInvalid.msg,
+            }
         else:
             data = {
                 'code': exc.code,

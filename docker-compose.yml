@@ -9,7 +9,7 @@ services:
     environment:
        MYSQL_DATABASE: 'crm_db'
        MYSQL_PASSWORD: 'root'
-       MYSQL_ROOT_PASSWORD: 'root'
+       MYSQL_ROOT_PASSWORD: '123456aA@'
     command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
     healthcheck:
       test: "/usr/bin/mysql --user=root --password=root --execute \"SHOW DATABASES;\""

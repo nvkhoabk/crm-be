@@ -1,14 +1,12 @@
 import json
 from django.test import Client, TestCase
+from api.tests.base import TestCRMBase
 from django.urls import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
 
 
-class TestPackage(TestCase):
-    def setUp(self):
-        self.client = Client()
-
+class TestPackage(TestCRMBase):
     def test_package(self):
         create_package_func_url = reverse('manage.create_package')
         self.assertEqual(create_package_func_url,

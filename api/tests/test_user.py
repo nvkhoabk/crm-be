@@ -4,19 +4,11 @@ from django.test import Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status as http_status
+from api.tests.base import TestCRMBase
 
 
-class TestUser(TestCase):
-    def setUp(self):
-        self.client = Client()
-
+class TestUser(TestCRMBase):
     def test_create_user(self):
-        super_user = get_user_model().objects.create_user(username='testuser',
-                                             password='12345',
-                                             is_superuser=True,
-                                        )
-        self.assertTrue(self.client.login(username='testuser', password='12345'))
-    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')
@@ -84,8 +76,9 @@ class TestUser(TestCase):
         resp = self.client.post(login_func_url, json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         
-        record = resp.json()
-        self.assertEqual(record['code'], 0)
+        resp = resp.json()
+        self.assertGreater(len(resp['access']), 0)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + resp['access'])
 
         get_user_info_func_url = reverse('auth.get_user_info')
         self.assertEqual(get_user_info_func_url, '/api/auth/get_user_info/')

@@ -4,12 +4,10 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from api.tests.base import TestCRMBase
 
 
-class TestParam(TestCase):
-    def setUp(self):
-        self.client = Client()
-
+class TestParam(TestCRMBase):
     def test_param(self):
         create_param_func_url = reverse('manage.create_param')
         self.assertEqual(create_param_func_url, '/api/manage/create_param/')

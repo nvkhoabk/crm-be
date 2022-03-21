@@ -98,8 +98,8 @@ class DeletePackageResponseSerializer(BaseResponseSerializer):
 
 class CreateCompanyRequestSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=5)
-    type = serializers.CharField(min_length=5)
-    owner = serializers.CharField(min_length=5)
+    type = serializers.CharField(min_length=5, allow_blank=True, required=False)
+    owner = serializers.CharField(min_length=5, allow_blank=True, required=False)
     phone = serializers.CharField(min_length=5, allow_blank=True, required=False)
 
     def validate_phone(self, value):

@@ -1,23 +1,32 @@
 import json
-from django.test import TestCase
+from api.tests.base import TestCRMBase
 from django.test import Client
 from django.urls import reverse
 from rest_framework import status as http_status
 from django.contrib.auth import get_user_model
 from api.services.exceptions import ManageCompanyNotFound
+from rest_framework.test import APIClient
 
 
-class TestManage(TestCase):
+class TestManage(TestCRMBase):
     def setUp(self):
-        self.client = Client()
-
-    def test_create_company(self):
-        super_user = get_user_model().objects.create_user(username='testuser',
-                                             password='12345',
+        self.client = APIClient()
+        super_user = get_user_model().objects.create_user(username='root',
+                                             password='123456aA@',
                                              is_superuser=True,
                                         )
-        self.assertTrue(self.client.login(username='testuser', password='12345'))
+        login_url = reverse('auth.login')
+        self.assertEqual(login_url,
+                         '/api/auth/login/')
+        resp = self.client.post(login_url, json.dumps({
+            'username': 'root',
+            'password': '123456aA@'
+        }), content_type='application/json')
+        resp = resp.json()
+        access_token = resp['access']
+        self.client.credentials(HTTP_AUTHORIZATION = 'Bearer ' + access_token)
     
+    def test_create_company(self):    
         create_company_func_url = reverse('manage.create_company')
         self.assertEqual(create_company_func_url,
                          '/api/manage/create_company/')

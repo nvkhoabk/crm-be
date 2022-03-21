@@ -41,12 +41,11 @@ urlpatterns = [
     path('manage/create_user/', manage.CreateUserView.as_view(), name='manage.create_user'),
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
 
-    
      # Auth
     # path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
     # path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
 
-    path('auth/login/', TokenObtainPairView.as_view()),
+    path('auth/login/', TokenObtainPairView.as_view(), name='auth.login'),
     path('auth/token/refresh/', TokenRefreshView.as_view()),
 ]
