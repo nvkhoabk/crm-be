@@ -23,7 +23,9 @@ class BaseAPIView(APIView):
     def authenticate(self, request):
         from rest_framework_simplejwt.authentication import JWTAuthentication
         auth = JWTAuthentication()
-        request.user = auth.authenticate(request)[0]
+        auth = auth.authenticate(request)
+        if auth:
+            request.user = auth[0]
 
     def get_response(self, request=None, results=None, serializer=None, many=False):
         if self.pagination_class is not None:
