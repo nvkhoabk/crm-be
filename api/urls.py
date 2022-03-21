@@ -2,6 +2,10 @@ from django.urls import path, include
 from api.views import article
 from api.views import auth
 from api.views import manage
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 
 urlpatterns = [
@@ -42,4 +46,7 @@ urlpatterns = [
     path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
     path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
+
+    path('token/', TokenObtainPairView.as_view()),
+    path('token/refresh/', TokenRefreshView.as_view()),
 ]

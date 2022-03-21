@@ -19,11 +19,11 @@ class BaseAPIView(APIView):
 
     def check_permissions(self, request):
         pass
-
+        
     def authenticate(self, request):
-        request.user = SimpleLazyObject(lambda: get_user(request))
-
-        return None
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        auth = JWTAuthentication()
+        request.user = auth.authenticate(request)[0]
 
     def get_response(self, request=None, results=None, serializer=None, many=False):
         if self.pagination_class is not None:

@@ -27,6 +27,7 @@ class AuthGetUserInfoService(BaseService):
 
         response = {
             'is_superuser': user.is_superuser,
+            'username': user.username,
         }
 
         user_roles = UserRole.objects.filter(

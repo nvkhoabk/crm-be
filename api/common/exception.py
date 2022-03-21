@@ -3,6 +3,8 @@ from rest_framework.views import set_rollback, Http404, PermissionDenied, except
 import rest_framework
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
+from rest_framework_simplejwt.exceptions import InvalidToken
+
 
 DEFAULT_PERMISSIONS = {
     rest_framework.exceptions.PermissionDenied: {
@@ -31,6 +33,8 @@ def crm_exception_handler(exc, context):
                 data = {'detail': exc.detail}
         elif isinstance(exc, rest_framework.exceptions.PermissionDenied):
             data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied] 
+        elif isinstance(exc, InvalidToken):
+            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied]  
         else:
             data = {
                 'code': exc.code,
