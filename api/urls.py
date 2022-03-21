@@ -43,10 +43,10 @@ urlpatterns = [
 
     
      # Auth
-    path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
+    # path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
-    path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
+    # path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
 
-    path('token/', TokenObtainPairView.as_view()),
-    path('token/refresh/', TokenRefreshView.as_view()),
+    path('auth/login/', TokenObtainPairView.as_view()),
+    path('auth/token/refresh/', TokenRefreshView.as_view()),
 ]
