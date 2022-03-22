@@ -232,7 +232,7 @@ class TestManage(TestCRMBase):
         data = {
             'filter': {
                 'company_id': company_id,
-                'id': department_id,
+                'department_id': department_id,
                 'department_name': 'name',
             },
             'paging': {
@@ -332,7 +332,7 @@ class TestManage(TestCRMBase):
             'filter': {
                 'company_id': company_id,
                 'department_id': department_id,
-                'id': role_id,
+                'role_id': role_id,
                 'role_name': 'name',
             },
             'paging': {
@@ -432,7 +432,7 @@ class TestManage(TestCRMBase):
             'filter': {
                 'company_id': company_id,
                 'department_id': department_id,
-                'id': role_id,
+                'role_id': role_id,
                 'role_name': 'name',
             },
             'paging': {
@@ -490,7 +490,7 @@ class TestManage(TestCRMBase):
                 'company_id': company_id,
                 'department_id': department_id,
                 'role_id': role_id,
-                'id': permission_id,
+                'permission_id': permission_id,
             },
             'paging': {
                 'page': 1,

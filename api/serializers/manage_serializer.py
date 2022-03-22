@@ -67,7 +67,7 @@ class CreatePackageResponseSerializer(BaseResponseSerializer):
 
 
 class UpdatePackageRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Package id')
     name = serializers.CharField(min_length=5)
     price = serializers.IntegerField(min_value=1)
 
@@ -89,7 +89,7 @@ class FilterPackageResponseSerializer(BaseResponseSerializer):
 
 
 class DeletePackageRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Package id')
 
 
 class DeletePackageResponseSerializer(BaseResponseSerializer):
@@ -97,10 +97,10 @@ class DeletePackageResponseSerializer(BaseResponseSerializer):
 
 
 class CreateCompanyRequestSerializer(serializers.Serializer):
-    name = serializers.CharField(min_length=5)
-    type = serializers.CharField(min_length=5, allow_blank=True, required=False)
-    owner = serializers.CharField(min_length=5, allow_blank=True, required=False)
-    phone = serializers.CharField(min_length=5, allow_blank=True, required=False)
+    name = serializers.CharField(min_length=5, help_text='Company name')
+    type = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Company type')
+    owner = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Owner name')
+    phone = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Company phone')
 
     def validate_phone(self, value):
         value = validate.check_phone_number(value)
@@ -120,7 +120,7 @@ class CreateCompanyResponseSerializer(BaseResponseSerializer):
 
 
 class DeleteCompanyRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Company id')
 
 
 class DeleteCompanyResponseSerializer(BaseResponseSerializer):
@@ -128,7 +128,7 @@ class DeleteCompanyResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateCompanyRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Company id')
     name = serializers.CharField(min_length=5)
     type = serializers.CharField(min_length=5)
     owner = serializers.CharField(min_length=5)
@@ -174,7 +174,7 @@ class CreateDepartmentResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateDepartmentRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Department id')
     department_name = serializers.CharField(min_length=5)
 
     class Meta:
@@ -188,7 +188,7 @@ class UpdateDepartmentResponseSerializer(BaseResponseSerializer):
 
 class FilterDepartmentRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    id = serializers.IntegerField(allow_null=True)
+    department_id = serializers.IntegerField(allow_null=True)
     department_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -205,7 +205,7 @@ class FilterDepartmentResponseSerializer(BaseResponseSerializer):
 
 
 class DeleteDepartmentRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Department id')
 
     class Meta:
         permission_field = 'id'
@@ -236,7 +236,7 @@ class CreateRoleResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateRoleRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Role id')
     role_name = serializers.CharField(min_length=5)
 
     class Meta:
@@ -251,7 +251,7 @@ class UpdateRoleResponseSerializer(BaseResponseSerializer):
 class FilterRoleRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
-    id = serializers.IntegerField(allow_null=True)
+    role_id = serializers.IntegerField(allow_null=True)
     role_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -346,7 +346,7 @@ class FilterPermissionRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField(allow_null=True)
     role_id = serializers.IntegerField(allow_null=True)
-    id = serializers.IntegerField(allow_null=True)
+    permission_id = serializers.IntegerField(allow_null=True, help_text='Permission id')
 
     class Meta:
         permission_field = 'company_id'
@@ -362,7 +362,7 @@ class FilterPermissionResponseSerializer(BaseResponseSerializer):
 
 
 class DeletePermissionRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='Permission id')
 
     class Meta:
         permission_field = 'id'
@@ -419,7 +419,7 @@ class FilterUserResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateUserRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(help_text='User id')
     company_id = serializers.IntegerField(required=False)
     department_id = serializers.IntegerField(required=False)
     role_id = serializers.IntegerField(required=False)

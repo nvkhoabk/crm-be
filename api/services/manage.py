@@ -197,7 +197,7 @@ class FilterDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Department.objects.all()
 
-        filters = ['company_id', 'id', 'department_name']
+        filters = ['company_id', 'department_id', 'department_name']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -207,7 +207,7 @@ class FilterDepartmentService(BaseService):
                 query_set = query_set.filter(
                     company__id=value,
                 )
-            if key == 'id':
+            if key == 'department_id':
                 query_set = query_set.filter(
                     pk=value,
                 )
@@ -266,7 +266,7 @@ class FilterRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Role.objects.all()
 
-        filters = ['department_id', 'id', 'role_name']
+        filters = ['department_id', 'role_id', 'role_name']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -276,7 +276,7 @@ class FilterRoleService(BaseService):
                 query_set = query_set.filter(
                     department__id=value,
                 )
-            if key == 'id':
+            if key == 'role_id':
                 query_set = query_set.filter(
                     pk=value,
                 )
@@ -337,7 +337,7 @@ class FilterPermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Permission.objects.all()
 
-        filters = ['company_id', 'department_id', 'role_id', 'id']
+        filters = ['company_id', 'department_id', 'role_id', 'permission_id']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -355,7 +355,7 @@ class FilterPermissionService(BaseService):
                 query_set = query_set.filter(
                     role__id=value,
                 )
-            if key == 'id':
+            if key == 'permission_id':
                 query_set = query_set.filter(
                     pk=value,
                 )
