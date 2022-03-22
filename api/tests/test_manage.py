@@ -173,7 +173,7 @@ class TestManage(TestCRMBase):
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
-        self.assertEqual(len(resp['data']), 1)
+        self.assertEqual(resp['data']['total'], 1)
 
     def test_department(self):
         super_user = get_user_model().objects.create_user(username='testuser',

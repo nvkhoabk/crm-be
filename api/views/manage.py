@@ -60,6 +60,7 @@ class FilterParamView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, ]
     serializer_class = manage_serializer.FilterParamRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Param'],
@@ -74,7 +75,7 @@ class FilterParamView(BaseAPIView):
         filter_param_service = manage_service.FilterParamService()
         params = filter_param_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=params, request=request, serializer=manage_serializer.FilterParamResponseSerializer)
+        return self.get_response(results=params, request=serializer.validated_data, serializer=manage_serializer.FilterParamResponseSerializer)
 
 
 class CreatePackageView(BaseAPIView):
@@ -127,6 +128,7 @@ class FilterPackageView(BaseAPIView):
     authentication_classes = []
     permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.FilterPackageRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Package'],
@@ -142,7 +144,7 @@ class FilterPackageView(BaseAPIView):
         filter_package_service = manage_service.FilterPackageService()
         packages = filter_package_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=packages, request=request, serializer=manage_serializer.FilterPackageResponseSerializer)
+        return self.get_response(results=packages, request=serializer.validated_data, serializer=manage_serializer.FilterPackageResponseSerializer)
 
 
 class DeletePackageView(BaseAPIView):
@@ -219,6 +221,7 @@ class FilterCompanyView(BaseAPIView):
     authentication_classes = []
     permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.FilterCompanyRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Company'],
@@ -234,7 +237,7 @@ class FilterCompanyView(BaseAPIView):
         filter_company_service = manage_service.FilterCompanyService()
         companies = filter_company_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=companies, request=request,
+        return self.get_response(results=companies, request=serializer.validated_data,
                                  serializer=manage_serializer.FilterCompanyResponseSerializer,
                                  )
 
@@ -313,6 +316,7 @@ class FilterDepartmentView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = manage_serializer.FilterDepartmentRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Department'],
@@ -328,7 +332,7 @@ class FilterDepartmentView(BaseAPIView):
         filter_department_service = manage_service.FilterDepartmentService()
         department = filter_department_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=department, request=request, serializer=manage_serializer.FilterDepartmentResponseSerializer)
+        return self.get_response(results=department, request=serializer.validated_data, serializer=manage_serializer.FilterDepartmentResponseSerializer)
 
 
 class DeleteDepartmentView(BaseAPIView):
@@ -405,6 +409,7 @@ class FilterRoleView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = manage_serializer.FilterRoleRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Role'],
@@ -420,7 +425,7 @@ class FilterRoleView(BaseAPIView):
         filter_role_service = manage_service.FilterRoleService()
         roles = filter_role_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=roles, request=request, serializer=manage_serializer.FilterRoleResponseSerializer)
+        return self.get_response(results=roles, request=serializer.validated_data, serializer=manage_serializer.FilterRoleResponseSerializer)
 
 
 class DeleteRoleView(BaseAPIView):
@@ -498,6 +503,7 @@ class FilterPermissionView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = manage_serializer.FilterPermissionRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Permission'],
@@ -513,7 +519,7 @@ class FilterPermissionView(BaseAPIView):
         filter_permission_service = manage_service.FilterPermissionService()
         permissions = filter_permission_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=permissions, request=request, serializer=manage_serializer.FilterPermissionResponseSerializer)
+        return self.get_response(results=permissions, request=serializer.validated_data, serializer=manage_serializer.FilterPermissionResponseSerializer)
 
 
 class DeletePermissionView(BaseAPIView):

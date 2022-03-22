@@ -37,7 +37,7 @@ class UpdateParamResponseSerializer(BaseResponseSerializer):
     pass
 
 
-class FilterParamRequestSerializer(serializers.Serializer):
+class FilterParamRequestSerializer(BasePagingSerializer):
     pass
 
 
@@ -83,7 +83,7 @@ class FilterPackageRequestParamSerializer(serializers.Serializer):
 class FilterPackageRequestSerializer(BasePagingSerializer):
     filter = FilterPackageRequestParamSerializer()
 
-
+    
 class FilterPackageResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=PackageSerializer())
 

@@ -80,9 +80,7 @@ class FilterPackageService(BaseService):
                     name__contains=value,
                 )
         
-        offset = kwargs['page'] * kwargs['page_size']
-        limit = kwargs['page_size']
-        return query_set[offset:offset+limit]
+        return query_set
 
 
 class DeletePackageService(BaseService):
@@ -159,10 +157,7 @@ class FilterCompanyService(BaseService):
                     phone__contains=value,
                 )
 
-        offset = kwargs['page'] * kwargs['page_size']
-        limit = kwargs['page_size']
-
-        return query_set[offset:offset+limit]
+        return query_set
 
 
 class CreateDepartmentService(BaseService):
@@ -221,10 +216,7 @@ class FilterDepartmentService(BaseService):
                     department_name__contains=value,
                 )
 
-        offset = kwargs['page'] * kwargs['page_size']
-        limit = kwargs['page_size']
-
-        return query_set[offset:offset+limit]
+        return query_set
 
 
 class DeleteDepartmentService(BaseService):
@@ -293,10 +285,7 @@ class FilterRoleService(BaseService):
                     role_name__contains=value,
                 )
 
-        offset = kwargs['page'] * kwargs['page_size']
-        limit = kwargs['page_size']
-
-        return query_set[offset:offset+limit]
+        return query_set
 
 
 class DeleteRoleService(BaseService):
@@ -371,10 +360,7 @@ class FilterPermissionService(BaseService):
                     pk=value,
                 )
 
-        offset = kwargs['page'] * kwargs['page_size']
-        limit = kwargs['page_size']
-
-        return query_set[offset:offset+limit]
+        return query_set
 
 
 class DeletePermissionService(BaseService):

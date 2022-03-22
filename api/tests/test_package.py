@@ -68,7 +68,7 @@ class TestPackage(TestCRMBase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
-        self.assertEqual(len(resp['data']), 1)
+        self.assertEqual(resp['data']['total'], 1)
 
         delete_package_func_url = reverse('manage.delete_package')
         self.assertEqual(delete_package_func_url,

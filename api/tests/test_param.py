@@ -40,8 +40,7 @@ class TestParam(TestCRMBase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
-        records = resp['data']
-        self.assertEqual(len(records), 1)
+        self.assertEqual(resp['data']['total'], 1)
 
         update_param_func_url = reverse('manage.update_param')
         self.assertEqual(update_param_func_url, '/api/manage/update_param/')

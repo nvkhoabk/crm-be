@@ -6,6 +6,11 @@ class BaseResponseSerializer(serializers.Serializer):
     msg = serializers.CharField(allow_blank=True, default='success')
 
 
+class BaseResponsePagingSerializer(serializers.Serializer):
+    page = serializers.IntegerField()
+    page_size = serializers.IntegerField()
+    total = serializers.IntegerField()
+
 class BasePagingSerializer(serializers.Serializer):
     page = serializers.IntegerField(default=0)
     page_size = serializers.IntegerField(default=10)

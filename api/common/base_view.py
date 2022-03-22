@@ -28,14 +28,7 @@ class BaseAPIView(APIView):
             request.user = auth[0]
 
     def get_response(self, request=None, results=None, serializer=None, many=False):
-        if self.pagination_class is not None:
-            try:
-                results = self.pagination_class.paginate_queryset(
-                    results, request)
-                serializer = serializer(results, many=many)
-                return self.pagination_class.get_paginated_response(serializer.data)
-            except AttributeError as e:
-                return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+        
 
         if serializer is not None:
             data = {
@@ -43,8 +36,32 @@ class BaseAPIView(APIView):
                 'msg': 'success',
                 'data': results,
             }
-            serializer = serializer(data, many=many)
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+            
+            if self.pagination_class:
+                page = request['page']
+                page_size = request['page_size']
+        
+                offset = page * page_size
+                limit = page_size
+                total = results.count()
+                results = results[offset: offset + limit]
+
+                serializer = serializer(data, many=many)
+                data = {
+                    'code': 0,
+                    'msg': 'success',
+                    'data': {
+                        'records': serializer.data['data'],
+                        'page': page,
+                        'page_size': page_size,
+                        'total': total
+                    }
+                }
+            else:
+                serializer = serializer(data, many=many)
+                data = serializer.data
+         
+            return Response(data=data, status=status.HTTP_200_OK)
         else:
             data = {
                 'code': 0,
