@@ -599,7 +599,7 @@ class FilterUserView(BaseAPIView):
 
 class UpdateUserView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [SuperAdminPermission, ]
+    permission_classes = []
     serializer_class = manage_serializer.UpdateUserRequestSerializer
 
     @swagger_auto_schema(

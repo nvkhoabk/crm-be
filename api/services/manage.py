@@ -435,13 +435,11 @@ class FilterUserService(BaseService):
                     role__id=value,
                 )
             if key == 'username':
-                query_set = query_set.filter(
-                    username__contains=value,
+                user_role_query = user_role_query.filter(
+                    user__username__contains=value,
                 )
-        query_set = query_set.filter(
-            id__in=user_role_query.values_list('user__id', flat=True).distinct()
-        )
-        return query_set
+
+        return user_role_query
 
 
 class UpdateUserService(BaseService):

@@ -1,6 +1,6 @@
 import json
 
-from api.models.organization import Company, Department, Permission, Role
+from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
@@ -422,8 +422,17 @@ class FilterUserRequestSerializer(BasePagingSerializer):
     filter = FilterUserRequestParamSerializer()
 
 
+class UserRoleSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    
+    class Meta:
+        model = UserRole
+        fields = '__all__'
+        depth = 1
+
+
 class FilterUserResponseSerializer(BaseResponseSerializer):
-    data = serializers.ListField(child=UserSerializer())
+    data = serializers.ListField(child=UserRoleSerializer())
 
 
 class UpdateUserRequestSerializer(serializers.Serializer):
