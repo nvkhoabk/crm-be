@@ -445,3 +445,15 @@ class UpdateUserRequestSerializer(serializers.Serializer):
 
 class UpdateUserResponseSerializer(BaseResponseSerializer):
     data = UserSerializer()
+
+
+class DeleteUserRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='User id')
+
+    class Meta:
+        permission_field = 'id'
+        permission_class = 'permission'
+
+
+class DeleteUserResponseSerializer(BaseResponseSerializer):
+    pass

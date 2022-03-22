@@ -108,4 +108,17 @@ class TestUser(TestCRMBase):
         
         record = resp.json()
         self.assertEqual(record['code'], 0)
-    
+   
+        delete_user_func_url = reverse('manage.delete_user')
+        self.assertEqual(delete_user_func_url, '/api/manage/delete_user/')
+        
+        data = {
+            'id': uid,
+        }
+        
+        resp = self.client.post(delete_user_func_url, json.dumps(data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+         

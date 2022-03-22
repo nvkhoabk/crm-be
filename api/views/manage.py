@@ -599,7 +599,7 @@ class FilterUserView(BaseAPIView):
 
 class UpdateUserView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.UpdateUserRequestSerializer
 
     @swagger_auto_schema(
@@ -621,3 +621,26 @@ class UpdateUserView(BaseAPIView):
         user = update_user_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=user, request=request, serializer=manage_serializer.UpdateUserResponseSerializer)
+
+
+class DeleteUserView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.DeleteUserRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage User'],
+        operation_id='Delete user',
+        operation_description='Delete user',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.DeleteUserResponseSerializer,
+            exceptions.ManageUserNotFound.code: exceptions.ManageUserNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_user_service = manage_service.DeleteUserService()
+        user = delete_user_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=user, request=request, serializer=manage_serializer.DeleteUserResponseSerializer)

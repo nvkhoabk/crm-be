@@ -479,3 +479,12 @@ class UpdateUserService(BaseService):
             user.save()
             return user
             
+
+class DeleteUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return User.objects.get(
+                id=kwargs['id'],
+            ).delete()
+        except User.DoesNotExist as e:
+            raise ManageUserNotFound()
