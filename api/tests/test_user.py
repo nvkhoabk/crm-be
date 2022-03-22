@@ -62,7 +62,26 @@ class TestUser(TestCRMBase):
         
         record = resp.json()
         self.assertEqual(record['code'], 0)
-    
+        
+        filter_user_url = reverse('manage.filter_user')
+        self.assertEqual(filter_user_url, '/api/manage/filter_user/')
+      
+        data = {
+            'filter': {
+                'company_id': company_id,
+            },
+            'paging': {
+                'page': 0,
+                'page_size': 10,
+            }
+        }
+        
+        resp = self.client.post(filter_user_url, json.dumps(data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        
+        record = resp.json()
+        self.assertEqual(record['code'], 0)
+     
 
         # Try to login
         login_func_url = reverse('auth.login')

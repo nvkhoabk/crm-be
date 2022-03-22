@@ -399,6 +399,25 @@ class CreateUserResponseSerializer(BaseResponseSerializer):
     data = UserSerializer()
 
 
+class FilterUserRequestParamSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField(required=False)
+    department_id = serializers.IntegerField(required=False)
+    role_id = serializers.IntegerField(required=False)
+    username = serializers.CharField(allow_null=True, required=False)
+
+    class Meta:
+        permission_field = 'company_id'
+        permission_class= 'company'
+
+
+class FilterUserRequestSerializer(BasePagingSerializer):
+    filter = FilterUserRequestParamSerializer()
+
+
+class FilterUserResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=UserSerializer())
+
+
 class UpdateUserRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     company_id = serializers.IntegerField(required=False)

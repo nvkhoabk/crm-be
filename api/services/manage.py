@@ -409,6 +409,39 @@ class CreateUserService(BaseService):
             return user
         
 
+class FilterUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        user_role_query = UserRole.objects.all()
+        query_set = User.objects.all()
+
+        filters = ['company_id', 'department_id', 'role_id', 'username']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'company_id':
+                user_role_query = user_role_query.filter(
+                    company__id=value,
+                )
+            if key == 'department_id':
+                user_role_query = user_role_query.filter(
+                    department__id=value,
+                )
+            if key == 'role_id':
+                user_role_query = user_role_query.filter(
+                    role__id=value,
+                )
+            if key == 'username':
+                query_set = query_set.filter(
+                    username__contains=value,
+                )
+        query_set = query_set.filter(
+            id__in=user_role_query.values_list('user__id', flat=True).distinct()
+        )
+        return query_set
+
+
 class UpdateUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         with transaction.atomic():
