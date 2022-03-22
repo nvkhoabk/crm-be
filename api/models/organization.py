@@ -24,6 +24,7 @@ class Department(BaseModel):
 
 
 class Role(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     role_name = models.CharField(max_length=255, db_index=True)
 

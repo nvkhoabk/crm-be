@@ -231,10 +231,12 @@ class DeleteDepartmentService(BaseService):
 
 class CreateRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        company_id = kwargs['company_id']
         department_id = kwargs['department_id']
         role_name = kwargs['role_name']
 
         if Role.objects.filter(
+            company__id=company_id,
             department__id=department_id,
             role_name=role_name,
         ).first():

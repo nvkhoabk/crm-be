@@ -371,6 +371,7 @@ class CreateRoleView(BaseAPIView):
         responses={
             status.HTTP_201_CREATED: None,
             0: manage_serializer.CreateRoleResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
             exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
             exceptions.ManageRoleDuplicated.code: exceptions.ManageRoleDuplicated.msg,
         }

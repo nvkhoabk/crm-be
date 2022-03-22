@@ -83,7 +83,7 @@ class FilterPackageRequestParamSerializer(serializers.Serializer):
 class FilterPackageRequestSerializer(BasePagingSerializer):
     filter = FilterPackageRequestParamSerializer()
 
-    
+
 class FilterPackageResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=PackageSerializer())
 
@@ -98,9 +98,12 @@ class DeletePackageResponseSerializer(BaseResponseSerializer):
 
 class CreateCompanyRequestSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=5, help_text='Company name')
-    type = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Company type')
-    owner = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Owner name')
-    phone = serializers.CharField(min_length=5, allow_blank=True, required=False, help_text='Company phone')
+    type = serializers.CharField(
+        min_length=5, allow_blank=True, required=False, help_text='Company type')
+    owner = serializers.CharField(
+        min_length=5, allow_blank=True, required=False, help_text='Owner name')
+    phone = serializers.CharField(
+        min_length=5, allow_blank=True, required=False, help_text='Company phone')
 
     def validate_phone(self, value):
         value = validate.check_phone_number(value)
@@ -129,10 +132,10 @@ class DeleteCompanyResponseSerializer(BaseResponseSerializer):
 
 class UpdateCompanyRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Company id')
-    name = serializers.CharField(min_length=5)
-    type = serializers.CharField(min_length=5)
-    owner = serializers.CharField(min_length=5)
-    phone = serializers.CharField(min_length=5)
+    name = serializers.CharField(min_length=5, required=False)
+    type = serializers.CharField(min_length=5, required=False)
+    owner = serializers.CharField(min_length=5, required=False)
+    phone = serializers.CharField(min_length=5, required=False)
 
 
 class UpdateCompanyResponseSerializer(BaseResponseSerializer):
@@ -160,7 +163,7 @@ class CreateDepartmentRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'company_id'
-        permission_class= 'company'
+        permission_class = 'company'
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -179,7 +182,7 @@ class UpdateDepartmentRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'department'
+        permission_class = 'department'
 
 
 class UpdateDepartmentResponseSerializer(BaseResponseSerializer):
@@ -188,12 +191,12 @@ class UpdateDepartmentResponseSerializer(BaseResponseSerializer):
 
 class FilterDepartmentRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    department_id = serializers.IntegerField(allow_null=True)
+    department_id = serializers.IntegerField(required=False)
     department_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         permission_field = 'company_id'
-        permission_class= 'company'
+        permission_class = 'company'
 
 
 class FilterDepartmentRequestSerializer(BasePagingSerializer):
@@ -209,7 +212,7 @@ class DeleteDepartmentRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'department'
+        permission_class = 'department'
 
 
 class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
@@ -217,12 +220,13 @@ class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
 
 
 class CreateRoleRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
     role_name = serializers.CharField(min_length=5)
 
     class Meta:
         permission_field = 'department_id'
-        permission_class= 'department'
+        permission_class = 'department'
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -241,7 +245,7 @@ class UpdateRoleRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'role'
+        permission_class = 'role'
 
 
 class UpdateRoleResponseSerializer(BaseResponseSerializer):
@@ -256,7 +260,7 @@ class FilterRoleRequestParamSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'role'
+        permission_class = 'role'
 
 
 class FilterRoleRequestSerializer(BasePagingSerializer):
@@ -272,7 +276,7 @@ class DeleteRoleRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'role'
+        permission_class = 'role'
 
 
 class DeleteRoleResponseSerializer(BaseResponseSerializer):
@@ -292,12 +296,14 @@ class CreatePermissionRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
     role_id = serializers.IntegerField()
-    edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
-    read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    edit_permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    read_permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
 
     class Meta:
         permission_field = 'company_id'
-        permission_class= 'company'
+        permission_class = 'company'
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -306,13 +312,14 @@ class PermissionSerializer(serializers.ModelSerializer):
 
     def get_edit_permissions(self, obj):
         return json.loads(obj.edit_permissions)
-    
+
     def get_read_permissions(self, obj):
         return json.loads(obj.read_permissions)
 
     class Meta:
         model = Permission
-        fields = ['id', 'company_id', 'department_id', 'role_id', 'edit_permissions', 'read_permissions']
+        fields = ['id', 'company_id', 'department_id',
+                  'role_id', 'edit_permissions', 'read_permissions']
 
 
 class CreatePermisionResponseSerializer(BaseResponseSerializer):
@@ -330,27 +337,29 @@ class UpdatePermissionRequestSerializer(serializers.Serializer):
         ('Báo cáo', 'Báo cáo'),
     )
     id = serializers.IntegerField()
-    edit_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
-    read_permissions = serializers.ListField(child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
-    
+    edit_permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+    read_permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=CATEGORY_CHOICES, allow_blank=True))
+
     class Meta:
         permission_field = 'id'
-        permission_class= 'permission'
-     
+        permission_class = 'permission'
+
 
 class UpdatePermisionResponseSerializer(BaseResponseSerializer):
     data = PermissionSerializer()
-    
+
 
 class FilterPermissionRequestParamSerializer(serializers.Serializer):
-    company_id = serializers.IntegerField()
-    department_id = serializers.IntegerField(allow_null=True)
-    role_id = serializers.IntegerField(allow_null=True)
-    permission_id = serializers.IntegerField(allow_null=True, help_text='Permission id')
+    company_id = serializers.IntegerField(required=False)
+    department_id = serializers.IntegerField(required=False)
+    role_id = serializers.IntegerField(required=False)
+    permission_id = serializers.IntegerField(required=False)
 
     class Meta:
         permission_field = 'company_id'
-        permission_class= 'company'
+        permission_class = 'company'
 
 
 class FilterPermissionRequestSerializer(BasePagingSerializer):
@@ -366,8 +375,7 @@ class DeletePermissionRequestSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'id'
-        permission_class= 'permission'
-
+        permission_class = 'permission'
 
 
 class DeletePermissionResponseSerializer(BaseResponseSerializer):
@@ -392,7 +400,7 @@ class CreateUserRequestSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', ) 
+        fields = ('id', 'username', )
 
 
 class CreateUserResponseSerializer(BaseResponseSerializer):
@@ -407,7 +415,7 @@ class FilterUserRequestParamSerializer(serializers.Serializer):
 
     class Meta:
         permission_field = 'company_id'
-        permission_class= 'company'
+        permission_class = 'company'
 
 
 class FilterUserRequestSerializer(BasePagingSerializer):

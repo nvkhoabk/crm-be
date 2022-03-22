@@ -300,6 +300,7 @@ class TestManage(TestCRMBase):
         self.assertEqual(create_role_func_url, '/api/manage/create_role/')
 
         data = {
+            'company_id': company_id,
             'department_id': department_id,
             'role_name': 'Role name',
         }
@@ -400,6 +401,7 @@ class TestManage(TestCRMBase):
         self.assertEqual(create_role_func_url, '/api/manage/create_role/')
 
         data = {
+            'company_id': company_id,
             'department_id': department_id,
             'role_name': 'Role name',
         }
