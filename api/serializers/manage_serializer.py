@@ -428,7 +428,7 @@ class FilterUserResponseSerializer(BaseResponseSerializer):
 
 class UpdateUserRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='User id')
-    company_id = serializers.IntegerField(required=False)
+    company_id = serializers.IntegerField(required=True)
     department_id = serializers.IntegerField(required=False)
     role_id = serializers.IntegerField(required=False)
     username = serializers.CharField(required=False)

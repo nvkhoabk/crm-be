@@ -52,6 +52,7 @@ class TestUser(TestCRMBase):
         self.assertEqual(update_user_url, '/api/manage/update_user/')
         data = {
             'id': uid,
+            'company_id': company_id,
             'username': 'username2',
             'password': '123456aA@',
             'status': 1,
