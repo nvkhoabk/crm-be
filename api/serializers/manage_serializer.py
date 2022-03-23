@@ -97,13 +97,13 @@ class DeletePackageResponseSerializer(BaseResponseSerializer):
 
 
 class CreateCompanyRequestSerializer(serializers.Serializer):
-    name = serializers.CharField(min_length=5, help_text='Company name')
+    name = serializers.CharField(help_text='Company name')
     type = serializers.CharField(
-        min_length=5, allow_blank=True, required=False, help_text='Company type')
+        allow_blank=True, required=False, help_text='Company type')
     owner = serializers.CharField(
-        min_length=5, allow_blank=True, required=False, help_text='Owner name')
+        allow_blank=True, required=False, help_text='Owner name')
     phone = serializers.CharField(
-        min_length=5, allow_blank=True, required=False, help_text='Company phone')
+        allow_blank=True, required=False, help_text='Company phone')
 
     def validate_phone(self, value):
         value = validate.check_phone_number(value)
@@ -132,10 +132,10 @@ class DeleteCompanyResponseSerializer(BaseResponseSerializer):
 
 class UpdateCompanyRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Company id')
-    name = serializers.CharField(min_length=5, required=False)
-    type = serializers.CharField(min_length=5, required=False)
-    owner = serializers.CharField(min_length=5, required=False)
-    phone = serializers.CharField(min_length=5, required=False)
+    name = serializers.CharField(required=False)
+    type = serializers.CharField(required=False)
+    owner = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
 
 
 class UpdateCompanyResponseSerializer(BaseResponseSerializer):

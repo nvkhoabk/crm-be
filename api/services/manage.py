@@ -5,6 +5,8 @@ from api.common.cookies import Cookies
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
+from api.services import utils
+from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageCompanyDuplicated,
                                      ManageParamDuplicated,
@@ -17,6 +19,8 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageUserNotFound,)
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
+from groups_manager.models import Group, GroupType, Member
+
 
 User = get_user_model()
 
@@ -59,7 +63,7 @@ class CreateOrUpdatePackageService(BaseService):
                 package.name = kwargs['name']
                 package.price = kwargs['price']
                 package.save()
-            
+
             return package
         except IntegrityError as e:
             raise ManageCreatePackageDuplicated()
@@ -79,7 +83,7 @@ class FilterPackageService(BaseService):
                 query_set = query_set.filter(
                     name__contains=value,
                 )
-        
+
         return query_set
 
 
@@ -95,12 +99,20 @@ class DeletePackageService(BaseService):
 
 class CreateCompanyService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        try:
-            return Company.objects.create(
-                **kwargs
-            )
-        except IntegrityError as e:
-            raise ManageCreateCompanyDuplicated()
+        with transaction.atomic():
+            try:
+                company = Company.objects.create(
+                    **kwargs
+                )
+                # Create group permission
+                company_group = Group.objects.create(
+                    name=utils.get_company_group_name(company.id))
+                company_admins = Group.objects.create(name=utils.get_company_admins_group(company.id),
+                                                      parent=company_group)
+                company_admins.assign_object(company)
+                return company
+            except IntegrityError as e:
+                raise ManageCreateCompanyDuplicated()
 
 
 class UpdateCompanyService(BaseService):
@@ -121,13 +133,13 @@ class UpdateCompanyService(BaseService):
 class DeleteCompanyService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         id = kwargs['id']
-
-        try:
-            return Company.objects.get(
-                id=id,
-            ).delete()
-        except Company.DoesNotExist as e:
-            raise ManageCompanyNotFound()
+        with transaction.atomic():
+            try:
+                return Company.objects.get(
+                    id=id,
+                ).delete()
+            except Company.DoesNotExist as e:
+                raise ManageCompanyNotFound()
 
 
 class FilterCompanyService(BaseService):
@@ -164,18 +176,18 @@ class CreateDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         company_id = kwargs['company_id']
         department_name = kwargs['department_name']
+        
+        try:
+            company = Company.objects.get(pk=company_id)
+        except Company.DoesNotExist:
+            raise ManageCompanyNotFound()
 
         if Department.objects.filter(
             company__id=company_id,
             department_name=department_name,
         ).first():
-            raise ManageDepartmentNotFound()        
+            raise ManageDepartmentNotFound()
 
-        try:
-            company = Company.objects.get(pk=company_id)
-        except Company.DoesNotExist:
-            raise ManageCompanyNotFound()
-        
         return Department.objects.create(
             company=company,
             department_name=department_name,
@@ -227,7 +239,7 @@ class DeleteDepartmentService(BaseService):
             ).delete()
         except Department.DoesNotExist as e:
             raise ManageDepartmentNotFound()
-    
+
 
 class CreateRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -241,17 +253,17 @@ class CreateRoleService(BaseService):
             role_name=role_name,
         ).first():
             raise ManageRoleDuplicated()
-        
+
         try:
             department = Department.objects.get(pk=department_id)
         except Company.DoesNotExist:
             raise ManageDepartmentNotFound()
-        
+
         return Role.objects.create(
             department=department,
             role_name=role_name,
         )
-    
+
 
 class UpdateRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -329,8 +341,10 @@ class UpdatePermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             permission = Permission.objects.get(pk=kwargs['id'])
-            permission.edit_permissions=json.dumps(kwargs['edit_permissions'])
-            permission.read_permissions=json.dumps(kwargs['read_permissions'])
+            permission.edit_permissions = json.dumps(
+                kwargs['edit_permissions'])
+            permission.read_permissions = json.dumps(
+                kwargs['read_permissions'])
         except Permission.DoesNotExist:
             raise ManagePermissionNotFound()
 
@@ -373,12 +387,39 @@ class DeletePermissionService(BaseService):
             ).delete()
         except Permission.DoesNotExist as e:
             raise ManagePermissionNotFound()
-    
 
 
 class CreateUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            company = Company.objects.get(pk=kwargs['company_id'])
+            group_admins = Group.objects.get(name=utils.get_company_admins_group(kwargs['company_id']))
+        except Company.DoesNotExist:
+            raise ManageCompanyNotFound()
+    
+        if not request.user.is_superuser and (kwargs.get('department_id') or kwargs.get('role_id')):
+            # Check if user has company permission 
+            try:
+                member = Member.objects.get(django_user=request.user)
+            except Member.DoesNotExist:
+                raise PermissionDenied()
+            if not member.has_perm('change_company', company):
+                raise PermissionDenied()
+        elif not request.user.is_superuser:
+            raise PermissionDenied() 
+            
         with transaction.atomic():
+            try:
+                if kwargs.get('department_id'):
+                    department = Department.objects.get(
+                        pk=kwargs['department_id'])
+                if kwargs.get('role_id'):
+                    role = Role.objects.get(pk=kwargs['role_id'])
+            except Department.DoesNotExist:
+                raise ManageDepartmentNotFound()
+            except Role.DoesNotExist:
+                raise ManageRoleNotFound()
+
             if User.objects.filter(username=kwargs['username']).first():
                 raise ManageUserDuplicated()
 
@@ -386,20 +427,11 @@ class CreateUserService(BaseService):
                 username=kwargs['username'],
                 password=kwargs['password'],
             )
-
-            try:
-                company = Company.objects.get(pk=kwargs['company_id'])
-                if kwargs.get('department_id'):
-                    department = Department.objects.get(pk=kwargs['department_id'])
-                if kwargs.get('role_id'):
-                    role = Role.objects.get(pk=kwargs['role_id'])
-            except Company.DoesNotExist:
-                raise ManageCompanyNotFound()
-            except Department.DoesNotExist:
-                raise ManageDepartmentNotFound()
-            except Role.DoesNotExist:
-                raise ManageRoleNotFound() 
-
+            if not kwargs.get('department_id') and not kwargs.get('role_id'):
+                # Add admin user to group admin
+                member = Member.objects.create(username=user.username, django_user=user)
+                group_admins.add_member(member)
+                    
             # Role
             UserRole.objects.create(
                 company=company,
@@ -407,9 +439,9 @@ class CreateUserService(BaseService):
                 role=role if kwargs.get('role_id') else None,
                 user=user,
             )
-        
+
             return user
-        
+
 
 class FilterUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -452,31 +484,32 @@ class UpdateUserService(BaseService):
 
             if kwargs.get('username'):
                 user.username = kwargs['username']
-                
+
             if kwargs.get('password'):
                 user.set_password(kwargs['password'])
 
             if kwargs.get('status') is not None:
                 user.is_active = kwargs['status']
-                
+
             user_role = UserRole.objects.get(
                 user=user,
             )
 
             try:
                 if kwargs.get('department_id'):
-                    user_role.department = Department.objects.get(pk=kwargs['department_id']) 
+                    user_role.department = Department.objects.get(
+                        pk=kwargs['department_id'])
                 if kwargs.get('role_id'):
                     user_role.role = Role.objects.get(pk=kwargs['role_id'])
             except Department.DoesNotExist:
                 raise ManageDepartmentNotFound()
             except Role.DoesNotExist:
-                raise ManageRoleNotFound() 
+                raise ManageRoleNotFound()
 
             user_role.save()
             user.save()
             return user
-            
+
 
 class DeleteUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):

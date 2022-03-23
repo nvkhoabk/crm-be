@@ -28,8 +28,6 @@ class BaseAPIView(APIView):
             request.user = auth[0]
 
     def get_response(self, request=None, results=None, serializer=None, many=False):
-        
-
         if serializer is not None:
             data = {
                 'code': 0,
@@ -44,7 +42,7 @@ class BaseAPIView(APIView):
                 offset = page * page_size
                 limit = page_size
                 total = results.count()
-                results = results[offset: offset + limit]
+                data['data'] = results[offset: offset + limit]
 
                 serializer = serializer(data, many=many)
                 data = {

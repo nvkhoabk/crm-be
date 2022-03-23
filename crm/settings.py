@@ -194,10 +194,8 @@ SWAGGER_SETTINGS = {
 GROUPS_MANAGER = {
     # User and Groups sync settings
     'AUTH_MODELS_SYNC': True,
-    'GROUP_NAME_PREFIX': 'crm_',
-    'GROUP_NAME_SUFFIX': '_$$random',
-    'USER_USERNAME_PREFIX': 'crm_',
-    'USER_USERNAME_SUFFIX': '_$$random',
+    'USER_USERNAME_PREFIX': '',
+    'USER_USERNAME_SUFFIX': '',
     # Permissions
     'PERMISSIONS': {
         'owner': ['view', 'change', 'delete'],
