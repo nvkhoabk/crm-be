@@ -225,7 +225,9 @@ class CreateDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         company_id = kwargs['company_id']
         department_name = kwargs['department_name']
-        
+
+        utils.has_company_permisison(request.user, company_id=company_id)
+            
         try:
             company = Company.objects.get(pk=company_id)
         except Company.DoesNotExist:
@@ -245,6 +247,7 @@ class CreateDepartmentService(BaseService):
 
 class GetDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, department_id=kwargs['id'])
         try:
             return Department.objects.get(pk=kwargs['id'])
         except Department.DoesNotExist:
@@ -253,6 +256,7 @@ class GetDepartmentService(BaseService):
 
 class UpdateDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, department_id=kwargs['id'])
         try:
             department = Department.objects.get(pk=kwargs['id'])
             department.department_name = kwargs['department_name']
@@ -273,6 +277,7 @@ class FilterDepartmentService(BaseService):
                 continue
 
             if key == 'company_id':
+                utils.has_company_permisison(request.user, company_id=value)
                 query_set = query_set.filter(
                     company__id=value,
                 )
@@ -290,6 +295,7 @@ class FilterDepartmentService(BaseService):
 
 class DeleteDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, department_id=kwargs['id'])
         try:
             return Department.objects.get(
                 id=kwargs['id'],
@@ -303,6 +309,8 @@ class CreateRoleService(BaseService):
         company_id = kwargs['company_id']
         department_id = kwargs['department_id']
         role_name = kwargs['role_name']
+        
+        utils.has_company_permisison(request.user, company_id=company_id)
 
         if Role.objects.filter(
             company__id=company_id,
@@ -324,6 +332,8 @@ class CreateRoleService(BaseService):
 
 class GetRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, role_id=kwargs['id'])
+
         try:
             return Role.objects.get(pk=kwargs['id'])
         except Role.DoesNotExist:
@@ -332,6 +342,7 @@ class GetRoleService(BaseService):
 
 class UpdateRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, role_id=kwargs['id'])
         try:
             role = Role.objects.get(pk=kwargs['id'])
             role.role_name = kwargs['role_name']
@@ -345,12 +356,18 @@ class FilterRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Role.objects.all()
 
-        filters = ['department_id', 'role_id', 'role_name']
+        filters = ['company_id', 'department_id', 'role_id', 'role_name']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
-
+            
+            if key == 'company_id':
+                utils.has_company_permisison(request.user, company_id=value)
+                query_set = query_set.filter(
+                    company__id=value,
+                )
+         
             if key == 'department_id':
                 query_set = query_set.filter(
                     department__id=value,
@@ -369,6 +386,7 @@ class FilterRoleService(BaseService):
 
 class DeleteRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, role_id=kwargs['id']) 
         try:
             return Role.objects.get(
                 id=kwargs['id'],
@@ -379,6 +397,7 @@ class DeleteRoleService(BaseService):
 
 class CreatePermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, company_id=kwargs['company_id'])
         try:
             company = Company.objects.get(pk=kwargs['company_id'])
             department = Department.objects.get(pk=kwargs['department_id'])
@@ -404,6 +423,7 @@ class CreatePermissionService(BaseService):
 
 class GetPermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, permission_id=kwargs['id'])
         try:
             return Permission.objects.get(pk=kwargs['id'])
         except Permission.DoesNotExist:
@@ -412,6 +432,7 @@ class GetPermissionService(BaseService):
 
 class UpdatePermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, permission_id=kwargs['id'])
         try:
             permission = Permission.objects.get(pk=kwargs['id'])
             permission.edit_permissions = json.dumps(
@@ -433,6 +454,7 @@ class FilterPermissionService(BaseService):
                 continue
 
             if key == 'company_id':
+                utils.has_company_permisison(request.user, company_id=value)
                 query_set = query_set.filter(
                     company__id=value,
                 )
@@ -454,6 +476,7 @@ class FilterPermissionService(BaseService):
 
 class DeletePermissionService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        utils.has_company_permisison(request.user, permission_id=kwargs['id'])
         try:
             return Permission.objects.get(
                 id=kwargs['id'],

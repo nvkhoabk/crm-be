@@ -257,5 +257,4 @@ class TestUser(TestCRMBase):
         self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
 
         resp = resp.json()
-        self.fail(resp)
         self.assertEqual(resp['code'], 0)

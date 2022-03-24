@@ -186,9 +186,10 @@ class CreateDepartmentRequestSerializer(serializers.Serializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True)
     class Meta:
         model = Department
-        fields = ['id', 'company_id', 'department_name', ]
+        fields = ['id', 'company_id', 'company_name', 'department_name', ]
 
 
 class CreateDepartmentResponseSerializer(BaseResponseSerializer):
@@ -257,9 +258,11 @@ class CreateRoleRequestSerializer(serializers.Serializer):
 
 
 class RoleSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    department_name = serializers.CharField(source='department.department_name', read_only=True)
     class Meta:
         model = Role
-        fields = ['id', 'company_id', 'department_id', 'role_name', ]
+        fields = ['id', 'company_id', 'company_name', 'department_id', 'department_name', 'role_name', ]
 
 
 class CreateRoleResponseSerializer(BaseResponseSerializer):
@@ -342,6 +345,10 @@ class CreatePermissionRequestSerializer(serializers.Serializer):
 
 
 class PermissionSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    department_name = serializers.CharField(source='department.department_name', read_only=True)
+    role_name = serializers.CharField(source='role.role_name', read_only=True)
+
     edit_permissions = serializers.SerializerMethodField()
     read_permissions = serializers.SerializerMethodField()
 
@@ -353,8 +360,8 @@ class PermissionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Permission
-        fields = ['id', 'company_id', 'department_id',
-                  'role_id', 'edit_permissions', 'read_permissions']
+        fields = ['id', 'company_id', 'company_name', 'department_id', 'department_name',
+                  'role_id', 'role_name', 'edit_permissions', 'read_permissions']
 
 
 class CreatePermisionResponseSerializer(BaseResponseSerializer):
