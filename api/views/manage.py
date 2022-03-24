@@ -241,6 +241,29 @@ class CreateCompanyView(BaseAPIView):
         return self.get_response(results=company, request=request, serializer=manage_serializer.CreateCompanyResponseSerializer)
 
 
+class GetCompanyView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.GetCompanyRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Get company',
+        operation_description='Get company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetCompanyResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_company_service = manage_service.GetCompanyService()
+        company = get_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=company, request=request, serializer=manage_serializer.GetCompanyResponseSerializer)
+
+
 class UpdateCompanyView(BaseAPIView):
     authentication_classes = []
     permission_classes = [SuperAdminPermission, ]
@@ -327,7 +350,7 @@ class CreateDepartmentView(BaseAPIView):
             status.HTTP_201_CREATED: None,
             0: manage_serializer.CreateDepartmentResponseSerializer,
             exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
-            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
+            exceptions.ManageDepartmentDuplicated.code: exceptions.ManageDepartmentDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
@@ -335,6 +358,29 @@ class CreateDepartmentView(BaseAPIView):
         department = create_department_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=department, request=request, serializer=manage_serializer.CreateDepartmentResponseSerializer)
+
+
+class GetDepartmentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.GetDepartmentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Department'],
+        operation_id='Get department',
+        operation_description='Get department api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetDepartmentResponseSerializer,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_department_service = manage_service.GetDepartmentService()
+        department = get_department_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=department, request=request, serializer=manage_serializer.GetDepartmentResponseSerializer)
 
 
 class UpdateDepartmentView(BaseAPIView):
@@ -431,6 +477,29 @@ class CreateRoleView(BaseAPIView):
         return self.get_response(results=role, request=request, serializer=manage_serializer.CreateRoleResponseSerializer)
 
 
+class GetRoleView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.GetRoleRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Role'],
+        operation_id='Get role',
+        operation_description='Get role api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetRoleResponseSerializer,
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_role_service = manage_service.GetRoleService()
+        role = get_role_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=role, request=request, serializer=manage_serializer.GetRoleResponseSerializer)
+
+
 class UpdateRoleView(BaseAPIView):
     authentication_classes = []
     permission_classes = []
@@ -523,6 +592,29 @@ class CreatePermissionView(BaseAPIView):
         permission = create_permission_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=permission, request=request, serializer=manage_serializer.CreatePermisionResponseSerializer)
+
+
+class GetPermissionView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.GetPermissionRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Permission'],
+        operation_id='Get permission',
+        operation_description='Get permission api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetPermisionResponseSerializer,
+            exceptions.ManagePermissionNotFound.code: exceptions.ManagePermissionNotFound.msg, 
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_permission_service = manage_service.GetPermissionService()
+        permission = get_permission_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=permission, request=request, serializer=manage_serializer.GetPermisionResponseSerializer)
 
 
 class UpdatePermissionView(BaseAPIView):

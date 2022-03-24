@@ -21,21 +21,25 @@ urlpatterns = [
     path('manage/delete_package/', manage.DeletePackageView.as_view(), name='manage.delete_package'),
 
     path('manage/create_company/', manage.CreateCompanyView.as_view(), name='manage.create_company'),
+    path('manage/get_company/', manage.GetCompanyView.as_view(), name='manage.get_company'),
     path('manage/update_company/', manage.UpdateCompanyView.as_view(), name='manage.update_company'),
     path('manage/filter_company/', manage.FilterCompanyView.as_view(), name='manage.filter_company'),
     path('manage/delete_company/', manage.DeleteCompanyView.as_view(), name='manage.delete_company'),
 
     path('manage/create_department/', manage.CreateDepartmentView.as_view(), name='manage.create_department'),
+    path('manage/get_department/', manage.GetDepartmentView.as_view(), name='manage.get_department'),
     path('manage/update_department/', manage.UpdateDepartmentView.as_view(), name='manage.update_department'),
     path('manage/filter_department/', manage.FilterDepartmentView.as_view(), name='manage.filter_department'),
     path('manage/delete_department/', manage.DeleteDepartmentView.as_view(), name='manage.delete_department'),
 
     path('manage/create_role/', manage.CreateRoleView.as_view(), name='manage.create_role'),
+    path('manage/get_role/', manage.GetRoleView.as_view(), name='manage.get_role'),
     path('manage/update_role/', manage.UpdateRoleView.as_view(), name='manage.update_role'),
     path('manage/filter_role/', manage.FilterRoleView.as_view(), name='manage.filter_role'),
     path('manage/delete_role/', manage.DeleteRoleView.as_view(), name='manage.delete_role'),
 
     path('manage/create_permission/', manage.CreatePermissionView.as_view(), name='manage.create_permission'),
+    path('manage/get_permission/', manage.GetPermissionView.as_view(), name='manage.get_permission'),
     path('manage/update_permission/', manage.UpdatePermissionView.as_view(), name='manage.update_permission'),
     path('manage/filter_permission/', manage.FilterPermissionView.as_view(), name='manage.filter_permission'),
     path('manage/delete_permission/', manage.DeletePermissionView.as_view(), name='manage.delete_permission'),

@@ -11,6 +11,7 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageCompanyDuplicated,
                                      ManageParamDuplicated,
                                      ManageParamNotFound,
+                                     ManageDepartmentDuplicated,
                                      ManageDepartmentNotFound,
                                      ManagePermissionDuplicated,
                                      ManagePermissionNotFound,
@@ -150,7 +151,17 @@ class CreateCompanyService(BaseService):
                 company_admins.assign_object(company)
                 return company
             except IntegrityError as e:
-                raise ManageCreateCompanyDuplicated()
+                raise ManageCompanyDuplicated()
+
+
+class GetCompanyService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Company.objects.get(
+                pk=kwargs['id'] 
+            )
+        except Company.DoesNotExists:
+            raise ManageCompanyNotFound()
 
 
 class UpdateCompanyService(BaseService):
@@ -224,12 +235,20 @@ class CreateDepartmentService(BaseService):
             company__id=company_id,
             department_name=department_name,
         ).first():
-            raise ManageDepartmentNotFound()
+            raise ManageDepartmentDuplicated()
 
         return Department.objects.create(
             company=company,
             department_name=department_name,
         )
+
+
+class GetDepartmentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Department.objects.get(pk=kwargs['id'])
+        except Department.DoesNotExist:
+            raise ManageDepartmentNotFound()
 
 
 class UpdateDepartmentService(BaseService):
@@ -303,6 +322,14 @@ class CreateRoleService(BaseService):
         )
 
 
+class GetRoleService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Role.objects.get(pk=kwargs['id'])
+        except Role.DoesNotExist:
+            raise ManageRoleNotFound()
+
+
 class UpdateRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -373,6 +400,14 @@ class CreatePermissionService(BaseService):
             )
         except IntegrityError as e:
             raise ManagePermissionDuplicated()
+
+
+class GetPermissionService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Permission.objects.get(pk=kwargs['id'])
+        except Permission.DoesNotExist:
+            raise ManagePermissionNotFound()
 
 
 class UpdatePermissionService(BaseService):

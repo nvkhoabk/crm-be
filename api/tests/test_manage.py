@@ -45,14 +45,29 @@ class TestManage(TestCRMBase):
         resp = resp.json()
 
         self.assertEqual(resp['code'], 0)
-        self.assertEqual(resp['data']['id'], 1)
+        company_id = resp['data']['id']
+
+        get_company_func_url = reverse('manage.get_company')
+        self.assertEqual(get_company_func_url,
+                         '/api/manage/get_company/')
+
+        data = {
+            'id': company_id,
+        }
+
+        resp = self.client.post(get_company_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        
 
         delete_company_func_url = reverse('manage.delete_company')
         self.assertEqual(delete_company_func_url,
                          '/api/manage/delete_company/')
 
         data = {
-            'id': 1,
+            'id': company_id,
         }
 
         resp = self.client.post(delete_company_func_url, json.dumps(
@@ -210,6 +225,20 @@ class TestManage(TestCRMBase):
         self.assertEqual(resp['code'], 0)
         department_id = resp['data']['id']
 
+        get_department_func_url = reverse('manage.get_department')
+        self.assertEqual(get_department_func_url,
+                         '/api/manage/get_department/')
+
+        data = {
+            'id': department_id,
+        }
+
+        resp = self.client.post(get_department_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+    
         update_department_func_url = reverse('manage.update_department')
         self.assertEqual(update_department_func_url,
                          '/api/manage/update_department/')
@@ -311,6 +340,19 @@ class TestManage(TestCRMBase):
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
         role_id = resp['data']['id']
+
+        get_role_func_url = reverse('manage.get_role')
+        self.assertEqual(get_role_func_url, '/api/manage/get_role/')
+        data = {
+            'id': role_id,
+        }
+         
+        resp = self.client.post(get_role_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        
 
         update_role_func_url = reverse('manage.update_role')
         self.assertEqual(update_role_func_url, '/api/manage/update_role/')
@@ -467,6 +509,20 @@ class TestManage(TestCRMBase):
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
         permission_id = resp['data']['id']
+        
+        get_permission_func_url = reverse('manage.get_permission') 
+        self.assertEqual(get_permission_func_url, '/api/manage/get_permission/')
+
+        data = {
+            'id': permission_id,
+        }
+
+        resp = self.client.post(get_permission_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        
 
         update_permission_func_url = reverse('manage.update_permission') 
         self.assertEqual(update_permission_func_url, '/api/manage/update_permission/')

@@ -41,8 +41,13 @@ class ManageCompanyNotFound(APIException):
     msg = 'Not found company'
 
 
-class ManageDepartmentNotFound(APIException):
+class ManageDepartmentDuplicated(APIException):
     code = 2030
+    msg = 'Duplicated department'
+
+
+class ManageDepartmentNotFound(APIException):
+    code = 2031
     msg = 'Not found department'
 
 

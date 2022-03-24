@@ -133,6 +133,14 @@ class CreateCompanyResponseSerializer(BaseResponseSerializer):
     data = CompanySerializer()
 
 
+class GetCompanyRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Company id')
+
+
+class GetCompanyResponseSerializer(BaseResponseSerializer):
+    data = CompanySerializer()
+
+
 class DeleteCompanyRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Company id')
 
@@ -184,6 +192,14 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class CreateDepartmentResponseSerializer(BaseResponseSerializer):
+    data = DepartmentSerializer()
+
+
+class GetDepartmentRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetDepartmentResponseSerializer(BaseResponseSerializer):
     data = DepartmentSerializer()
 
 
@@ -243,10 +259,18 @@ class CreateRoleRequestSerializer(serializers.Serializer):
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ['id', 'department_id', 'role_name', ]
+        fields = ['id', 'company_id', 'department_id', 'role_name', ]
 
 
 class CreateRoleResponseSerializer(BaseResponseSerializer):
+    data = RoleSerializer()
+
+
+class GetRoleRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetRoleResponseSerializer(BaseResponseSerializer):
     data = RoleSerializer()
 
 
@@ -334,6 +358,14 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class CreatePermisionResponseSerializer(BaseResponseSerializer):
+    data = PermissionSerializer()
+
+
+class GetPermissionRequestSerializer(serializers.Serializer): 
+    id = serializers.IntegerField()
+
+
+class GetPermisionResponseSerializer(BaseResponseSerializer):
     data = PermissionSerializer()
 
 
