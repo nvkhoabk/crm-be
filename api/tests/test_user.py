@@ -228,8 +228,10 @@ class TestUser(TestCRMBase):
 
         data = {
             'company_id': company_id,
-            'department_id': department_id,
-            'role_id': role_id,
+            'roles': [{
+                'department_id': department_id,
+                'role_id': role_id,
+            }],
             'username': 'username2',
             'password': '123456aA@',
         }
@@ -240,4 +242,20 @@ class TestUser(TestCRMBase):
 
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
-        
+        uid = resp['data']['id']
+
+        get_user_func_url = reverse('manage.get_user')
+        self.assertEqual(get_user_func_url,
+                         '/api/manage/get_user/')
+
+        data = {
+            'id': uid,
+        }
+
+        resp = self.client.post(get_user_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, http_status.HTTP_200_OK)
+
+        resp = resp.json()
+        self.fail(resp)
+        self.assertEqual(resp['code'], 0)

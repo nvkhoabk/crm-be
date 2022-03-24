@@ -425,19 +425,16 @@ class DeletePermissionResponseSerializer(BaseResponseSerializer):
     pass
 
 
+class UserPositionSerializer(serializers.Serializer):
+    department_id = serializers.IntegerField()
+    role_id = serializers.IntegerField()
+
+
 class CreateUserRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    department_id = serializers.IntegerField(required=False)
-    role_id = serializers.IntegerField(required=False)
+    roles = serializers.ListField(child=UserPositionSerializer(), required=False)    
     username = serializers.CharField()
     password = serializers.CharField()
-    # phone = serializers.CharField(required=False)
-
-    # def validate_phone(self, value):
-    #     value = validate.check_phone_number(value)
-    #     if not value:
-    #         raise serializers.ValidationError('Phone is not valid')
-    #     return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -448,6 +445,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CreateUserResponseSerializer(BaseResponseSerializer):
     data = UserSerializer()
+
+
+class GetUserRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetUserResponseSerializer(BaseResponseSerializer):
+    pass
 
 
 class FilterUserRequestParamSerializer(serializers.Serializer):
@@ -475,14 +480,13 @@ class UserRoleSerializer(serializers.ModelSerializer):
 
 
 class FilterUserResponseSerializer(BaseResponseSerializer):
-    data = serializers.ListField(child=UserRoleSerializer())
+    data = serializers.ListField(child=UserSerializer())
 
 
 class UpdateUserRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='User id')
     company_id = serializers.IntegerField(required=True)
-    department_id = serializers.IntegerField(required=False)
-    role_id = serializers.IntegerField(required=False)
+    roles = serializers.ListField(child=UserPositionSerializer(), required=False)  
     username = serializers.CharField(required=False)
     password = serializers.CharField(required=False)
     status = serializers.BooleanField(required=False, default=True)

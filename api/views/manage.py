@@ -711,6 +711,29 @@ class CreateUserView(BaseAPIView):
         return self.get_response(results=user, request=request, serializer=manage_serializer.CreateUserResponseSerializer)
 
 
+class GetUserView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.GetUserRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage User'],
+        operation_id='Get user',
+        operation_description='Get user',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: "{'code': 0, 'msg': 'success', 'data': \"{'is_superuser': False, 'roles': [{'company': {'id': 7, 'name': 'Company A'}, 'department': {'id': 1, 'department_name': 'name'}, 'role': None, 'edit_permissions': [], 'read_permissions': []}]}\"}",
+            exceptions.ManageUserNotFound.code: exceptions.ManageUserNotFound.msg, 
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_user_service = manage_service.GetUserService()
+        user = get_user_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=user, request=request)
+
+
 class FilterUserView(BaseAPIView):
     authentication_classes = []
     permission_classes = []

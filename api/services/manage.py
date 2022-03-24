@@ -470,7 +470,7 @@ class CreateUserService(BaseService):
         except Company.DoesNotExist:
             raise ManageCompanyNotFound()
     
-        if not request.user.is_superuser and (kwargs.get('department_id') or kwargs.get('role_id')):
+        if not request.user.is_superuser and kwargs.get('roles'):
             # Check if user has company permission 
             try:
                 member = Member.objects.get(django_user=request.user)
@@ -482,17 +482,6 @@ class CreateUserService(BaseService):
             raise PermissionDenied() 
             
         with transaction.atomic():
-            try:
-                if kwargs.get('department_id'):
-                    department = Department.objects.get(
-                        pk=kwargs['department_id'])
-                if kwargs.get('role_id'):
-                    role = Role.objects.get(pk=kwargs['role_id'])
-            except Department.DoesNotExist:
-                raise ManageDepartmentNotFound()
-            except Role.DoesNotExist:
-                raise ManageRoleNotFound()
-
             if User.objects.filter(username=kwargs['username']).first():
                 raise ManageUserDuplicated()
 
@@ -504,17 +493,100 @@ class CreateUserService(BaseService):
                 # Add admin user to group admin
                 member = Member.objects.create(username=user.username, django_user=user)
                 group_admins.add_member(member)
-                    
-            # Role
-            UserRole.objects.create(
-                company=company,
-                department=department if kwargs.get('department_id') else None,
-                role=role if kwargs.get('role_id') else None,
-                user=user,
-            )
+            
+            for roles in kwargs.get('roles', []):
+                try:
+                    if kwargs.get('department_id'):
+                        department = Department.objects.get(
+                            pk=kwargs['department_id'])
+                    if kwargs.get('role_id'):
+                        role = Role.objects.get(pk=kwargs['role_id'])
+                except Department.DoesNotExist:
+                    raise ManageDepartmentNotFound()
+                except Role.DoesNotExist:
+                    raise ManageRoleNotFound()
+        
+                # Role
+                UserRole.objects.create(
+                    company=company,
+                    department=department if kwargs.get('department_id') else None,
+                    role=role if kwargs.get('role_id') else None,
+                    user=user,
+                )
 
+            if len(kwargs.get('roles', [])) == 0:
+                UserRole.objects.create(
+                    company=company,
+                    user=user,
+                )
+             
             return user
 
+
+class GetUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            user = User.objects.get(pk=kwargs['id']) 
+        except User.DoesNotExists:
+            raise ManageUserNotFound()
+
+        response = {
+            'is_superuser': user.is_superuser,
+            'username': user.username,
+        }
+
+        user_roles = UserRole.objects.filter(
+            user=user,
+            deleted_at__isnull=True,
+        )
+
+        roles = []
+
+        for position in user_roles:
+            data = {
+                'company': None,
+                'department': None,
+                'role': None,
+                'edit_permissions': [],
+                'read_permissions': [],
+            }
+
+            company = position.company
+            data['company'] = {
+                'id': company.id,
+                'name': company.name,
+            }
+
+            department = position.department
+            if department:
+                data['department'] = {
+                    'id': department.id,
+                    'department_name': department.department_name,
+                }
+                
+            role = position.role
+            if role:
+                data['role'] = {
+                    'id': role.id,
+                    'role_name': role.role_name,
+                }
+
+                try:
+                    permission_obj = Permission.objects.get(
+                        company=company,
+                        department=department,
+                        role=role,
+                    )
+                    data['edit_permissions'] = json.loads(permission_obj.edit_permissions)
+                    data['read_permissions'] = json.loads(permission_obj.read_permissions)
+                except Permission.DoesNotExist:
+                    pass
+
+            roles.append(data)
+        
+        response['roles'] = roles
+        return response
+    
 
 class FilterUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -544,7 +616,11 @@ class FilterUserService(BaseService):
                     user__username__contains=value,
                 )
 
-        return user_role_query
+        query_set = query_set.filter(
+            id__in=user_role_query.values_list('user__id', flat=True),
+        )
+        
+        return query_set
 
 
 class UpdateUserService(BaseService):
@@ -564,22 +640,31 @@ class UpdateUserService(BaseService):
             if kwargs.get('status') is not None:
                 user.is_active = kwargs['status']
 
-            user_role = UserRole.objects.get(
-                user=user,
-            )
+            if kwargs.get('roles', []):   
+                UserRole.objects.filter(
+                    user=user,
+                ).delete()
 
-            try:
-                if kwargs.get('department_id'):
-                    user_role.department = Department.objects.get(
-                        pk=kwargs['department_id'])
-                if kwargs.get('role_id'):
-                    user_role.role = Role.objects.get(pk=kwargs['role_id'])
-            except Department.DoesNotExist:
-                raise ManageDepartmentNotFound()
-            except Role.DoesNotExist:
-                raise ManageRoleNotFound()
-
-            user_role.save()
+            for roles in kwargs.get('roles', []):
+                try:
+                    if kwargs.get('department_id'):
+                        department = Department.objects.get(
+                            pk=kwargs['department_id'])
+                    if kwargs.get('role_id'):
+                        role = Role.objects.get(pk=kwargs['role_id'])
+                except Department.DoesNotExist:
+                    raise ManageDepartmentNotFound()
+                except Role.DoesNotExist:
+                    raise ManageRoleNotFound()
+        
+                # Role
+                UserRole.objects.create(
+                    company=company,
+                    department=department if kwargs.get('department_id') else None,
+                    role=role if kwargs.get('role_id') else None,
+                    user=user,
+                )
+    
             user.save()
             return user
 

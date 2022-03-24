@@ -46,6 +46,7 @@ urlpatterns = [
 
     path('manage/create_user/', manage.CreateUserView.as_view(), name='manage.create_user'),
     path('manage/filter_user/', manage.FilterUserView.as_view(), name='manage.filter_user'),
+    path('manage/get_user/', manage.GetUserView.as_view(), name='manage.get_user'),
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
