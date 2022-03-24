@@ -11,40 +11,43 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ParamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Param
+        fields = ['id', 'key', 'value']
+
+
 class CreateParamRequestSerializer(serializers.Serializer):
     KEY_CHOICES = (
         ('INTRODUCTION', 'INTRODUCTION'),
     )
 
     key = serializers.ChoiceField(choices=KEY_CHOICES, default='INTRODUCTION')
-    value = serializers.CharField(min_length=5)
+    value = serializers.CharField()
 
 
 class CreateParamResponseSerializer(BaseResponseSerializer):
-    pass
+   data = ParamSerializer() 
 
 
+class GetParamRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetParamResponseSerializer(BaseResponseSerializer):
+    data = ParamSerializer() 
+ 
 class UpdateParamRequestSerializer(serializers.Serializer):
-    KEY_CHOICES = (
-        ('INTRODUCTION', 'INTRODUCTION'),
-    )
-
-    key = serializers.ChoiceField(choices=KEY_CHOICES, default='INTRODUCTION')
-    value = serializers.CharField(min_length=5)
+    id = serializers.IntegerField()
+    value = serializers.CharField()
 
 
 class UpdateParamResponseSerializer(BaseResponseSerializer):
-    pass
+    data = ParamSerializer() 
 
 
 class FilterParamRequestSerializer(BasePagingSerializer):
     pass
-
-
-class ParamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Param
-        fields = ['id', 'key', 'value']
 
 
 class FilterParamResponseSerializer(BaseResponseSerializer):
@@ -52,7 +55,7 @@ class FilterParamResponseSerializer(BaseResponseSerializer):
 
 
 class CreatePackageRequestSerializer(serializers.Serializer):
-    name = serializers.CharField(min_length=5)
+    name = serializers.CharField()
     price = serializers.IntegerField(min_value=1)
 
 
@@ -66,9 +69,17 @@ class CreatePackageResponseSerializer(BaseResponseSerializer):
     data = PackageSerializer()
 
 
+class GetPackageRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Package id')
+
+
+class GetPackageResponseSerializer(BaseResponseSerializer):
+    data = PackageSerializer()
+
+
 class UpdatePackageRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Package id')
-    name = serializers.CharField(min_length=5)
+    name = serializers.CharField()
     price = serializers.IntegerField(min_value=1)
 
 
@@ -159,7 +170,7 @@ class FilterCompanyResponseSerializer(BaseResponseSerializer):
 
 class CreateDepartmentRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    department_name = serializers.CharField(min_length=5)
+    department_name = serializers.CharField()
 
     class Meta:
         permission_field = 'company_id'
@@ -178,7 +189,7 @@ class CreateDepartmentResponseSerializer(BaseResponseSerializer):
 
 class UpdateDepartmentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Department id')
-    department_name = serializers.CharField(min_length=5)
+    department_name = serializers.CharField()
 
     class Meta:
         permission_field = 'id'
@@ -222,7 +233,7 @@ class DeleteDepartmentResponseSerializer(BaseResponseSerializer):
 class CreateRoleRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
-    role_name = serializers.CharField(min_length=5)
+    role_name = serializers.CharField()
 
     class Meta:
         permission_field = 'department_id'
@@ -241,7 +252,7 @@ class CreateRoleResponseSerializer(BaseResponseSerializer):
 
 class UpdateRoleRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Role id')
-    role_name = serializers.CharField(min_length=5)
+    role_name = serializers.CharField()
 
     class Meta:
         permission_field = 'id'
@@ -387,7 +398,7 @@ class CreateUserRequestSerializer(serializers.Serializer):
     department_id = serializers.IntegerField(required=False)
     role_id = serializers.IntegerField(required=False)
     username = serializers.CharField()
-    password = serializers.CharField(min_length=6)
+    password = serializers.CharField()
     # phone = serializers.CharField(required=False)
 
     # def validate_phone(self, value):
@@ -441,7 +452,7 @@ class UpdateUserRequestSerializer(serializers.Serializer):
     department_id = serializers.IntegerField(required=False)
     role_id = serializers.IntegerField(required=False)
     username = serializers.CharField(required=False)
-    password = serializers.CharField(required=False, min_length=6)
+    password = serializers.CharField(required=False)
     status = serializers.BooleanField(required=False, default=True)
     # phone = serializers.CharField(required=False)
 

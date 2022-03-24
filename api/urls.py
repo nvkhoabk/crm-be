@@ -10,10 +10,12 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path('manage/create_param/', manage.CreateParamView.as_view(), name='manage.create_param'),
+    path('manage/get_param/', manage.GetParamView.as_view(), name='manage.get_param'),
     path('manage/update_param/', manage.UpdateParamView.as_view(), name='manage.update_param'),
     path('manage/filter_param/', manage.FilterParamView.as_view(), name='manage.filter_param'),
 
     path('manage/create_package/', manage.CreatePackageView.as_view(), name='manage.create_package'),
+    path('manage/get_package/', manage.GetPackageView.as_view(), name='manage.get_package'),
     path('manage/update_package/', manage.UpdatePackageView.as_view(), name='manage.update_package'),
     path('manage/filter_package/', manage.FilterPackageView.as_view(), name='manage.filter_package'),
     path('manage/delete_package/', manage.DeletePackageView.as_view(), name='manage.delete_package'),

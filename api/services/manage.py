@@ -10,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageCompanyDuplicated,
                                      ManageParamDuplicated,
+                                     ManageParamNotFound,
                                      ManageDepartmentNotFound,
                                      ManagePermissionDuplicated,
                                      ManagePermissionNotFound,
@@ -25,21 +26,38 @@ from groups_manager.models import Group, GroupType, Member
 User = get_user_model()
 
 
-class CreateOrUpdateParamService(BaseService):
+class CreateParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            param, created = Param.objects.get_or_create(
+            return Param.objects.create(
                 key=kwargs['key'],
-                defaults={
-                    'value': kwargs['value'],
-                }
+                value=kwargs['value'],
             )
-            if not created:
-                param.value = kwargs['value']
-                param.save()
-            return param
         except IntegrityError as e:
-            raise ManageCreateParamDuplicated()
+            raise ManageParamDuplicated()
+
+
+class GetParamService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Param.objects.get(
+                pk=kwargs['id'],
+            )
+        except Param.DoesNotExists:
+            raise ManageParamNotFound()
+    
+
+class UpdateParamService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            param = Param.objects.get(pk=kwargs['id'])
+            param.value = kwargs['value']
+            param.save()
+            return param
+        except Param.DoesNotExist:
+            raise ManageParamNotFound()
+        except IntegrityError as e:
+            raise ManageParamDuplicated()
 
 
 class FilterParamService(BaseService):
@@ -48,26 +66,44 @@ class FilterParamService(BaseService):
         return query_set
 
 
-class CreateOrUpdatePackageService(BaseService):
+class CreatePackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            package, created = Package.objects.get_or_create(
+            return Package.objects.create(
+                name=kwargs['name'],
+                price=kwargs['price'],
+            )
+        except IntegrityError as e:
+            raise ManagePackageDuplicated()
+
+
+class GetPackageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Package.objects.get(
+                pk=kwargs['id'],
+            )
+        except Package as e:
+            raise ManagePackageDuplicated()
+
+
+class UpdatePackageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            package = Package.objects.get(
                 pk=kwargs.get('id'),
-                defaults={
-                    'name': kwargs['name'],
-                    'price': kwargs['price'],
-                }
             )
 
-            if not created:
-                package.name = kwargs['name']
-                package.price = kwargs['price']
-                package.save()
+            package.name = kwargs['name']
+            package.price = kwargs['price']
+            package.save()
 
             return package
+        except Package.DoesNotExists:
+            raise ManagePackageNotFound()
         except IntegrityError as e:
-            raise ManageCreatePackageDuplicated()
-
+            raise ManagePackageDuplicated()
+    
 
 class FilterPackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -76,6 +112,8 @@ class FilterPackageService(BaseService):
         filters = ['name', ]
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
+            if value is None:
+                continue
             if key not in filters:
                 continue
 

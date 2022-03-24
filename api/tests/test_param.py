@@ -28,6 +28,7 @@ class TestParam(TestCRMBase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
+        param_id = resp['data']['id']
 
         filter_param_func_url = reverse('manage.filter_param')
         self.assertEqual(filter_param_func_url, '/api/manage/filter_param/')
@@ -41,16 +42,30 @@ class TestParam(TestCRMBase):
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
         self.assertEqual(resp['data']['total'], 1)
-
+        
         update_param_func_url = reverse('manage.update_param')
         self.assertEqual(update_param_func_url, '/api/manage/update_param/')
 
         data = {
-            'key': 'INTRODUCTION',
+            'id': param_id,  
             'value': 'Hello 2',
         }
 
         resp = self.client.post(update_param_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+        
+
+        get_param_func_url = reverse('manage.get_param')
+        self.assertEqual(get_param_func_url, '/api/manage/get_param/')
+
+        data = {
+            'id': param_id,
+        }
+
+        resp = self.client.post(get_param_func_url, json.dumps(
             data), content_type='application/json')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = resp.json()

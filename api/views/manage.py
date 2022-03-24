@@ -27,10 +27,33 @@ class CreateParamView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        create_param_service = manage_service.CreateOrUpdateParamService()
+        create_param_service = manage_service.CreateParamService()
         param = create_param_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=param, request=request, serializer=manage_serializer.CreateParamResponseSerializer)
+
+
+class GetParamView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.GetParamRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Param'],
+        operation_id='Get param',
+        operation_description='Get param api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetParamResponseSerializer,
+            exceptions.ManageParamNotFound.code: exceptions.ManageParamNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_param_service = manage_service.GetParamService()
+        param = get_param_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=param, request=request, serializer=manage_serializer.GetParamResponseSerializer)
 
 
 class UpdateParamView(BaseAPIView):
@@ -46,11 +69,12 @@ class UpdateParamView(BaseAPIView):
         responses={
             status.HTTP_201_CREATED: None,
             0: manage_serializer.UpdateParamResponseSerializer,
+            exceptions.ManageParamNotFound.code: exceptions.ManageParamNotFound.msg,
             exceptions.ManageParamDuplicated.code: exceptions.ManageParamDuplicated.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        update_param_service = manage_service.CreateOrUpdateParamService()
+        update_param_service = manage_service.UpdateParamService()
         param = update_param_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=param, request=request, serializer=manage_serializer.UpdateParamResponseSerializer)
@@ -95,10 +119,33 @@ class CreatePackageView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        create_package_service = manage_service.CreateOrUpdatePackageService()
+        create_package_service = manage_service.CreatePackageService()
         param = create_package_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=param, request=request, serializer=manage_serializer.CreatePackageResponseSerializer)
+
+
+class GetPackageView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.GetPackageRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Package'],
+        operation_id='Get package',
+        operation_description='Get package api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetPackageResponseSerializer,
+            exceptions.ManagePackageNotFound.code: exceptions.ManagePackageNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_package_service = manage_service.GetPackageService()
+        param = get_package_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=param, request=request, serializer=manage_serializer.GetPackageResponseSerializer)
 
 
 class UpdatePackageView(BaseAPIView):
@@ -115,10 +162,11 @@ class UpdatePackageView(BaseAPIView):
             status.HTTP_201_CREATED: None,
             0: manage_serializer.UpdatePackageResponseSerializer,
             exceptions.ManagePackageDuplicated.code: exceptions.ManagePackageDuplicated.msg,
+            exceptions.ManagePackageNotFound.code: exceptions.ManagePackageNotFound.msg,
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        update_package_service = manage_service.CreateOrUpdatePackageService()
+        update_package_service = manage_service.UpdatePackageService()
         param = update_package_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=param, request=request, serializer=manage_serializer.UpdatePackageResponseSerializer)

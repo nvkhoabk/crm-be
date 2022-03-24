@@ -16,6 +16,11 @@ class ManageParamDuplicated(APIException):
     msg = 'Duplicate param name'
 
 
+class ManageParamNotFound(APIException):
+    code = 2001
+    msg = 'Not found param'
+
+
 class ManagePackageDuplicated(APIException):
     code = 2010
     msg = 'Duplicate param name'

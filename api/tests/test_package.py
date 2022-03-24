@@ -49,13 +49,27 @@ class TestPackage(TestCRMBase):
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
 
+        get_package_func_url = reverse('manage.get_package')
+        self.assertEqual(get_package_func_url,
+                         '/api/manage/get_package/')
+
+        data = {
+            'id': package_id,
+        }
+
+        resp = self.client.post(get_package_func_url, json.dumps(
+            data), content_type='application/json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = resp.json()
+        self.assertEqual(resp['code'], 0)
+
         filter_package_func_url = reverse('manage.filter_package')
         self.assertEqual(filter_package_func_url,
                          '/api/manage/filter_package/')
 
         data = {
             'filter': {
-                'name': 'Package 2',
+                'name': '',
             },
             'paging': {
                 'page': 0,
