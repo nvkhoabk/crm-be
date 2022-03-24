@@ -1,4 +1,4 @@
-from api.models.organization import Company, Department, Role, Permission
+from api.models.organization import Company, Department, Role, Permission, UserRole
 from groups_manager.models import Group, GroupType, Member
 from api.services import exceptions
 
@@ -11,7 +11,13 @@ def get_company_admins_group(id):
     return 'company_%d_admin' % id
 
 
-def has_company_permisison(user, company_id=0, department_id=0, role_id=0, permission_id=0):
+def has_company_permisison(user, *args, **kwargs):
+    company_id=kwargs.get('company_id', 0) 
+    department_id=kwargs.get('department_id', 0) 
+    role_id=kwargs.get('role_id', 0)  
+    permission_id=kwargs.get('permission_id', 0) 
+    target_user = kwargs.get('target_user', None) 
+
     if user.is_superuser:
         return True
 
@@ -35,6 +41,13 @@ def has_company_permisison(user, company_id=0, department_id=0, role_id=0, permi
             company_id = permisison.company.id
         except Permission.DoesNotExist:
             raise exceptions.ManagePermissionNotFound() 
+    elif target_user:
+        user_role = UserRole.objects.filter(
+            user=target_user,
+        ).first()
+        if not user_role:
+            raise exceptions.PermissionDenied()
+        company_id = user_role.company.id
     else:
         raise exceptions.PermissionDenied() 
     
@@ -43,10 +56,10 @@ def has_company_permisison(user, company_id=0, department_id=0, role_id=0, permi
     except Company.DoesNotExist:
         raise ManageCompanyNotFound()
  
-    group_admins = Group.objects.get(name=utils.get_company_admins_group(company_id))
+    group_admins = Group.objects.get(name=get_company_admins_group(company_id))
 
     try:
-        member = Member.objects.get(django_user=request.user)
+        member = Member.objects.get(django_user=user)
     except Member.DoesNotExist:
         raise PermissionDenied()
     if member.has_perm('change_company', company):

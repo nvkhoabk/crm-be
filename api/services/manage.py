@@ -553,6 +553,7 @@ class GetUserService(BaseService):
         except User.DoesNotExists:
             raise ManageUserNotFound()
 
+        utils.has_company_permisison(request.user, target_user=user)
         response = {
             'is_superuser': user.is_superuser,
             'username': user.username,
@@ -623,6 +624,7 @@ class FilterUserService(BaseService):
                 continue
 
             if key == 'company_id':
+                utils.has_company_permisison(request.user, company_id=value)
                 user_role_query = user_role_query.filter(
                     company__id=value,
                 )
@@ -654,6 +656,8 @@ class UpdateUserService(BaseService):
             except User.DoesNotExist:
                 raise ManageUserNotFound()
 
+            utils.has_company_permisison(request.user, target_user=user)
+    
             if kwargs.get('username'):
                 user.username = kwargs['username']
 
@@ -695,8 +699,8 @@ class UpdateUserService(BaseService):
 class DeleteUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            return User.objects.get(
-                id=kwargs['id'],
-            ).delete()
+            user = User.objects.get(id=kwargs['id'])
+            utils.has_company_permisison(request.user, target_user=user)
+            user.delete()
         except User.DoesNotExist as e:
             raise ManageUserNotFound()
