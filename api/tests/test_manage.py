@@ -499,8 +499,8 @@ class TestManage(TestCRMBase):
             'company_id': company_id,
             'department_id': department_id,
             'role_id': role_id,
-            'edit_permissions': ['Marketing', 'Báo cáo'],
-            'read_permissions': ['Sản phẩm và kho hàng', 'Quản lý data']
+            'edit_permissions': ['MARKETING', 'REPORT'],
+            'read_permissions': ['PRODUCT_AND_WAREHOUSE', 'DATA_MANAGEMENT']
         }
 
         resp = self.client.post(create_permission_func_url, json.dumps(
@@ -529,8 +529,8 @@ class TestManage(TestCRMBase):
 
         data = {
             'id': permission_id,
-            'edit_permissions': ['Marketing', 'Báo cáo'],
-            'read_permissions': ['Sản phẩm và kho hàng', 'Quản lý data']
+            'edit_permissions': ['MARKETING', 'REPORT'],
+            'read_permissions': ['PRODUCT_AND_WAREHOUSE', 'DATA_MANAGEMENT']
         }
 
         resp = self.client.post(update_permission_func_url, json.dumps(

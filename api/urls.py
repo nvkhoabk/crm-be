@@ -1,5 +1,4 @@
 from django.urls import path, include
-from api.views import article
 from api.views import auth
 from api.views import manage
 from rest_framework_simplejwt.views import (
@@ -51,9 +50,7 @@ urlpatterns = [
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
      # Auth
-    # path('auth/login/', auth.AuthLoginView.as_view(), name='auth.login'),
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
-    # path('auth/logout/', auth.AuthLogoutView.as_view(), name='auth.logout'), 
 
     path('auth/login/', TokenObtainPairView.as_view(), name='auth.login'),
     path('auth/token/refresh/', TokenRefreshView.as_view()),

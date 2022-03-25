@@ -323,13 +323,13 @@ class DeleteRoleResponseSerializer(BaseResponseSerializer):
 
 class CreatePermissionRequestSerializer(serializers.Serializer):
     CATEGORY_CHOICES = (
-        ('Marketing', 'Marketing'),
-        ('Quản lý data', 'Quản lý data'),
-        ('Quản lý nhân sự', 'Quản lý nhân sự'),
-        ('Sản phẩm và kho hàng', 'Sản phẩm và kho hàng'),
-        ('Tài chính - kế toán', 'Tài chính - kế toán'),
-        ('Tuỳ chỉnh hệ thống', 'Tuỳ chỉnh hệ thống'),
-        ('Báo cáo', 'Báo cáo'),
+        ('MARKETING', 'MARKETING'),
+        ('DATA_MANAGEMENT', 'DATA_MANAGEMENT'),
+        ('USER_MANAGEMENT', 'USER_MANAGEMENT'),
+        ('PRODUCT_AND_WAREHOUSE', 'PRODUCT_AND_WAREHOUSE'),
+        ('ACCOUNTING', 'ACCOUNTING'),
+        ('SYSTEM_CONFIGURATION', 'SYSTEM_CONFIGURATION'),
+        ('REPORT', 'REPORT'),
     )
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
