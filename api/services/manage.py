@@ -120,7 +120,7 @@ class FilterPackageService(BaseService):
 
             if key == 'name':
                 query_set = query_set.filter(
-                    name__contains=value,
+                    name__icontains=value,
                 )
 
         return query_set
@@ -203,19 +203,19 @@ class FilterCompanyService(BaseService):
 
             if key == 'name':
                 query_set = query_set.filter(
-                    name__contains=value,
+                    name__icontains=value,
                 )
             if key == 'type':
                 query_set = query_set.filter(
-                    type__contains=value,
+                    type__icontains=value,
                 )
             if key == 'owner':
                 query_set = query_set.filter(
-                    owner__contains=value,
+                    owner__icontains=value,
                 )
             if key == 'phone':
                 query_set = query_set.filter(
-                    phone__contains=value,
+                    phone__icontains=value,
                 )
 
         return query_set
@@ -287,7 +287,7 @@ class FilterDepartmentService(BaseService):
                 )
             if key == 'department_name':
                 query_set = query_set.filter(
-                    department_name__contains=value,
+                    department_name__icontains=value,
                 )
 
         return query_set
@@ -321,10 +321,12 @@ class CreateRoleService(BaseService):
 
         try:
             department = Department.objects.get(pk=department_id)
+            company = Company.objects.get(pk=company_id)
         except Company.DoesNotExist:
             raise ManageDepartmentNotFound()
 
         return Role.objects.create(
+            company=company,
             department=department,
             role_name=role_name,
         )
@@ -378,7 +380,7 @@ class FilterRoleService(BaseService):
                 )
             if key == 'role_name':
                 query_set = query_set.filter(
-                    role_name__contains=value,
+                    role_name__icontains=value,
                 )
 
         return query_set
@@ -638,7 +640,7 @@ class FilterUserService(BaseService):
                 )
             if key == 'username':
                 user_role_query = user_role_query.filter(
-                    user__username__contains=value,
+                    user__username__icontains=value,
                 )
 
         query_set = query_set.filter(

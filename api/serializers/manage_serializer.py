@@ -292,7 +292,7 @@ class UpdateRoleResponseSerializer(BaseResponseSerializer):
 
 class FilterRoleRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    department_id = serializers.IntegerField()
+    department_id = serializers.IntegerField(allow_null=True)
     role_id = serializers.IntegerField(allow_null=True)
     role_name = serializers.CharField(required=False, allow_blank=True)
 
@@ -403,9 +403,9 @@ class UpdatePermisionResponseSerializer(BaseResponseSerializer):
 
 class FilterPermissionRequestParamSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(required=False)
-    department_id = serializers.IntegerField(required=False)
-    role_id = serializers.IntegerField(required=False)
-    permission_id = serializers.IntegerField(required=False)
+    department_id = serializers.IntegerField(required=False, allow_null=True)
+    role_id = serializers.IntegerField(required=False, allow_null=True)
+    permission_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         permission_field = 'company_id'
