@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException
 from rest_framework_simplejwt.exceptions import InvalidToken
 from api.services.exceptions import AuthLoginInvalid
-
+from rest_framework import status
 
 DEFAULT_PERMISSIONS = {
     rest_framework.exceptions.PermissionDenied: {
@@ -33,14 +33,20 @@ def crm_exception_handler(exc, context):
             else:
                 data = {'detail': exc.detail}
         elif isinstance(exc, rest_framework.exceptions.PermissionDenied):
-            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied] 
+            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied]
+            set_rollback()
+            return Response(data, headers=headers, status=status.HTTP_403_FORBIDDEN)
         elif isinstance(exc, InvalidToken):
-            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied]  
+            data = DEFAULT_PERMISSIONS[rest_framework.exceptions.PermissionDenied]
+            set_rollback()
+            return Response(data, headers=headers, status=status.HTTP_403_FORBIDDEN)
         elif isinstance(exc, rest_framework.exceptions.AuthenticationFailed):
             data = {
                 'code': AuthLoginInvalid.code,
                 'msg': AuthLoginInvalid.msg,
             }
+            set_rollback()
+            return Response(data, headers=headers, status=status.HTTP_401_UNAUTHORIZED)
         else:
             data = {
                 'code': exc.code,
@@ -48,6 +54,6 @@ def crm_exception_handler(exc, context):
             }
 
         set_rollback()
-        return Response(data, headers=headers)
+        return Response(data, headers=headers, status=status.HTTP_400_BAD_REQUEST)
 
     return None

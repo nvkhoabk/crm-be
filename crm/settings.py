@@ -139,12 +139,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:8080',
-    'http://103.252.1.215:8080', 
+    'http://103.252.1.215',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
-    'http://103.252.1.215:8080',
+    'http://103.252.1.215',
 ]
 
 SESSION_COOKIE_SAMESITE = None
