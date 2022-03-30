@@ -49,7 +49,16 @@ urlpatterns = [
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
-     # Auth
+    # Call center
+    path('callcenter/incoming_call/', manage.DeleteUserView.as_view(), name='callcenter.incoming_call'),
+    path('callcenter/outgoing_call/', manage.DeleteUserView.as_view(), name='callcenter.outgoing_call'),
+    path('callcenter/call_answered/', manage.DeleteUserView.as_view(), name='callcenter.call_answered'),
+    path('callcenter/call_logs/', manage.DeleteUserView.as_view(), name='callcenter.call_logs'),
+    path('callcenter/get_call_history/', manage.DeleteUserView.as_view(), name='callcenter.get_call_history'),
+    path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
+    path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
+
+    # Auth
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
 
     path('auth/login/', TokenObtainPairView.as_view(), name='auth.login'),

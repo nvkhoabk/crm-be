@@ -7,9 +7,9 @@ User = get_user_model()
 
 class Company(BaseModel):
     name = models.CharField(max_length=255, db_index=True, unique=True)
-    type = models.CharField(max_length=255, db_index=True, unique=True)
-    owner = models.CharField(max_length=255, db_index=True, unique=True)
-    phone = models.CharField(max_length=255, db_index=True, unique=True)
+    type = models.CharField(max_length=255)
+    owner = models.CharField(max_length=255)
+    phone = models.CharField(max_length=255)
     class Meta:
         db_table = 'companies'
         unique_together = ('name', 'deleted_at',)

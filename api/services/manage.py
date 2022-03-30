@@ -370,11 +370,11 @@ class FilterRoleService(BaseService):
                     company__id=value,
                 )
          
-            if key == 'department_id':
+            if key == 'department_id' and value is not None:
                 query_set = query_set.filter(
                     department__id=value,
                 )
-            if key == 'role_id':
+            if key == 'role_id' and value is not None:
                 query_set = query_set.filter(
                     pk=value,
                 )
@@ -441,6 +441,7 @@ class UpdatePermissionService(BaseService):
                 kwargs['edit_permissions'])
             permission.read_permissions = json.dumps(
                 kwargs['read_permissions'])
+            permission.save()
         except Permission.DoesNotExist:
             raise ManagePermissionNotFound()
 
@@ -460,11 +461,11 @@ class FilterPermissionService(BaseService):
                 query_set = query_set.filter(
                     company__id=value,
                 )
-            if key == 'department_id':
+            if key == 'department_id' and value is not None:
                 query_set = query_set.filter(
                     department__id=value,
                 )
-            if key == 'role_id':
+            if key == 'role_id' and value is not None:
                 query_set = query_set.filter(
                     role__id=value,
                 )
@@ -521,11 +522,11 @@ class CreateUserService(BaseService):
             
             for roles in kwargs.get('roles', []):
                 try:
-                    if kwargs.get('department_id'):
+                    if roles.get('department_id'):
                         department = Department.objects.get(
-                            pk=kwargs['department_id'])
-                    if kwargs.get('role_id'):
-                        role = Role.objects.get(pk=kwargs['role_id'])
+                            pk=roles['department_id'])
+                    if roles.get('role_id'):
+                        role = Role.objects.get(pk=roles['role_id'])
                 except Department.DoesNotExist:
                     raise ManageDepartmentNotFound()
                 except Role.DoesNotExist:
@@ -534,8 +535,8 @@ class CreateUserService(BaseService):
                 # Role
                 UserRole.objects.create(
                     company=company,
-                    department=department if kwargs.get('department_id') else None,
-                    role=role if kwargs.get('role_id') else None,
+                    department=department if roles.get('department_id') else None,
+                    role=role if roles.get('role_id') else None,
                     user=user,
                 )
 
@@ -559,6 +560,7 @@ class GetUserService(BaseService):
         response = {
             'is_superuser': user.is_superuser,
             'username': user.username,
+            'status': user.is_active
         }
 
         user_roles = UserRole.objects.filter(
@@ -674,13 +676,18 @@ class UpdateUserService(BaseService):
                     user=user,
                 ).delete()
 
+            try:
+                company = Company.objects.get(pk=kwargs['company_id'])
+            except Company.DoesNotExist:
+                raise ManageCompanyNotFound()
+
             for roles in kwargs.get('roles', []):
                 try:
-                    if kwargs.get('department_id'):
+                    if roles.get('department_id'):
                         department = Department.objects.get(
-                            pk=kwargs['department_id'])
-                    if kwargs.get('role_id'):
-                        role = Role.objects.get(pk=kwargs['role_id'])
+                            pk=roles['department_id'])
+                    if roles.get('role_id'):
+                        role = Role.objects.get(pk=roles['role_id'])
                 except Department.DoesNotExist:
                     raise ManageDepartmentNotFound()
                 except Role.DoesNotExist:
@@ -689,8 +696,8 @@ class UpdateUserService(BaseService):
                 # Role
                 UserRole.objects.create(
                     company=company,
-                    department=department if kwargs.get('department_id') else None,
-                    role=role if kwargs.get('role_id') else None,
+                    department=department if roles.get('department_id') else None,
+                    role=role if roles.get('role_id') else None,
                     user=user,
                 )
     

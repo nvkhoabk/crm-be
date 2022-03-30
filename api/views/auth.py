@@ -65,7 +65,7 @@ class AuthGetUserInfoView(BaseAPIView):
         request_body=serializer_class,
         responses={
             status.HTTP_201_CREATED: None,
-            0: "{'code': 0, 'msg': 'success', 'data': \"{'is_superuser': False, 'roles': [{'company': {'id': 7, 'name': 'Company A'}, 'department': {'id': 1, 'department_name': 'name'}, 'role': None, 'edit_permissions': [], 'read_permissions': []}]}\"}"
+            0: "{'code': 0, 'msg': 'success', 'data': \"{'is_superuser': False, 'roles': [{'company': {'id': 7, 'name': 'Company A'}, 'department': {'id': 1, 'department_name': 'name'}, 'role': None, 'edit_permissions': [], 'read_permissions': []}]}, 'menu': ['USER_MANAGEMENT']\"}"
         }
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):

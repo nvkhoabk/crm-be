@@ -12,10 +12,10 @@ def get_company_admins_group(id):
 
 
 def has_company_permisison(user, *args, **kwargs):
-    company_id=kwargs.get('company_id', 0) 
-    department_id=kwargs.get('department_id', 0) 
-    role_id=kwargs.get('role_id', 0)  
-    permission_id=kwargs.get('permission_id', 0) 
+    company_id = kwargs.get('company_id', 0)
+    department_id = kwargs.get('department_id', 0)
+    role_id = kwargs.get('role_id', 0)
+    permission_id = kwargs.get('permission_id', 0)
     target_user = kwargs.get('target_user', None) 
 
     if user.is_superuser:
@@ -37,7 +37,7 @@ def has_company_permisison(user, *args, **kwargs):
             raise exceptions.ManageRoleNotFound()
     elif permission_id:
         try:
-            permisison = Permission.objects.get(pk=role_id)
+            permisison = Permission.objects.get(pk=permission_id)
             company_id = permisison.company.id
         except Permission.DoesNotExist:
             raise exceptions.ManagePermissionNotFound() 

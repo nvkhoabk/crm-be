@@ -1,8 +1,10 @@
+import json
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from django.contrib.auth import authenticate, login, logout
 from api.services import exceptions
 from api.models.organization import UserRole, Permission
+from api.const import MODULES
 
 
 class AuthLoginService(BaseService):
@@ -58,7 +60,7 @@ class AuthGetUserInfoService(BaseService):
                     'id': department.id,
                     'department_name': department.department_name,
                 }
-                
+
             role = position.role
             if role:
                 data['role'] = {
@@ -78,6 +80,22 @@ class AuthGetUserInfoService(BaseService):
                     pass
 
             roles.append(data)
-        
+
         response['roles'] = roles
+        response['menu'] = []
+
+        if user.is_superuser:
+            response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT]
+        elif len(response['roles']) == 1 and response['roles'][0]['role'] is None and response['roles'][0][
+            'department'] is None:
+            response['menu'] = [MODULES.USER_MANAGEMENT]
+        else:
+            for role in roles:
+                for permission in role['edit_permissions']:
+                    if permission not in response['menu']:
+                        response['menu'].append(permission)
+                for permission in role['read_permissions']:
+                    if permission not in response['menu']:
+                        response['menu'].append(permission)
+
         return response

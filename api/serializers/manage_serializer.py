@@ -27,7 +27,7 @@ class CreateParamRequestSerializer(serializers.Serializer):
 
 
 class CreateParamResponseSerializer(BaseResponseSerializer):
-   data = ParamSerializer() 
+    data = ParamSerializer()
 
 
 class GetParamRequestSerializer(serializers.Serializer):
@@ -35,15 +35,16 @@ class GetParamRequestSerializer(serializers.Serializer):
 
 
 class GetParamResponseSerializer(BaseResponseSerializer):
-    data = ParamSerializer() 
- 
+    data = ParamSerializer()
+
+
 class UpdateParamRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     value = serializers.CharField()
 
 
 class UpdateParamResponseSerializer(BaseResponseSerializer):
-    data = ParamSerializer() 
+    data = ParamSerializer()
 
 
 class FilterParamRequestSerializer(BasePagingSerializer):
@@ -187,6 +188,7 @@ class CreateDepartmentRequestSerializer(serializers.Serializer):
 
 class DepartmentSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
+
     class Meta:
         model = Department
         fields = ['id', 'company_id', 'company_name', 'department_name', ]
@@ -260,6 +262,7 @@ class CreateRoleRequestSerializer(serializers.Serializer):
 class RoleSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     department_name = serializers.CharField(source='department.department_name', read_only=True)
+
     class Meta:
         model = Role
         fields = ['id', 'company_id', 'company_name', 'department_id', 'department_name', 'role_name', ]
@@ -368,7 +371,7 @@ class CreatePermisionResponseSerializer(BaseResponseSerializer):
     data = PermissionSerializer()
 
 
-class GetPermissionRequestSerializer(serializers.Serializer): 
+class GetPermissionRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
 
 
@@ -378,13 +381,13 @@ class GetPermisionResponseSerializer(BaseResponseSerializer):
 
 class UpdatePermissionRequestSerializer(serializers.Serializer):
     CATEGORY_CHOICES = (
-        ('Marketing', 'Marketing'),
-        ('Quản lý data', 'Quản lý data'),
-        ('Quản lý nhân sự', 'Quản lý nhân sự'),
-        ('Sản phẩm và kho hàng', 'Sản phẩm và kho hàng'),
-        ('Tài chính - kế toán', 'Tài chính - kế toán'),
-        ('Tuỳ chỉnh hệ thống', 'Tuỳ chỉnh hệ thống'),
-        ('Báo cáo', 'Báo cáo'),
+        ('MARKETING', 'MARKETING'),
+        ('DATA_MANAGEMENT', 'DATA_MANAGEMENT'),
+        ('USER_MANAGEMENT', 'USER_MANAGEMENT'),
+        ('PRODUCT_AND_WAREHOUSE', 'PRODUCT_AND_WAREHOUSE'),
+        ('ACCOUNTING', 'ACCOUNTING'),
+        ('SYSTEM_CONFIGURATION', 'SYSTEM_CONFIGURATION'),
+        ('REPORT', 'REPORT'),
     )
     id = serializers.IntegerField()
     edit_permissions = serializers.ListField(
@@ -439,15 +442,22 @@ class UserPositionSerializer(serializers.Serializer):
 
 class CreateUserRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
-    roles = serializers.ListField(child=UserPositionSerializer(), required=False)    
+    roles = serializers.ListField(child=UserPositionSerializer(), required=False)
     username = serializers.CharField()
     password = serializers.CharField()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    company_name = serializers.SerializerMethodField(source='get_company_name', read_only=True)
+    status = serializers.BooleanField(source='is_active', read_only=True)
+
+    def get_company_name(self, user):
+        company_id = UserRole.objects.filter(user_id=user.id).first().company_id
+        return Company.objects.filter(pk=company_id).first().name
+
     class Meta:
         model = User
-        fields = ('id', 'username', )
+        fields = ('id', 'username', 'company_name', 'status')
 
 
 class CreateUserResponseSerializer(BaseResponseSerializer):
@@ -459,14 +469,14 @@ class GetUserRequestSerializer(serializers.Serializer):
 
 
 class GetUserResponseSerializer(BaseResponseSerializer):
-    pass
+    pass  # Customized response in service
 
 
 class FilterUserRequestParamSerializer(serializers.Serializer):
-    company_id = serializers.IntegerField(required=False)
-    department_id = serializers.IntegerField(required=False)
-    role_id = serializers.IntegerField(required=False)
-    username = serializers.CharField(allow_null=True, required=False)
+    company_id = serializers.IntegerField(allow_null=True, required=False)
+    department_id = serializers.IntegerField(allow_null=True, required=False)
+    role_id = serializers.IntegerField(allow_null=True, required=False)
+    username = serializers.CharField(allow_null=True, allow_blank=True, required=False)
 
     class Meta:
         permission_field = 'company_id'
@@ -479,7 +489,7 @@ class FilterUserRequestSerializer(BasePagingSerializer):
 
 class UserRoleSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    
+
     class Meta:
         model = UserRole
         fields = '__all__'
@@ -493,7 +503,7 @@ class FilterUserResponseSerializer(BaseResponseSerializer):
 class UpdateUserRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='User id')
     company_id = serializers.IntegerField(required=True)
-    roles = serializers.ListField(child=UserPositionSerializer(), required=False)  
+    roles = serializers.ListField(child=UserPositionSerializer(), required=False)
     username = serializers.CharField(required=False)
     password = serializers.CharField(required=False)
     status = serializers.BooleanField(required=False, default=True)
@@ -520,3 +530,11 @@ class DeleteUserRequestSerializer(serializers.Serializer):
 
 class DeleteUserResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class GetUserRoleRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetUserRoleResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=UserRoleSerializer())
