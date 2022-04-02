@@ -139,18 +139,18 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:8080',
-    'http://103.252.1.215:8080', 
+    'http://115.146.123.8',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
-    'http://103.252.1.215:8080',
+    'http://115.146.123.8',
 ]
 
 SESSION_COOKIE_SAMESITE = None
 CRSF_COOKIE_SAMESITE = None
 
-ALLOWED_HOSTS = ['103.252.1.215', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['115.146.123.8', 'localhost', '127.0.0.1']
 
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
