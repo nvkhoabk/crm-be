@@ -448,18 +448,17 @@ class CreateUserRequestSerializer(serializers.Serializer):
 
 
 class UserRoleSerializer(serializers.ModelSerializer):
-    #user = UserSerializer()
 
     class Meta:
         model = UserRole
-        fields = '__all__'
+        fields = ('id', 'company', 'department', 'role')
         depth = 1
 
 
 class UserSerializer(serializers.ModelSerializer):
     company_name = serializers.SerializerMethodField(source='get_company_name', read_only=True)
     status = serializers.BooleanField(source='is_active', read_only=True)
-    user_roles = serializers.ListField(child=UserRoleSerializer(), required=False)
+    user_roles = UserRoleSerializer(many=True, required=False)
 
     def get_company_name(self, user):
         company_id = UserRole.objects.filter(user_id=user.id).first().company_id

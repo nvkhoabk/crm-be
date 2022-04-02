@@ -55,7 +55,7 @@ class UserRole(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, null=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_roles')
 
     class Meta:
         db_table = 'user_roles'
