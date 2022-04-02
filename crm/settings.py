@@ -103,9 +103,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'crm_db',
-        'HOST': '103.252.1.215',
+        'HOST': '115.146.123.8',
         'PORT': '3306',
-        'USER': 'crm',
+        'USER': 'crm_be',
         'PASSWORD': '123456aA@',
     }
 }
@@ -139,12 +139,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:8080',
-    'http://103.252.1.215',
+    'http://103.252.1.215:8080', 
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
-    'http://103.252.1.215',
+    'http://103.252.1.215:8080',
 ]
 
 SESSION_COOKIE_SAMESITE = None

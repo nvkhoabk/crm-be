@@ -447,9 +447,19 @@ class CreateUserRequestSerializer(serializers.Serializer):
     password = serializers.CharField()
 
 
+class UserRoleSerializer(serializers.ModelSerializer):
+    #user = UserSerializer()
+
+    class Meta:
+        model = UserRole
+        fields = '__all__'
+        depth = 1
+
+
 class UserSerializer(serializers.ModelSerializer):
     company_name = serializers.SerializerMethodField(source='get_company_name', read_only=True)
     status = serializers.BooleanField(source='is_active', read_only=True)
+    user_roles = serializers.ListField(child=UserRoleSerializer(), required=False)
 
     def get_company_name(self, user):
         company_id = UserRole.objects.filter(user_id=user.id).first().company_id
@@ -457,7 +467,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'company_name', 'status')
+        fields = ('id', 'username', 'company_name', 'status', 'user_roles')
 
 
 class CreateUserResponseSerializer(BaseResponseSerializer):
@@ -485,15 +495,6 @@ class FilterUserRequestParamSerializer(serializers.Serializer):
 
 class FilterUserRequestSerializer(BasePagingSerializer):
     filter = FilterUserRequestParamSerializer()
-
-
-class UserRoleSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-
-    class Meta:
-        model = UserRole
-        fields = '__all__'
-        depth = 1
 
 
 class FilterUserResponseSerializer(BaseResponseSerializer):
