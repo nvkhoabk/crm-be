@@ -139,10 +139,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:8080',
+    'http://localhost:8000',
     'http://115.146.123.8',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
+    'http://localhost:8000',
     'http://127.0.0.1:8080',
     'http://115.146.123.8',
 ]

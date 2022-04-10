@@ -51,6 +51,11 @@ class ManageDepartmentNotFound(APIException):
     msg = 'Not found department'
 
 
+class ManageDepartmentNotEmpty(APIException):
+    code = 2032
+    msg = 'Department is not empty'
+
+
 class ManageRoleDuplicated(APIException):
     code = 2040
     msg = 'Duplicate role'
