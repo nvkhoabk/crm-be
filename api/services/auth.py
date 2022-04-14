@@ -88,7 +88,7 @@ class AuthGetUserInfoService(BaseService):
             response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT]
         elif len(response['roles']) == 1 and response['roles'][0]['role'] is None and response['roles'][0][
             'department'] is None:
-            response['menu'] = [MODULES.USER_MANAGEMENT]
+            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE]
         else:
             for role in roles:
                 for permission in role['edit_permissions']:

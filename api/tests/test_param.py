@@ -13,9 +13,9 @@ class TestParam(TestCRMBase):
         self.assertEqual(create_param_func_url, '/api/manage/create_param/')
 
         super_user = get_user_model().objects.create_user(username='testuser',
-                                             password='12345',
-                                             is_superuser=True,
-                                        )
+                                                          password='12345',
+                                                          is_superuser=True,
+                                                          )
         self.assertTrue(self.client.login(username='testuser', password='12345'))
 
         data = {
@@ -42,12 +42,12 @@ class TestParam(TestCRMBase):
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
         self.assertEqual(resp['data']['total'], 1)
-        
+
         update_param_func_url = reverse('manage.update_param')
         self.assertEqual(update_param_func_url, '/api/manage/update_param/')
 
         data = {
-            'id': param_id,  
+            'id': param_id,
             'value': 'Hello 2',
         }
 
@@ -56,7 +56,6 @@ class TestParam(TestCRMBase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         resp = resp.json()
         self.assertEqual(resp['code'], 0)
-        
 
         get_param_func_url = reverse('manage.get_param')
         self.assertEqual(get_param_func_url, '/api/manage/get_param/')

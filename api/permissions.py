@@ -1,5 +1,7 @@
 from rest_framework import permissions
-from api.models.organization import UserRole
+from rest_framework.utils import json
+
+from api.models.organization import UserRole, User, Permission
 
 
 class SuperAdminPermission(permissions.BasePermission):
@@ -21,5 +23,71 @@ class CompanyAdminPermission(permissions.BasePermission):
             if UserRole.objects.filter(**filter).first():
                 return True
             else:
-                return False 
-        return True 
+                return False
+        return True
+
+
+class ModulePermission(permissions.BasePermission):
+    MODULE_NAME = ''
+
+    def has_module_permission(self, permission_obj):
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+
+        user_roles = UserRole.objects.filter(**filter)
+        # Admin company can access to all api
+        first_user_role = user_roles.first()
+        if first_user_role.department_id is None and first_user_role.role_id is None:
+            return True
+
+        for position in user_roles:
+            company = position.company
+            department = position.department
+            role = position.role
+            if role:
+                try:
+                    permission_obj = Permission.objects.get(
+                        company=company,
+                        department=department,
+                        role=role,
+                    )
+                    if self.has_module_permission(permission_obj):
+                        return True
+
+                except Permission.DoesNotExist:
+                    pass
+
+        return False
+
+
+class ModuleReadPermission(ModulePermission):
+    def has_module_permission(self, permission_obj):
+        if self.MODULE_NAME in json.loads(permission_obj.read_permissions):
+            return True
+
+        # Edit permission is treated as Read Permission
+        if self.MODULE_NAME in json.loads(permission_obj.edit_permissions):
+            return True
+
+        return False
+
+
+class ModuleEditPermission(ModulePermission):
+    def has_module_permission(self, permission_obj):
+        return self.MODULE_NAME in json.loads(permission_obj.edit_permissions)
+
+
+class ProductReadPermission(ModuleReadPermission):
+    MODULE_NAME = 'PRODUCT_AND_WAREHOUSE'
+
+
+class ProductEditPermission(ModuleEditPermission):
+    MODULE_NAME = 'PRODUCT_AND_WAREHOUSE'

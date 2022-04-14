@@ -79,3 +79,13 @@ class ManageUserDuplicated(APIException):
 class ManageUserNotFound(APIException):
     code = 2061
     msg = 'User not found'
+
+
+class ProductNotFound(APIException):
+    code = 3001
+    msg = 'Product not found'
+
+
+class ProductDuplicated(APIException):
+    code = 3002
+    msg = 'Duplicate product'

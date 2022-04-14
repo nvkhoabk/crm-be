@@ -18,7 +18,7 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageRoleDuplicated,
                                      ManageRoleNotFound,
                                      ManageUserDuplicated,
-                                     ManageUserNotFound,)
+                                     ManageUserNotFound, ManagePackageDuplicated, ManagePackageNotFound, )
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -44,7 +44,7 @@ class GetParamService(BaseService):
             return Param.objects.get(
                 pk=kwargs['id'],
             )
-        except Param.DoesNotExists:
+        except Param.DoesNotExist:
             raise ManageParamNotFound()
     
 
@@ -85,7 +85,7 @@ class GetPackageService(BaseService):
                 pk=kwargs['id'],
             )
         except Package as e:
-            raise ManagePackageDuplicated()
+            raise ManagePackageNotFound()
 
 
 class UpdatePackageService(BaseService):

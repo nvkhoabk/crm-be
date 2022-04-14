@@ -1,6 +1,7 @@
 from django.urls import path, include
 from api.views import auth
 from api.views import manage
+from api.views import product
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -57,6 +58,14 @@ urlpatterns = [
     path('callcenter/get_call_history/', manage.DeleteUserView.as_view(), name='callcenter.get_call_history'),
     path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
     path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
+
+    # Product
+    path('product/create_product/', product.CreateProductView.as_view(), name='product.create_product'),
+    path('product/filter_product/', product.FilterProductView.as_view(), name='product.filter_product'),
+    path('product/get_product/', product.GetProductView.as_view(), name='product.get_product'),
+    path('product/update_product/', product.UpdateProductView.as_view(), name='product.update_product'),
+    path('product/delete_product/', product.DeleteProductView.as_view(), name='product.delete_product'),
+
 
     # Auth
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
