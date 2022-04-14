@@ -13,6 +13,7 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageParamNotFound,
                                      ManageDepartmentDuplicated,
                                      ManageDepartmentNotFound,
+                                     ManageDepartmentNotEmpty,
                                      ManagePermissionDuplicated,
                                      ManagePermissionNotFound,
                                      ManageRoleDuplicated,
@@ -297,6 +298,9 @@ class DeleteDepartmentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         utils.has_company_permisison(request.user, department_id=kwargs['id'])
         try:
+            if UserRole.objects.filter(department_id=kwargs['id'], user__is_active=True):
+                raise ManageDepartmentNotEmpty()
+
             return Department.objects.get(
                 id=kwargs['id'],
             ).delete()
