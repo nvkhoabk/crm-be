@@ -94,3 +94,33 @@ class ProductNotFound(APIException):
 class ProductDuplicated(APIException):
     code = 3002
     msg = 'Duplicate product'
+
+
+class CallCenterDuplicated(APIException):
+    code = 3003
+    msg = 'Duplicate call center'
+
+
+class CallCenterNotFound(APIException):
+    code = 3003
+    msg = 'Call center not found'
+
+
+class SipCredentialError(APIException):
+    code = 3004
+    msg = 'Sip username or password is wrong'
+
+
+class SipAPIError(APIException):
+    code = 3005
+    msg = 'Sip api error'
+
+
+class CallAgentNotFound(APIException):
+    code = 3006
+    msg = 'Call agent not found'
+
+
+class AgentRegisterNotFound(APIException):
+    code = 3007
+    msg = 'Agent Register not found'

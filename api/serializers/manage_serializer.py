@@ -1,5 +1,6 @@
 import json
 
+from api.models.call_center import CallCenter
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
@@ -125,9 +126,18 @@ class CreateCompanyRequestSerializer(serializers.Serializer):
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    call_center = serializers.SerializerMethodField()
+
+    def get_call_center(self, company):
+        call_center = CallCenter.objects.filter(company_id=company.id)
+        if call_center:
+            return call_center.first()
+
+        return None
+
     class Meta:
         model = Company
-        fields = ['id', 'name', 'type', 'owner', 'phone']
+        fields = ['id', 'name', 'type', 'owner', 'phone', 'call_center']
 
 
 class CreateCompanyResponseSerializer(BaseResponseSerializer):

@@ -16,6 +16,9 @@ class Const:
     # File path
     FILE_ROOT = "files/"
 
+    # Sip server
+    SIP_SERVER = "wss://cms.siptrunk.vn:4443"
+
 
 class ASSET_STATUS:
     NEW = 'NEW'

@@ -2,9 +2,11 @@ import json
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from django.contrib.auth import authenticate, login, logout
+
+from api.models.call_center import CallAgent
 from api.services import exceptions
 from api.models.organization import UserRole, Permission
-from api.const import MODULES
+from api.const import MODULES, Const
 
 
 class AuthLoginService(BaseService):
@@ -97,5 +99,19 @@ class AuthGetUserInfoService(BaseService):
                 for permission in role['read_permissions']:
                     if permission not in response['menu']:
                         response['menu'].append(permission)
+
+        response['call_center'] = {
+            'ext': None,
+            'secret': None,
+            'sip_server': None
+        }
+
+        try:
+            call_agent = CallAgent.objects.get(user_id=user, deleted_at__isnull=True)
+            response['call_center']['ext'] = call_agent.name
+            response['call_center']['secret'] = call_agent.secret
+            response['call_center']['sip_server'] = Const.SIP_SERVER
+        except CallAgent.DoesNotExist:
+            pass
 
         return response

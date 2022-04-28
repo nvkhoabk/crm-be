@@ -16,6 +16,7 @@ class BaseAPIView(APIView):
     serializer_class = None
     pagination_class = None
     serializer_many = False
+    forward_pagination = False
 
     def check_permissions(self, request):
         pass
@@ -41,8 +42,9 @@ class BaseAPIView(APIView):
         
                 offset = page * page_size
                 limit = page_size
-                total = results.count()
-                data['data'] = results[offset: offset + limit]
+                total = len(results)
+                if self.forward_pagination is False:
+                    data['data'] = results[offset: offset + limit]
 
                 serializer = serializer(data, many=many)
                 data = {

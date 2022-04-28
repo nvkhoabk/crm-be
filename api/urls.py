@@ -2,6 +2,7 @@ from django.urls import path, include
 from api.views import auth
 from api.views import manage
 from api.views import product
+from api.views import call_center
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -51,13 +52,26 @@ urlpatterns = [
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
     # Call center
-    path('callcenter/incoming_call/', manage.DeleteUserView.as_view(), name='callcenter.incoming_call'),
-    path('callcenter/outgoing_call/', manage.DeleteUserView.as_view(), name='callcenter.outgoing_call'),
-    path('callcenter/call_answered/', manage.DeleteUserView.as_view(), name='callcenter.call_answered'),
-    path('callcenter/call_logs/', manage.DeleteUserView.as_view(), name='callcenter.call_logs'),
-    path('callcenter/get_call_history/', manage.DeleteUserView.as_view(), name='callcenter.get_call_history'),
-    path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
-    path('callcenter/register/', manage.DeleteUserView.as_view(), name='callcenter.register'),
+    path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(), name='callcenter.create_callcenter'),
+    path('callcenter/get_callcenter/', call_center.GetCallCenterView.as_view(), name='callcenter.get_callcenter'),
+    path('callcenter/update_callcenter/', call_center.UpdateCallCenterView.as_view(), name='callcenter.update_callcenter'),
+    path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
+    path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
+    path('callcenter/start_callin/', call_center.StartCallInView.as_view(), name='callcenter.start_callin'),
+    path('callcenter/end_callin/', call_center.EndCallInView.as_view(), name='callcenter.end_callin'),
+    path('callcenter/start_callout/', call_center.StartCallOutView.as_view(), name='callcenter.start_callout'),
+    path('callcenter/end_callout/', call_center.EndCallOutView.as_view(), name='callcenter.end_callout'),
+
+    path('callcenter/get_agents/', call_center.GetAgentsView.as_view(), name='callcenter.get_agents'),
+    path('callcenter/update_agents/', call_center.UpdateAgentsView.as_view(), name='callcenter.update_agents'),
+
+    path('callcenter/get_company_call_history/', call_center.GetCompanyCallHistoryView.as_view(), name='callcenter.get_company_call_history'),
+    path('callcenter/get_user_call_history/', call_center.GetUserCallHistoryView.as_view(), name='callcenter.get_user_call_history'),
+    path('callcenter/get_call_report/', call_center.GetCallReportView.as_view(), name='callcenter.get_call_report'),
+
+    path('callcenter/create_agent_register/', call_center.CreateAgentRegisterCenterView.as_view(), name='callcenter.create_agent_register'),
+    path('callcenter/delete_agent_register/', call_center.DeleteAgentRegisterCenterView.as_view(), name='callcenter.delete_agent_register'),
+    path('callcenter/filter_agent_register/', call_center.FilterAgentRegisterCenterView.as_view(), name='callcenter.filter_agent_register'),
 
     # Product
     path('product/create_product/', product.CreateProductView.as_view(), name='product.create_product'),
