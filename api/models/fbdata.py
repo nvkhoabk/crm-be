@@ -2,7 +2,16 @@ from api.models.base import BaseModel
 from django.db import models
 
 
+class FBUser(BaseModel):
+    uid = models.IntegerField(db_index=True, unique=True)
+    name = models.CharField(max_length=1024)
+
+    class Meta:
+        db_table = 'fb_users'
+
+
 class FBPage(BaseModel):
+    uid = models.ForeignKey(FBUser, on_delete=models.CASCADE, null=True)
     page_id = models.CharField(max_length=64, unique=True, db_index=True)
     page_name = models.CharField(max_length=1024)
     access_token = models.CharField(max_length=1024)
