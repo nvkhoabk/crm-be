@@ -3,18 +3,21 @@ from django.db import models
 
 
 class FBUser(BaseModel):
-    uid = models.IntegerField(db_index=True, unique=True)
+    uid = models.CharField(max_length=255, db_index=True, unique=True)
     name = models.CharField(max_length=1024)
+    access_token = models.CharField(max_length=4096, default='')
+    expire_time = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'fb_users'
 
 
 class FBPage(BaseModel):
-    uid = models.ForeignKey(FBUser, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(FBUser, on_delete=models.CASCADE, null=True)
     page_id = models.CharField(max_length=64, unique=True, db_index=True)
     page_name = models.CharField(max_length=1024)
     access_token = models.CharField(max_length=1024)
+    expire_time = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'fb_pages'

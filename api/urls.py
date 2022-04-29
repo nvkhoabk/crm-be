@@ -91,4 +91,5 @@ urlpatterns = [
 
     # FB crawler
     path('fb/login/', fb.FBLoginView.as_view(), name='fb.login'),
+    path('fb/login/callback', fb.FBLoginCallBackView.as_view(), name='fb.login_callback'),
 ]

@@ -96,9 +96,16 @@ class BaseAPIView(APIView):
 
             serializer = None
             if self.serializer_class is not None:
-                serializer = self.serializer_class(
-                    data=JSONParser().parse(request), many=self.serializer_many)
-                serializer.is_valid(raise_exception=True)
+                if request.method.lower() == 'get':
+                    serializer = self.serializer_class(data=request.GET.dict())
+                    serializer.is_valid(raise_exception=True)
+                else:
+                    try:
+                        serializer = self.serializer_class(
+                            data=JSONParser().parse(request), many=self.serializer_many)
+                        serializer.is_valid(raise_exception=True)
+                    except Exception as e:
+                        raise ValidationError(str(e))
             
             for permission in self.get_permissions():
                 if not permission.has_permission(request, self):

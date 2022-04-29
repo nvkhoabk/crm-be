@@ -8,3 +8,11 @@ class FBLoginRequestSerializer(serializers.Serializer):
 
 class FBLoginResponseSerializer(BaseResponseSerializer):
     data = serializers.CharField(allow_blank=True, default='')
+
+
+class FBLoginCallBackRequestSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+
+class FBLoginCallBackResponseSerializer(serializers.Serializer):
+    pass
