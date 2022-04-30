@@ -1,5 +1,5 @@
 import json
-from api.models.fbdata import CrawlData
+from api.models.data import CrawlData
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.utils import validate
 from rest_framework import serializers

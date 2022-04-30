@@ -2,7 +2,7 @@ import json
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.fbdata import CrawlData
+from api.models.data import CrawlData
 from api.services import utils
 
 

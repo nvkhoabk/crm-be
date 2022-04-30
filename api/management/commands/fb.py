@@ -4,7 +4,7 @@ import time
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
-from api.models.fbdata import CrawlData, FBPage, FBUser
+from api.models.data import CrawlData, FBPage, FBUser
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from pyfacebook import FacebookApi
