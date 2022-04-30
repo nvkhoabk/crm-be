@@ -1,11 +1,31 @@
 from api.models.base import BaseModel
 from django.db import models
+from api.models.organization import Company
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class FBUser(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    uid = models.CharField(max_length=255, db_index=True, unique=True)
+    name = models.CharField(max_length=1024)
+    access_token = models.CharField(max_length=4096, default='')
+    expire_time = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'fb_users'
 
 
 class FBPage(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(FBUser, on_delete=models.CASCADE, null=True)
     page_id = models.CharField(max_length=64, unique=True, db_index=True)
     page_name = models.CharField(max_length=1024)
     access_token = models.CharField(max_length=1024)
+    expire_time = models.IntegerField(default=0)
+    last_check_time = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'fb_pages'
@@ -18,6 +38,7 @@ class FBPost(BaseModel):
     permalink_url = models.CharField(max_length=1024)
     message = models.TextField()
     likes = models.IntegerField(default=0)
+    last_check_time = models.IntegerField(default=True)
 
     class Meta:
         db_table = 'fb_posts'
@@ -32,6 +53,7 @@ class FBComment(BaseModel):
     user_id = models.CharField(max_length=64)
     message = models.TextField()
     phone = models.CharField(max_length=64, default='', null=True) 
+    last_check_time = models.IntegerField(default=True)
 
     class Meta:
         db_table = 'fb_comments'
@@ -47,3 +69,26 @@ class FBMessage(BaseModel):
 
     class Meta:
         db_table = 'fb_messages'
+
+
+class CrawData(BaseModel):
+    SOURCE_CHOICES = (
+        ('fb', 'fb'),
+        ('zalo', 'zalo'),
+    )
+    STATUS_CHOICES = (
+        ('init', 'init'),
+    )
+    
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    source = models.CharField(db_index=True, max_length=64, choices=SOURCE_CHOICES, default='fb')
+    ref_link = models.CharField(max_length=2048, default='')
+    uid = models.CharField(db_index=True, max_length=64, default='')
+    username = models.CharField(max_length=1024, default='')
+    phone = models.CharField(max_length=64, default='')
+    content = models.TextField()
+    status = models.CharField(db_index=True, max_length=64, choices=STATUS_CHOICES, default='init')
+
+    class Meta:
+        db_table = 'crawl_data'

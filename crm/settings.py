@@ -243,3 +243,11 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_HEADERS = ('content-disposition', 'accept-encoding',
                       'content-type', 'accept', 'origin', 'authorization', 'token')
+
+
+FB_APP_ID = '318537180209438'
+FB_APP_SECRET = 'c091a3a9b59e1475abc049f9b352cc72' 
+REDIRECT_URI = 'https://crm.ity.vn/api/fb/login/callback'
+FB_SCOPE = 'email,pages_show_list,read_page_mailboxes,pages_messaging,pages_messaging_subscriptions,pages_read_engagement,pages_manage_metadata,pages_read_user_content,pages_manage_ads,pages_manage_posts,pages_manage_engagement,public_profile,ads_management,page_events'
+FB_IV = '1219164814273683'
+FB_SECRET_KEY = '1381444214459712'

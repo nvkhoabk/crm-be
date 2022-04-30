@@ -8,8 +8,16 @@ class FBPageUtil:
         self.access_token = access_token
         self.graph = facebook.GraphAPI(access_token)
 
-    def get_page_info(self):
+    def get_pages(self):
+        uri = 'https://graph.facebook.com/{}/accounts?fields=name,access_token&access_token={}'.format(self.uid, self.access_token)
+        response = requests.get(uri)
+        response = response.json()
+        return response['data']
+    
+    def get_user_info(self):
         profile = self.graph.get_object('me', fields='id,name')
+        self.uid = profile.get('id')
+        self.name = profile.get('name')
         return profile
 
     def get_page_posts(self, page_id):
@@ -37,8 +45,12 @@ class FBPageUtil:
         comments = self.graph.request(post_id + '/comments')
         while 'paging' in comments:
             for comment in comments['data']:
+                count = 0
                 if comment_ids.get(comment['id']):
+                    count = count + 1
                     continue
+                if count == len(comments['data']):
+                    return total_comments
                 total_comments.append(comment)
                 comment_ids[comment['id']] = True
             if 'next' in comments['paging']:
