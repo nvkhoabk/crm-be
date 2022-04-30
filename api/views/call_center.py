@@ -366,3 +366,26 @@ class FilterAgentRegisterCenterView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.FilterAgentRegisterResponseSerializer)
+
+
+class GetExternalReportView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = call_center_serializer.GetExternalPaymentReportRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Get external report',
+        operation_description='Get external report',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.GetExternalPaymentReportResponseSerializer,
+            exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.GetCallReportService()
+        user = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=user, request=serializer.validated_data,
+                                 serializer=call_center_serializer.GetExternalPaymentReportResponseSerializer)

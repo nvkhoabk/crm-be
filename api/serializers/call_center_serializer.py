@@ -4,8 +4,6 @@ from api.models.call_center import CallCenter, CallAgent, AgentRegister
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 
-from api.serializers.manage_serializer import UserSerializer
-
 
 class CallCenterSerializer(serializers.ModelSerializer):
 
@@ -163,7 +161,7 @@ class GetCompanyCallHistoryRequestParam(serializers.Serializer):
     from_date = serializers.DateField(required=True)
     to_date = serializers.DateField(required=True)
     number = serializers.CharField(required=False)
-    user_id = serializers.IntegerField(required=False)
+    user_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class GetCompanyCallHistoryRequestSerializer(BasePagingSerializer):
@@ -242,3 +240,26 @@ class FilterAgentRegisterRequestSerializer(BasePagingSerializer):
 class FilterAgentRegisterResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=AgentRegisterSerializer())
 
+
+class ExternalPaymentReportSerializer(serializers.Serializer):
+    call_date = serializers.DateTimeField()
+    number = serializers.CharField(max_length=128)
+    duration = serializers.IntegerField()
+    fee = serializers.IntegerField()
+    total_fee = serializers.IntegerField()
+
+class GetExternalPaymentReportRequestSerializer(BasePagingSerializer):
+    pass
+
+class GetExternalPaymentReportResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=ExternalPaymentReportSerializer())
+
+
+class GetCreditPaymentRequestSerializer(serializers.Serializer):
+    payment_id = serializers.IntegerField()
+
+
+class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
+    total_fee = serializers.IntegerField()
+    payment_date = serializers.DateField()
+    payment_type = serializers.CharField(max_length=256)

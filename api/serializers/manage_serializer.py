@@ -5,6 +5,7 @@ from api.models.organization import Company, Department, Permission, Role, UserR
 from api.models.package import Package
 from api.models.param import Param
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
+from api.serializers.call_center_serializer import CallCenterSerializer
 from api.utils import validate
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -131,7 +132,7 @@ class CompanySerializer(serializers.ModelSerializer):
     def get_call_center(self, company):
         call_center = CallCenter.objects.filter(company_id=company.id)
         if call_center:
-            return call_center.first()
+            return CallCenterSerializer(call_center.first()).data
 
         return None
 

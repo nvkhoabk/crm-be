@@ -2,6 +2,7 @@ import json
 
 import requests
 
+from api.const import CALL_DIRECTION
 from api.models.call_center import SipServiceInfo
 from api.services.exceptions import (SipCredentialError, SipAPIError)
 
@@ -93,14 +94,29 @@ class SipService:
 
         response_object = res.json()
         for cdr in response_object['data']:
-            call_history.append({
-                'dest_number': cdr['destination'],
-                'calldate': cdr['calldate'],
-                'src_user': cdr['src_user'],
-                'record_url': cdr['record_file'],
-                'direction': cdr['direction'],
-                'duration': cdr['duration'],
-                'ext': 'ext' + cdr['src_company'] + cdr['src_extension']
-            })
+            if cdr['direction'] == CALL_DIRECTION.INCOMING:
+                call_history.append({
+                    'dest_number': cdr['callerid'],
+                    'calldate': cdr['calldate'],
+                    'src_extension': cdr['dst_extension'],
+                    'record_url': self.get_record_url(cdr),
+                    'direction': cdr['direction'],
+                    'duration': cdr['duration'],
+                    'ext': 'ext' + cdr['dst_company'] + cdr['dst_extension']
+                })
+
+            if cdr['direction'] == CALL_DIRECTION.OUTGOING:
+                call_history.append({
+                    'dest_number': cdr['destination'],
+                    'calldate': cdr['calldate'],
+                    'src_extension': cdr['src_extension'],
+                    'record_url': self.get_record_url(cdr),
+                    'direction': cdr['direction'],
+                    'duration': cdr['duration'],
+                    'ext': 'ext' + cdr['src_company'] + cdr['src_extension']
+                })
 
         return call_history
+
+    def get_record_url(self, cdr):
+        return BASE_URL + cdr['record_file'] if cdr['record_file'] else None
