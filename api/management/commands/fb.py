@@ -4,7 +4,7 @@ import time
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
-from api.models.fbdata import CrawData, FBPage, FBUser
+from api.models.fbdata import CrawlData, FBPage, FBUser
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from pyfacebook import FacebookApi
@@ -34,7 +34,7 @@ class FBCrawler(Daemon):
                 comment = comment.to_dict()
                 if not extract_phone(comment['message']):
                     continue
-                CrawData.objects.create(
+                CrawlData.objects.create(
                     source='fb',
                     ref_link=comment['permalink_url'],
                     uid=comment['from']['id'],
@@ -56,7 +56,7 @@ class FBCrawler(Daemon):
             if not extract_phone(all_messages):
                 continue
 
-            CrawData.objects.create(
+            CrawlData.objects.create(
                 source='fb',
                 uid=message['senders']['data'][0]['id'],
                 username=message['senders']['data'][0]['id'],
