@@ -1,6 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
-from marshmallow import ValidationError
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -106,7 +105,7 @@ class BaseAPIView(APIView):
                             data=JSONParser().parse(request), many=self.serializer_many)
                         serializer.is_valid(raise_exception=True)
                     except Exception as e:
-                        raise ValidationError(str(e))
+                        raise serializers.ValidationError(str(e))
             
             for permission in self.get_permissions():
                 if not permission.has_permission(request, self):
