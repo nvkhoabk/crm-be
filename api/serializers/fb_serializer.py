@@ -12,6 +12,7 @@ class FBLoginResponseSerializer(BaseResponseSerializer):
 
 class FBLoginCallBackRequestSerializer(serializers.Serializer):
     code = serializers.CharField()
+    state = serializers.CharField()
 
 
 class FBLoginCallBackResponseSerializer(serializers.Serializer):

@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 class FBLoginView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [IsAuthenticated, ]
     serializer_class = None
 
     @swagger_auto_schema(

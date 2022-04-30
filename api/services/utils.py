@@ -1,6 +1,10 @@
 from api.models.organization import Company, Department, Role, Permission, UserRole
 from groups_manager.models import Group, GroupType, Member
 from api.services import exceptions
+from Crypto.Cipher import AES
+from Crypto import Random
+import hashlib
+import base64
 
 
 def get_company_group_name(id):
@@ -65,3 +69,29 @@ def has_company_permisison(user, *args, **kwargs):
     if member.has_perm('change_company', company):
         return True
     raise PermissionDenied()
+
+
+class AESCipher:
+    
+    BS = 32
+
+    def __init__(self, key):
+        self.key = hashlib.sha256(key.encode()).digest()
+
+    def encrypt(self, raw):
+        raw = self.pad(raw)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw))
+
+    def decrypt(self, enc):
+        enc = base64.b64decode(enc)
+        iv = enc[:16]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return self.unpad(cipher.decrypt(enc[16:])).decode('utf8')
+
+    def unpad(self, s):
+        return s[0:-ord(s[-1:])]
+
+    def pad(self, s):
+        return bytes(s + (self.BS - len(s) % self.BS) * chr(self.BS - len(s) % self.BS), 'utf-8')

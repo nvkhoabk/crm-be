@@ -45,8 +45,12 @@ class FBPageUtil:
         comments = self.graph.request(post_id + '/comments')
         while 'paging' in comments:
             for comment in comments['data']:
+                count = 0
                 if comment_ids.get(comment['id']):
+                    count = count + 1
                     continue
+                if count == len(comments['data']):
+                    return total_comments
                 total_comments.append(comment)
                 comment_ids[comment['id']] = True
             if 'next' in comments['paging']:

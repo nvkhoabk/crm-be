@@ -129,9 +129,9 @@ class CompanySerializer(serializers.ModelSerializer):
     call_center = serializers.SerializerMethodField()
 
     def get_call_center(self, company):
-        call_center = CallCenter.objects.filter(company_id=company.id)
-        if call_center:
-            return call_center.first()
+        # call_center = CallCenter.objects.filter(company_id=company.id)
+        # if call_center:
+        #     return call_center.first()
 
         return None
 
