@@ -4,6 +4,7 @@ from api.views import manage
 from api.views import product
 from api.views import call_center
 from api.views import fb
+from api.views import data
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -92,4 +93,5 @@ urlpatterns = [
     # FB crawler
     path('fb/login/', fb.FBLoginView.as_view(), name='fb.login'),
     path('fb/login/callback', fb.FBLoginCallBackView.as_view(), name='fb.login_callback'),
+    path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
 ]

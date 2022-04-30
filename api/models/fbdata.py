@@ -71,7 +71,7 @@ class FBMessage(BaseModel):
         db_table = 'fb_messages'
 
 
-class CrawData(BaseModel):
+class CrawlData(BaseModel):
     SOURCE_CHOICES = (
         ('fb', 'fb'),
         ('zalo', 'zalo'),
