@@ -20,65 +20,22 @@ class FBPageUtil:
         self.name = profile.get('name')
         return profile
 
-    def get_page_posts(self, page_id):
-        post_ids = {}
-        total_posts = []
+    def get_page_posts(self, page_id, offset, limit):
+        posts = self.graph.request('/{}/posts?offset={}&limit={}&fields=permalink_url,message,created_time'.format(page_id, offset, limit))
+        return posts['data']
 
-        posts = self.graph.request('/me/posts?fields=permalink_url,message,created_time')
-        while 'paging' in posts:
-            for post in posts['data']:
-                if post_ids.get(post['id']):
-                    return total_posts
-                total_posts.append(post)
-                post_ids[post['id']] = True
-            if 'next' in posts['paging']:
-                posts = requests.get(posts['paging']['next']).json()
-            else:
-                break
+    def get_page_comments(self, post_id, offset, limit):
+        comments = self.graph.request('{}/comments?offset={}&limit={}'.format(post_id, offset, limit))
+        return comments['data']
 
-        return total_posts
-
-    def get_page_comments(self, post_id):
-        comment_ids = {}
-        total_comments = []
-
-        comments = self.graph.request(post_id + '/comments')
-        while 'paging' in comments:
-            for comment in comments['data']:
-                count = 0
-                if comment_ids.get(comment['id']):
-                    count = count + 1
-                    continue
-                if count == len(comments['data']):
-                    return total_comments
-                total_comments.append(comment)
-                comment_ids[comment['id']] = True
-            if 'next' in comments['paging']:
-                comments = requests.get(comments['paging']['next']).json()
-            else:
-                break
-
-        return total_comments
-
-    def get_page_messages(self):
-        message_ids = {}
+    def get_page_messages(self, page_id, offset, limit):
         total_messages = []
         
-        messages = self.graph.request('me?fields=conversations{id,messages{message},senders}')
-        if not messages.get('conversations'):
-            return total_messages
-        messages = messages['conversations']
-        while 'paging' in messages:
-            for message in messages['data']:
-                message['messages'] = self._get_all_message(message)
-                if message_ids.get(message['id']):
-                    continue 
-                total_messages.append(message)
-                message_ids[message['id']] = True
-            if 'next' in messages['paging']:
-                messages = requests.get(messages['paging']['next']).json()
-            else:
-                break
+        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,messages{message},senders')
+
+        for message in messages['data']:
+            message['messages'] = self._get_all_message(message)
+            total_messages.append(message)
 
         return total_messages
 

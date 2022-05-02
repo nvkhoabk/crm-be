@@ -24,45 +24,77 @@ class FBCrawler(Daemon):
 
     def crawl_posts(self, page):
         api = FacebookApi(access_token=page.access_token)
-        posts = api.page.get_posts(
-            object_id=page.page_id, count=100, limit=100).data
-        for post in posts:
-            fields = 'id,created_time,message,permalink_url,from'
-            comments = api.page.get_comments(
-                object_id=post.id, fields=fields, count=100, limit=100).data
-            for comment in comments:
-                comment = comment.to_dict()
-                if not extract_phone(comment['message']):
-                    continue
-                CrawlData.objects.create(
-                    source='fb',
-                    ref_link=comment['permalink_url'],
-                    uid=comment['from']['id'],
-                    username=comment['from']['name'],
-                    content=comment['message'],
-                    phone=extract_phone(comment['message']),
-                )
+        fb = FBPageUtil(access_token=page.access_token)
 
-        page.last_check_time = int(time.time()) 
-        page.save()
+        offset = 0
+        limit = 10
+    
+        while True:
+            posts = fb.get_page_posts(page.page_id, offset, limit)
+            offset = offset + limit
 
+            if len(posts) == 0:
+                break
+    
+            for post in posts:
+                c_offset = 0
+                c_limit = 10
+                while True:     
+                    comments = fb.get_page_comments(post['id'], c_offset, c_limit)
+                    if len(comments) == 0:
+                        break
+            
+                    c_offset = c_offset + c_limit
+
+                    for comment in comments: 
+                        if CrawlData.objects.filter(object_id=comment['id']).first():
+                            continue
+                
+                        if not extract_phone(comment['message']):
+                            continue
+
+                        CrawlData.objects.create(
+                            source='fb',
+                            object_id=comment['id'],
+                            type=CrawlData.TYPE_POST,
+                            ref_link=post['permalink_url'],
+                            uid=comment['from']['id'],
+                            username=comment['from']['name'],
+                            content=comment['message'],
+                            phone=extract_phone(comment['message']),
+                        )
+        
     def crawl_messages(self, page):
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
 
-        messages = fb.get_page_messages()
-        for message in messages:
-            all_messages = ' '.join(message['messages'])
-            if not extract_phone(all_messages):
-                continue
+        offset = 0
+        limit = 10
+        while True:
+            messages = fb.get_page_messages(page.page_id, offset, limit)
+            if len(messages) == 0:
+                break
+            
+            offset = offset + limit
+            
+            for message in messages:
+                all_messages = ' '.join(message['messages'])
+                
+                if CrawlData.objects.filter(object_id=message['id']).first():
+                    continue
+            
+                if not extract_phone(all_messages):
+                    continue
 
-            CrawlData.objects.create(
-                source='fb',
-                uid=message['senders']['data'][0]['id'],
-                username=message['senders']['data'][0]['id'],
-                content=all_messages,
-                phone=extract_phone(all_messages),
-            )
+                CrawlData.objects.create(
+                    source='fb',
+                    object_id=message['id'],
+                    type=CrawlData.TYPE_MSG,
+                    uid=message['senders']['data'][0]['id'],
+                    username=message['senders']['data'][0]['id'],
+                    content=all_messages,
+                    phone=extract_phone(all_messages),
+                )
 
     def do_crawl(self):
         users = FBUser.objects.annotate(id_mod=F('id') % self.shard).filter(
@@ -102,8 +134,8 @@ class Command(BaseCommand):
 
         for id in range(shard):
             crawler = FBCrawler(pidfile=pid_path, shard=shard, id=id)
-            # crawler.do_crawl()
-
+            crawler.do_crawl()
+            exit(0)
             if action == 'start':
                 try:
                     pid = os.fork()
