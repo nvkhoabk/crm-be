@@ -82,7 +82,7 @@ class SipService:
                                                                                                limit, page)
 
         if sip_id:
-            uri += '&user{}'.format(sip_id)
+            uri += '&user={}'.format(sip_id)
 
         if from_date and to_date:
             uri += '&filters={{"initDate":"{}", "endDate":"{}"}}'.format(from_date, to_date)

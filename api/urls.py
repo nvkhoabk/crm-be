@@ -70,7 +70,8 @@ urlpatterns = [
     path('callcenter/get_company_call_history/', call_center.GetCompanyCallHistoryView.as_view(), name='callcenter.get_company_call_history'),
     path('callcenter/get_user_call_history/', call_center.GetUserCallHistoryView.as_view(), name='callcenter.get_user_call_history'),
     path('callcenter/get_call_report/', call_center.GetCallReportView.as_view(), name='callcenter.get_call_report'),
-    path('callcenter/get_external_report/', call_center.GetCallReportView.as_view(), name='callcenter.get_external_report'),
+    path('callcenter/get_external_report/', call_center.GetExternalPaymentReportView.as_view(), name='callcenter.get_external_report'),
+    path('callcenter/get_credit_payment_report/', call_center.GetCreditPaymentReportView.as_view(), name='callcenter.get_external_report'),
 
     path('callcenter/create_agent_register/', call_center.CreateAgentRegisterCenterView.as_view(), name='callcenter.create_agent_register'),
     path('callcenter/delete_agent_register/', call_center.DeleteAgentRegisterCenterView.as_view(), name='callcenter.delete_agent_register'),

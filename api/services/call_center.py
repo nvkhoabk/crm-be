@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister
+from api.const import CALL_DIRECTION
+from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory
 from api.models.organization import Company, UserRole
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
@@ -337,9 +338,9 @@ class FilterAgentRegisterService(BaseCallCenterService):
         return query_set
 
 
-class GetExternalReportService(BaseCallCenterService):
+class GetExternalPaymentReportService(BaseCallCenterService):
     def __init__(self):
-        self.report = dict()
+        self.report = list()
 
     def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -351,40 +352,131 @@ class GetExternalReportService(BaseCallCenterService):
 
             sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
 
-            from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
-            to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
-            month = kwargs['filter']['from_date']
-            while month < kwargs['filter']['to_date']:
+            from_date = timezone.now()
+            to_date = timezone.now()
+
+            if kwargs['report_type'] == 'CURRENT_MONTH':
+                call_center = CallCenter.objects.get(company_id=sip_info.company_id)
+                from_date = call_center.created_at - relativedelta(months=1)
+                to_date = call_center.payment_date
+
+            if kwargs['report_type'] == 'PREVIOUS_MONTH':
+                call_center_history = CallCenterPaymentHistory.objects.filter(company_id=sip_info.company_id).order_by('-id').first()
+                from_date = call_center_history.created_at
+                to_date = call_center_history.payment_date
+
+            month = from_date
+            while month < to_date:
                 month_str = month.strftime('%Y%m')
 
                 call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
                                                                 kwargs.get('page'), month_str, from_date, to_date)
-                self.process_call_report(call_history)
+                self.process_external_call(call_history)
                 month += relativedelta(months=1)
 
-            return list(self.report.values())
+            return self.report
 
         except CallAgent.DoesNotExist:
             raise CallAgentNotFound()
+        except CallCenter.DoesNotExist:
+            raise CallCenterNotFound()
+        except CallCenterPaymentHistory.DoesNotExist:
+            raise CallCenterNotFound()
 
-    def process_call_report(self, call_history):
-        for history in call_history:
-            if history['ext'] not in self.report:
-                self.report[history['ext']] = {
-                    'agent_name': history['ext'],
-                    'number_call_out': 0,
-                    'duration_call_out': 0,
-                    'number_call_in': 0,
-                    'duration_call_in': 0,
-                    'total_duration': 0
-                }
+    def process_external_call(self, call_history):
+        for call in call_history:
+            if call['direction'] == CALL_DIRECTION.OUTGOING and self.is_external_number(call['dest_number']):
+                self.report.append(call)
 
-            if history['direction'] == 'outgoing':
-                self.report[history['ext']]['number_call_out'] += 1
-                self.report[history['ext']]['duration_call_out'] += int(history['duration'])
+    @staticmethod
+    def is_external_number(number):
+        if len(number) == 10:
+            return number[0:2] == '02' or number[0:2] == '05'
 
-            if history['direction'] == 'incoming':
-                self.report[history['ext']]['number_call_in'] += 1
-                self.report[history['ext']]['duration_call_in'] += int(history['duration'])
+        if len(number) == 11:
+            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
+                                                                                          0:3] == '092' or number[
+                                                                                                           0:3] == '099'
+        return False
 
-            self.report[history['ext']]['total_duration'] += int(history['duration'])
+
+class GetCreditPaymentReportService(BaseCallCenterService):
+    def __init__(self):
+        self.report = list()
+
+    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
+
+            from_date = timezone.now()
+            to_date = timezone.now()
+            charge_by = ''
+
+            if kwargs['report_type'] == 'CURRENT_MONTH':
+                call_center = CallCenter.objects.get(company_id=sip_info.company_id)
+                from_date = call_center.created_at - relativedelta(months=1)
+                to_date = call_center.payment_date
+                charge_by = call_center.charge_by
+
+            if kwargs['report_type'] == 'PREVIOUS_MONTH':
+                call_center_history = CallCenterPaymentHistory.objects.filter(company_id=sip_info.company_id).order_by(
+                    '-id').first()
+                from_date = call_center_history.created_at - relativedelta(months=1)
+                to_date = call_center_history.payment_date
+                charge_by = call_center_history.charge_by
+
+            if charge_by == 'AGENT':
+                self.calculate_by_agent(call_center)
+
+            if charge_by == 'MINUTE':
+                month = from_date
+                while month < to_date:
+                    month_str = month.strftime('%Y%m')
+
+                    call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
+                                                                    kwargs.get('page'), month_str, from_date, to_date)
+                    self.process_external_call(call_history)
+                    month += relativedelta(months=1)
+
+            return self.report
+
+        except CallAgent.DoesNotExist:
+            raise CallAgentNotFound()
+        except CallCenter.DoesNotExist:
+            raise CallCenterNotFound()
+        except CallCenterPaymentHistory.DoesNotExist:
+            raise CallCenterNotFound()
+
+    def calculate_by_agent(self, call_center):
+        agent_register_list = AgentRegister.objects.filter(company_id=call_center.company_id)
+        total = 0
+        for agent_register in agent_register_list:
+            total += agent_register.number * self.calculate_agent_fee(agent_register.charge_from,
+                                                                      agent_register.charge_to, call_center.agent_fee)
+
+        return total
+
+    def calculate_agent_fee(self, start_date, end_date, fee_per_month):
+        pass
+
+    def process_external_call(self, call_history):
+        for call in call_history:
+            if call['direction'] == CALL_DIRECTION.OUTGOING and self.is_external_number(call['dest_number']):
+                self.report.append(call)
+
+    @staticmethod
+    def is_external_number(number):
+        if len(number) == 10:
+            return number[0:2] == '02' or number[0:2] == '05'
+
+        if len(number) == 11:
+            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
+                                                                                          0:3] == '092' or number[
+                                                                                                           0:3] == '099'
+        return False

@@ -12,8 +12,8 @@ class CallCenter(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)
     charge_by = models.CharField(max_length=128)
     payment_method = models.CharField(max_length=128)
-    payment_date = models.IntegerField()
-    payment_notify = models.IntegerField()
+    payment_date = models.DateField()
+    payment_notify = models.DateField()
     agent_fee = models.FloatField()
     minute_fee = models.TextField(max_length=1024)
     external_fee = models.FloatField()
@@ -58,3 +58,22 @@ class AgentRegister(BaseModel):
 
     class Meta:
         db_table = 'agent_register'
+
+
+class CallCenterPaymentHistory(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)
+    charge_by = models.CharField(max_length=128)
+    payment_method = models.CharField(max_length=128)
+    payment_date = models.DateField()
+    payment_notify = models.DateField()
+    agent_fee = models.FloatField()
+    minute_fee = models.TextField(max_length=1024)
+    external_fee = models.FloatField()
+    sip_fee_calculation = models.CharField(max_length=128)
+    call_center_user = models.CharField(max_length=256)
+    call_center_password = models.CharField(max_length=1024)
+    discount_type = models.CharField(max_length=128, null=True)
+    discount_value = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'callcenter_payment_history'

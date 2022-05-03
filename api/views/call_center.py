@@ -143,8 +143,8 @@ class GetAgentsView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         get_agent_list_service = call_center_service.GetAgentsService()
-        user = get_agent_list_service.serve(request, cookies)
-        return self.get_response(results=user, request=request,
+        results = get_agent_list_service.serve(request, cookies)
+        return self.get_response(results=results, request=request,
                                  serializer=call_center_serializer.GetAgentsResponseSerializer)
 
 
@@ -166,8 +166,8 @@ class UpdateAgentsView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         update_agent_list_service = call_center_service.UpdateAgentService()
-        user = update_agent_list_service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=user, request=request,
+        results = update_agent_list_service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
                                  serializer=call_center_serializer.UpdateAgentsResponseSerializer)
 
 
@@ -246,8 +246,8 @@ class GetCompanyCallHistoryView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.GetCompanyCallHistoryService()
-        user = service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=user, request=serializer.validated_data,
+        results = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.GetCompanyCallHistoryResponseSerializer)
 
 
@@ -270,8 +270,8 @@ class GetUserCallHistoryView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.GetUserCallHistoryService()
-        user = service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=user, request=serializer.validated_data,
+        results = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.GetUserCallHistoryResponseSerializer)
 
 
@@ -293,8 +293,8 @@ class GetCallReportView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.GetCallReportService()
-        user = service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=user, request=serializer.validated_data,
+        results = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.GetCallReportResponseSerializer)
 
 
@@ -368,7 +368,7 @@ class FilterAgentRegisterCenterView(BaseAPIView):
                                  serializer=call_center_serializer.FilterAgentRegisterResponseSerializer)
 
 
-class GetExternalReportView(BaseAPIView):
+class GetExternalPaymentReportView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated]
     serializer_class = call_center_serializer.GetExternalPaymentReportRequestSerializer
@@ -385,7 +385,30 @@ class GetExternalReportView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        service = call_center_service.GetCallReportService()
-        user = service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=user, request=serializer.validated_data,
+        service = call_center_service.GetExternalPaymentReportService()
+        results = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.GetExternalPaymentReportResponseSerializer)
+
+
+class GetCreditPaymentReportView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = call_center_serializer.GetCreditPaymentRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Get credit payment report',
+        operation_description='Get credit payment report',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.GetCreditPaymentResponseSerializer,
+            exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.GetExternalPaymentReportService()
+        results = service.serve(request, cookies, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=call_center_serializer.GetCreditPaymentResponseSerializer)
