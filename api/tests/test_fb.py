@@ -5,7 +5,7 @@ import re
 from api.fb.page import FBPageUtil
 from api.utils.phone import extract_phone
 from api.services.crawl import CrawlService
-from api.models.fbdata import FBPage
+from api.models.data import FBPage
 
 
 class TestCrawl(TestCase):

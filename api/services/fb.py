@@ -3,7 +3,7 @@ from api.models.article import Article
 from api.common.cookies import Cookies
 from django.shortcuts import redirect
 from pyfacebook import GraphAPI
-from api.models.fbdata import FBUser, FBPage
+from api.models.data import FBUser, FBPage
 from django.conf import settings
 from api.fb.page import FBPageUtil
 import base64

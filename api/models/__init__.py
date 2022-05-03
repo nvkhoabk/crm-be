@@ -1,1 +1,1 @@
-from api.models.fbdata import *
+from api.models.data import *

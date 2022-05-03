@@ -71,7 +71,7 @@ class FBMessage(BaseModel):
         db_table = 'fb_messages'
 
 
-class CrawData(BaseModel):
+class CrawlData(BaseModel):
     SOURCE_CHOICES = (
         ('fb', 'fb'),
         ('zalo', 'zalo'),
@@ -79,10 +79,20 @@ class CrawData(BaseModel):
     STATUS_CHOICES = (
         ('init', 'init'),
     )
+
+    TYPE_POST = 'post'
+    TYPE_MSG = 'msg'
+    
+    TYPE_CHOICES = (
+        (TYPE_POST, TYPE_POST),
+        (TYPE_MSG, TYPE_MSG),
+    )
     
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     source = models.CharField(db_index=True, max_length=64, choices=SOURCE_CHOICES, default='fb')
+    type = models.CharField(db_index=True, max_length=64, choices=TYPE_CHOICES, default=TYPE_POST)
+    object_id = models.CharField(db_index=True, max_length=64)
     ref_link = models.CharField(max_length=2048, default='')
     uid = models.CharField(db_index=True, max_length=64, default='')
     username = models.CharField(max_length=1024, default='')

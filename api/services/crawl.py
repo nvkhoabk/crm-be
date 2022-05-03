@@ -1,7 +1,7 @@
 import json
 from api.common.base_service import BaseService
 from api.fb.page import FBPageUtil
-from api.models.fbdata import FBComment, FBPage, FBPost, FBMessage
+from api.models.data import FBComment, FBPage, FBPost, FBMessage
 from api.utils.phone import extract_phone
 
 
