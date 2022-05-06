@@ -68,6 +68,7 @@ class FBLoginCallBackService(BaseService):
                 user=user,
             )
         user.access_token = api.access_token
+        user.need_crawl = True
         user.save()
         
         pages = fb.get_pages()

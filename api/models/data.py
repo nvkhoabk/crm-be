@@ -13,6 +13,7 @@ class FBUser(BaseModel):
     name = models.CharField(max_length=1024)
     access_token = models.CharField(max_length=4096, default='')
     expire_time = models.IntegerField(default=0)
+    need_crawl = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'fb_users'

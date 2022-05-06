@@ -98,7 +98,8 @@ class FBCrawler(Daemon):
 
     def do_crawl(self):
         users = FBUser.objects.annotate(id_mod=F('id') % self.shard).filter(
-            id_mod=self.id
+            id_mod=self.id,
+            need_crawl=True,
         )[:self.BULK_SIZE]
 
         for user in users:
@@ -106,8 +107,8 @@ class FBCrawler(Daemon):
                 user=user
             )
             for page in fbpages:
-                posts = self.crawl_posts(page)
-                messages = self.crawl_messages(page)
+                self.crawl_posts(page)
+                self.crawl_messages(page)
 
     def run(self):
         while True:
@@ -134,8 +135,8 @@ class Command(BaseCommand):
 
         for id in range(shard):
             crawler = FBCrawler(pidfile=pid_path, shard=shard, id=id)
-            crawler.do_crawl()
-            exit(0)
+            # crawler.do_crawl()
+            # exit(0)
             if action == 'start':
                 try:
                     pid = os.fork()
