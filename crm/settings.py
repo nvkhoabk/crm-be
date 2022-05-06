@@ -188,6 +188,7 @@ FIXTURE_DIRS = (
 )
 
 SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
         'basic': {
             'type': 'basic'
