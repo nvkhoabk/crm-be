@@ -95,8 +95,8 @@ class EnableCallCenterView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        disable_call_center_service = call_center_service.DisableCallCenterService()
-        call_center = disable_call_center_service.serve(
+        enable_call_center_service = call_center_service.EnableCallCenterService()
+        call_center = enable_call_center_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=call_center, request=request,
                                  serializer=call_center_serializer.EnableCallCenterResponseSerializer)

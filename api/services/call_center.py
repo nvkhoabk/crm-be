@@ -28,7 +28,7 @@ class CreateCallCenterService(BaseService):
             try:
                 Company.objects.get(pk=kwargs['company_id'])
                 if kwargs.get('minute_fee') is not None:
-                    kwargs['minute_fee'] = json.dumps(kwargs.get('minute_fee'))
+                    kwargs['minute_fee'] = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
 
                 call_center = CallCenter.objects.create(**kwargs)
                 self.create_agent_list(call_center)
@@ -76,7 +76,7 @@ class EnableCallCenterService(BaseCallCenterService):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
-            call_center.is_enable = False
+            call_center.is_enable = True
             call_center.save()
 
             return call_center
@@ -91,7 +91,7 @@ class DisableCallCenterService(BaseCallCenterService):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
-            call_center.is_enable = True
+            call_center.is_enable = False
             call_center.save()
 
             call_agents = CallAgent.objects.filter(company_id=kwargs['company_id'])
@@ -99,7 +99,7 @@ class DisableCallCenterService(BaseCallCenterService):
             for agent in call_agents:
                 agent.deleted_at = timezone.now()
 
-            call_agents.bulk_update(fields=['deleted_at'])
+            call_agents.bulk_update(call_agents, fields=['deleted_at'])
             return call_center
         except CallCenter.DoesNotExist as e:
             raise CallCenterNotFound()
