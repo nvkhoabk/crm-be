@@ -96,4 +96,7 @@ urlpatterns = [
     path('fb/login/', fb.FBLoginView.as_view(), name='fb.login'),
     path('fb/login/callback', fb.FBLoginCallBackView.as_view(), name='fb.login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
+
+    # Data management
+    # path('data/filter_data/', data.FilterDataView.as_view(), name='data.filter_data'),
 ]

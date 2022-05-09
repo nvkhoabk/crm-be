@@ -103,3 +103,25 @@ class CrawlData(BaseModel):
 
     class Meta:
         db_table = 'crawl_data'
+
+
+class Customer(models.Model):
+    name = models.CharField(db_index=True, max_length=255)
+    phone = models.CharField(db_index=True, max_length=64)
+    address = models.CharField(max_length=2048)
+   
+    class Meta:
+        db_table = 'customers'
+
+
+class Data(models.Model):
+    created_date = models.DateField(db_index=True)
+    price = models.IntegerField(default=0)
+    debt = models.IntegerField(default=0)
+    due_date = models.DateField(db_index=True)
+    annual_debt = models.IntegerField(default=0)
+    pic = models.ForeignKey(User, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'data'
