@@ -4,7 +4,8 @@ import time
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
-from api.models.data import CrawlData, FBPage, FBUser
+from api.models.data import CrawlData, ZaloOA
+from api.zalo.zutils import ZaloPage
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from pyfacebook import FacebookApi
@@ -120,6 +121,56 @@ class FBCrawler(Daemon):
                 time.sleep(self.TIME)
 
 
+class ZaloCrawler(Daemon):
+    BULK_SIZE = 10
+    TIME = 5
+    START_TIME = 1651289937
+
+    def __init__(self, pidfile, shard=1, id=0):
+        pidfile = '{}_{}'.format(pidfile, id)
+        self.shard = shard
+        self.id = id
+        super().__init__(pidfile)
+      
+    def crawl_messages(self, oa):
+        zalo = ZaloPage(access_token=oa.access_token)
+
+        followers = zalo.get_followers()
+        for user in followers:
+            messages = zalo.get_follower_message(user)
+            all_messages = '\n'.join(messages)
+
+            if not extract_phone(all_messages):
+                continue
+            CrawlData.objects.create(
+                    source='zalo',
+                    object_id=user,
+                    type=CrawlData.TYPE_MSG,
+                    uid=user,
+                    username=user,
+                    content=all_messages,
+                    phone=extract_phone(all_messages),
+                )
+
+    def do_crawl(self):
+        oas = ZaloOA.objects.annotate(id_mod=F('id') % self.shard).filter(
+            id_mod=self.id,
+            need_crawl=True,
+        )[:self.BULK_SIZE]
+
+        for oa in oas:
+            self.crawl_messages(oa)
+
+    def run(self):
+        while True:
+            try:
+                self.do_crawl() 
+            except Exception as e:
+                pass
+            finally:
+                time.sleep(self.TIME)
+
+
 class Command(BaseCommand):
     help = 'Runs a process as a daemon'
 
@@ -133,19 +184,36 @@ class Command(BaseCommand):
         pid_path = options['pid']
         shard = int(options['shard'])
 
+        fb_path = pid_path + '.fb'
+         
         for id in range(shard):
-            crawler = FBCrawler(pidfile=pid_path, shard=shard, id=id)
-            # crawler.do_crawl()
-            # exit(0)
+            fb_crawler = FBCrawler(pidfile=fb_path, shard=shard, id=id)
             if action == 'start':
                 try:
                     pid = os.fork()
                     if pid == 0:
-                        crawler.start()
+                        fb_crawler.start()
                         sys.exit(0)
                 except OSError as e:
                     sys.stderr.write("fork #1 failed: %d (%s)\n" %
                                      (e.errno, e.strerror))
                     sys.exit(1)
             elif action == 'stop':
-                crawler.stop()
+                fb_crawler.stop()
+        
+        zalo_path = pid_path + '.zalo'
+         
+        for id in range(shard):
+            zalo_crawler = ZaloCrawler(pidfile=zalo_path, shard=shard, id=id)
+            if action == 'start':
+                try:
+                    pid = os.fork()
+                    if pid == 0:
+                        zalo_crawler.start()
+                        sys.exit(0)
+                except OSError as e:
+                    sys.stderr.write("fork #1 failed: %d (%s)\n" %
+                                     (e.errno, e.strerror))
+                    sys.exit(1)
+            elif action == 'stop':
+                zalo_crawler.stop()

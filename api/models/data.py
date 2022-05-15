@@ -72,6 +72,29 @@ class FBMessage(BaseModel):
         db_table = 'fb_messages'
 
 
+class ZaloOA(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    access_token = models.CharField(max_length=4096, default='')
+    oa_id = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    need_crawl = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'zalo_oas'
+     
+
+class ZaloMessage(BaseModel):
+    oa = models.ForeignKey(ZaloOA, on_delete=models.CASCADE)
+    message_id = models.CharField(max_length=64, db_index=True)
+    user_id = models.CharField(max_length=64)
+    message = models.TextField()
+    phone = models.CharField(max_length=64, default='', null=True) 
+
+    class Meta:
+        db_table = 'zalo_messages'
+
+
 class CrawlData(BaseModel):
     SOURCE_CHOICES = (
         ('fb', 'fb'),

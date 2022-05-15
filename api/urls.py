@@ -3,7 +3,7 @@ from api.views import auth
 from api.views import manage
 from api.views import product
 from api.views import call_center
-from api.views import fb
+from api.views import crawl
 from api.views import data
 
 from rest_framework_simplejwt.views import (
@@ -93,10 +93,9 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view()),
 
     # FB crawler
-    path('fb/login/', fb.FBLoginView.as_view(), name='fb.login'),
-    path('fb/login/callback', fb.FBLoginCallBackView.as_view(), name='fb.login_callback'),
+    path('fb/login/', crawl.FBLoginView.as_view(), name='data.fb_login'),
+    path('fb/login/callback', crawl.FBLoginCallBackView.as_view(), name='data.fb_login_callback'),
+    path('zalo/login/', crawl.ZaloLoginView.as_view(), name='data.zalo_login'),
+    path('zalo/login/callback', crawl.ZaloLoginCallBackView.as_view(), name='data.zalo_login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
-
-    # Data management
-    # path('data/filter_data/', data.FilterDataView.as_view(), name='data.filter_data'),
 ]
