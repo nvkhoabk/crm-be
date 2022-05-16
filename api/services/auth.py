@@ -107,10 +107,12 @@ class AuthGetUserInfoService(BaseService):
         }
 
         try:
-            call_agent = CallAgent.objects.get(user_id=user, deleted_at__isnull=True)
-            response['call_center']['ext'] = call_agent.name
-            response['call_center']['secret'] = call_agent.secret
-            response['call_center']['sip_server'] = Const.SIP_SERVER
+            call_agents = CallAgent.objects.filter(user_id=user, deleted_at__isnull=True)
+            if len(call_agents) > 0:
+                call_agent = call_agents[0]
+                response['call_center']['ext'] = call_agent.name
+                response['call_center']['secret'] = call_agent.secret
+                response['call_center']['sip_server'] = Const.SIP_SERVER
         except CallAgent.DoesNotExist:
             pass
 

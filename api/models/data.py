@@ -13,6 +13,7 @@ class FBUser(BaseModel):
     name = models.CharField(max_length=1024)
     access_token = models.CharField(max_length=4096, default='')
     expire_time = models.IntegerField(default=0)
+    need_crawl = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'fb_users'
@@ -71,6 +72,29 @@ class FBMessage(BaseModel):
         db_table = 'fb_messages'
 
 
+class ZaloOA(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    access_token = models.CharField(max_length=4096, default='')
+    oa_id = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    need_crawl = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'zalo_oas'
+     
+
+class ZaloMessage(BaseModel):
+    oa = models.ForeignKey(ZaloOA, on_delete=models.CASCADE)
+    message_id = models.CharField(max_length=64, db_index=True)
+    user_id = models.CharField(max_length=64)
+    message = models.TextField()
+    phone = models.CharField(max_length=64, default='', null=True) 
+
+    class Meta:
+        db_table = 'zalo_messages'
+
+
 class CrawlData(BaseModel):
     SOURCE_CHOICES = (
         ('fb', 'fb'),
@@ -102,3 +126,25 @@ class CrawlData(BaseModel):
 
     class Meta:
         db_table = 'crawl_data'
+
+
+class Customer(models.Model):
+    name = models.CharField(db_index=True, max_length=255)
+    phone = models.CharField(db_index=True, max_length=64)
+    address = models.CharField(max_length=2048)
+   
+    class Meta:
+        db_table = 'customers'
+
+
+class Data(models.Model):
+    created_date = models.DateField(db_index=True)
+    price = models.IntegerField(default=0)
+    debt = models.IntegerField(default=0)
+    due_date = models.DateField(db_index=True)
+    annual_debt = models.IntegerField(default=0)
+    pic = models.ForeignKey(User, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'data'

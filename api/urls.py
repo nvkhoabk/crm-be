@@ -3,7 +3,7 @@ from api.views import auth
 from api.views import manage
 from api.views import product
 from api.views import call_center
-from api.views import fb
+from api.views import crawl
 from api.views import data
 
 from rest_framework_simplejwt.views import (
@@ -59,7 +59,7 @@ urlpatterns = [
     path('callcenter/get_callcenter/', call_center.GetCallCenterView.as_view(), name='callcenter.get_callcenter'),
     path('callcenter/update_callcenter/', call_center.UpdateCallCenterView.as_view(), name='callcenter.update_callcenter'),
     path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
-    path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
+    path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.disable_callcenter'),
     path('callcenter/start_callin/', call_center.StartCallInView.as_view(), name='callcenter.start_callin'),
     path('callcenter/end_callin/', call_center.EndCallInView.as_view(), name='callcenter.end_callin'),
     path('callcenter/start_callout/', call_center.StartCallOutView.as_view(), name='callcenter.start_callout'),
@@ -96,7 +96,9 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view()),
 
     # FB crawler
-    path('fb/login/', fb.FBLoginView.as_view(), name='fb.login'),
-    path('fb/login/callback', fb.FBLoginCallBackView.as_view(), name='fb.login_callback'),
+    path('fb/login/', crawl.FBLoginView.as_view(), name='data.fb_login'),
+    path('fb/login/callback', crawl.FBLoginCallBackView.as_view(), name='data.fb_login_callback'),
+    path('zalo/login/', crawl.ZaloLoginView.as_view(), name='data.zalo_login'),
+    path('zalo/login/callback', crawl.ZaloLoginCallBackView.as_view(), name='data.zalo_login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
 ]
