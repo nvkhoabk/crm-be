@@ -27,7 +27,13 @@ class BaseAPIView(APIView):
         auth = auth.authenticate(request)
         if auth:
             request.user = auth[0]
-
+        else:
+            # Extract token from cookie
+            if request.COOKIES.get('Token'): 
+                auth = JWTAuthentication()
+                validated_token = auth.get_validated_token(request.COOKIES.get('Token'))
+                request.user = auth.get_user(validated_token)
+                
     def get_response(self, request=None, results=None, serializer=None, many=False):
         if serializer is not None:
             data = {
