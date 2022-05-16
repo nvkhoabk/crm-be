@@ -81,12 +81,12 @@ class CallCenterPaymentHistory(BaseModel):
 
 class CallLog(BaseModel):
     callid = models.CharField(max_length=256)
-    calldate = models.DateTimeField(required=True)
-    extension = models.CharField(max_length=256, required=True)
-    phone = models.CharField(max_length=32, required=True)
+    calldate = models.DateTimeField()
+    extension = models.CharField(max_length=256)
+    phone = models.CharField(max_length=32)
     duration = models.IntegerField()
     status = models.CharField(max_length=128)
-    recordingfile = models.CharField(max_length=2048, required=True)
+    recordingfile = models.CharField(max_length=2048)
     is_telco = models.BooleanField(default=False)
 
     class Meta:
