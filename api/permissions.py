@@ -91,3 +91,9 @@ class ProductReadPermission(ModuleReadPermission):
 
 class ProductEditPermission(ModuleEditPermission):
     MODULE_NAME = 'PRODUCT_AND_WAREHOUSE'
+
+
+class CallCenterAuthenticated(permissions.BasePermission):
+    def has_permission(self, request, view):
+        secret = request.GET.get('secret', None)
+        return secret == 'Crm1ty@1305Fri'

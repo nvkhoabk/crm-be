@@ -4,7 +4,7 @@ from api.services import exceptions
 from api.services import call_center as call_center_service
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from api.permissions import SuperAdminPermission
+from api.permissions import SuperAdminPermission, CallCenterAuthenticated
 
 
 class CreateCallCenterView(BaseAPIView):
@@ -412,3 +412,59 @@ class GetCreditPaymentReportView(BaseAPIView):
         results = service.serve(request, cookies, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=call_center_serializer.GetCreditPaymentResponseSerializer)
+
+
+class IncomingCallView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [CallCenterAuthenticated]
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Incoming call',
+        operation_description='Incoming call'
+    )
+    def get(self, request, serializer=None, cookies=None, *args, **kwargs):
+        call_center_service.IncomingCallService.serve(request, cookies, *args, **kwargs)
+        request.GET.get('phone', None)
+        request.GET.get('extension', None)
+        request.GET.get('callid', None)
+        return self.get_response()
+
+
+class OutgoingCallView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [CallCenterAuthenticated]
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Outgoing call',
+        operation_description='Outgoing call'
+    )
+    def get(self, request, serializer=None, cookies=None, *args, **kwargs):
+        call_center_service.OutgoingCallService.serve(request, cookies, *args, **kwargs)
+        request.GET.get('secret', None)
+        request.GET.get('phone', None)
+        request.GET.get('extension', None)
+        request.GET.get('callid', None)
+        return self.get_response()
+
+
+class CallAnsweredView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [CallCenterAuthenticated]
+    serializer_class = call_center_serializer.CallLogRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Call answered',
+        operation_description='Call answered',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.CallLogResponseSerializer,
+            exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        call_center_service.CallAnsweredService.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response()
+

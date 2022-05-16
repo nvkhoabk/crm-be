@@ -279,3 +279,17 @@ class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
     total_fee = serializers.IntegerField()
     payment_date = serializers.DateField()
     payment_type = serializers.CharField(max_length=256)
+
+
+class CallLogRequestSerializer(serializers.Serializer):
+    callid = serializers.CharField(max_length=256, required=True)
+    calldate = serializers.DateTimeField(required=True)
+    extension = serializers.CharField(max_length=256, required=True)
+    phone = serializers.CharField(max_length=32, required=True)
+    duration = serializers.IntegerField(required=True)
+    status = serializers.CharField(max_length=128)
+    recordingfile = serializers.CharField(max_length=2048, required=True)
+
+
+class CallLogResponseSerializer(BaseResponseSerializer):
+    None

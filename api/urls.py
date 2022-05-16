@@ -77,6 +77,9 @@ urlpatterns = [
     path('callcenter/create_agent_register/', call_center.CreateAgentRegisterCenterView.as_view(), name='callcenter.create_agent_register'),
     path('callcenter/delete_agent_register/', call_center.DeleteAgentRegisterCenterView.as_view(), name='callcenter.delete_agent_register'),
     path('callcenter/filter_agent_register/', call_center.FilterAgentRegisterCenterView.as_view(), name='callcenter.filter_agent_register'),
+    path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
+    path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),
+    path('callcenter/call_answered', call_center.CallAnsweredView.as_view(), name='callcenter.call_answered'),
 
     # Product
     path('product/create_product/', product.CreateProductView.as_view(), name='product.create_product'),

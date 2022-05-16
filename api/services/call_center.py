@@ -7,7 +7,8 @@ from django.utils import timezone
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import CALL_DIRECTION
-from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory
+from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
+    CallLog
 from api.models.organization import Company, UserRole
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
@@ -469,6 +470,35 @@ class GetCreditPaymentReportService(BaseCallCenterService):
         for call in call_history:
             if call['direction'] == CALL_DIRECTION.OUTGOING and self.is_external_number(call['dest_number']):
                 self.report.append(call)
+
+    @staticmethod
+    def is_external_number(number):
+        if len(number) == 10:
+            return number[0:2] == '02' or number[0:2] == '05'
+
+        if len(number) == 11:
+            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
+                                                                                          0:3] == '092' or number[
+                                                                                                           0:3] == '099'
+        return False
+
+
+class IncomingCallService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        pass
+
+
+class OutgoingCallService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        pass
+
+
+class CallAnsweredService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        call_log = CallLog(**kwargs)
+        call_log.is_telco = self.is_external_number(call_log.phone)
+        call_log.save()
+        return call_log
 
     @staticmethod
     def is_external_number(number):
