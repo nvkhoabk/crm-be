@@ -416,7 +416,7 @@ class GetCreditPaymentReportView(BaseAPIView):
 
 class IncomingCallView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [CallCenterAuthenticated]
+    permission_classes = []
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
@@ -424,7 +424,8 @@ class IncomingCallView(BaseAPIView):
         operation_description='Incoming call'
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
-        call_center_service.IncomingCallService.serve(request, cookies, *args, **kwargs)
+        service = call_center_service.IncomingCallService()
+        service.serve(request, cookies, *args, **kwargs)
         request.GET.get('phone', None)
         request.GET.get('extension', None)
         request.GET.get('callid', None)
@@ -433,7 +434,7 @@ class IncomingCallView(BaseAPIView):
 
 class OutgoingCallView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [CallCenterAuthenticated]
+    permission_classes = []
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
@@ -441,7 +442,8 @@ class OutgoingCallView(BaseAPIView):
         operation_description='Outgoing call'
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
-        call_center_service.OutgoingCallService.serve(request, cookies, *args, **kwargs)
+        service = call_center_service.OutgoingCallService()
+        service.serve(request, cookies, *args, **kwargs)
         request.GET.get('secret', None)
         request.GET.get('phone', None)
         request.GET.get('extension', None)
@@ -451,7 +453,7 @@ class OutgoingCallView(BaseAPIView):
 
 class CallAnsweredView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [CallCenterAuthenticated]
+    permission_classes = []
     serializer_class = call_center_serializer.CallLogRequestSerializer
 
     @swagger_auto_schema(
@@ -465,6 +467,7 @@ class CallAnsweredView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        call_center_service.CallAnsweredService.serve(request, cookies, *args, **serializer.validated_data)
+        service = call_center_service.CallAnsweredService()
+        service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response()
 
