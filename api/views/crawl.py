@@ -43,8 +43,7 @@ class FBLoginCallBackView(BaseAPIView):
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
         fb_login_call_back_service = crawl_service.FBLoginCallBackService()
-        result = fb_login_call_back_service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=result, request=request, serializer=fb_serializer.FBLoginCallBackResponseSerializer)
+        return fb_login_call_back_service.serve(request, cookies, **serializer.validated_data)
 
 
 class ZaloLoginView(BaseAPIView):
@@ -80,5 +79,4 @@ class ZaloLoginCallBackView(BaseAPIView):
     )
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
         zalo_login_call_back_service = crawl_service.ZaloLoginCallBackService()
-        result = zalo_login_call_back_service.serve(request, cookies, **serializer.validated_data)
-        return self.get_response(results=result, request=request, serializer=zalo_serializer.ZaloLoginCallBackResponseSerializer)
+        return zalo_login_call_back_service.serve(request, cookies, **serializer.validated_data)

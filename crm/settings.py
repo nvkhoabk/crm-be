@@ -250,6 +250,7 @@ SIMPLE_JWT = {
 CORS_ALLOW_HEADERS = ('content-disposition', 'accept-encoding',
                       'content-type', 'accept', 'origin', 'authorization', 'token')
 
+CRAWLER_REDIRECT_URI = 'https://crm.ity.vn'
 
 FB_APP_ID = '318537180209438'
 FB_APP_SECRET = 'c091a3a9b59e1475abc049f9b352cc72' 

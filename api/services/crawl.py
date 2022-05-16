@@ -37,6 +37,7 @@ class FBLoginService(BaseService):
 class FBLoginCallBackService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         state = kwargs.get('state')
+        state = state.replace(' ', '+')
         aes = AESCipher(settings.FB_SECRET_KEY)
 
         try:
@@ -97,7 +98,7 @@ class FBLoginCallBackService(BaseService):
                     expire_time=0,
                 )
 
-        return {}
+        return redirect(settings.CRAWLER_REDIRECT_URI)
 
 
 class CrawlService(BaseService):
@@ -183,6 +184,7 @@ class ZaloLoginCallBackService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         code = kwargs.get('code')
         state = kwargs.get('state')
+        state = state.replace(' ', '+')
         aes = AESCipher(settings.ZALO_SECRET_KEY)
 
         try:
@@ -221,5 +223,5 @@ class ZaloLoginCallBackService(BaseService):
         user.need_crawl = True
         user.save()
 
-        return {}
+        return redirect(settings.CRAWLER_REDIRECT_URI)
  
