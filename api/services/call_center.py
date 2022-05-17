@@ -13,7 +13,7 @@ from api.models.organization import Company, UserRole
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
-                                     AgentRegisterNotFound, SipAPIError)
+                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound)
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -32,7 +32,7 @@ class CreateCallCenterService(BaseService):
                     kwargs['minute_fee'] = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
 
                 call_center = CallCenter.objects.create(**kwargs)
-                self.create_agent_list(call_center)
+                #self.create_agent_list(call_center)
 
                 return call_center
             except IntegrityError as e:
@@ -40,40 +40,40 @@ class CreateCallCenterService(BaseService):
             except Company.DoesNotExist:
                 raise ManageCompanyNotFound()
 
-    def create_agent_list(self, call_center):
-        sip_service = SipService()
-        sip_service.login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
-        agent_list = sip_service.get_agent_list(call_center.company_id)
-        call_agents = []
-        for agent in agent_list:
-            call_agents.append(CallAgent(company_id=call_center.company_id, name=agent['ext'], secret=agent['secret'],
-                                         sip_id=agent['sip_id']))
+    # def create_agent_list(self, call_center):
+    #     sip_service = SipService()
+    #     sip_service.login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
+    #     agent_list = sip_service.get_agent_list(call_center.company_id)
+    #     call_agents = []
+    #     for agent in agent_list:
+    #         call_agents.append(CallAgent(company_id=call_center.company_id, name=agent['ext'], secret=agent['secret'],
+    #                                      sip_id=agent['sip_id']))
+    #
+    #     CallAgent.objects.bulk_create(call_agents)
+#
+#
+# class BaseService(BaseService):
+#     def serve(self, request, cookies: Cookies, *args, **kwargs):
+#         pass
+#
+#     def serve(self, request, cookies: Cookies, *args, **kwargs):
+#         try:
+#             return self.serve(request, cookies, *args, **kwargs)
+#         except SipAPIError:
+#             # Try to login
+#             filter = {
+#                 'user': request.user,
+#                 'deleted_at__isnull': True
+#             }
+#             user_roles = UserRole.objects.filter(**filter)
+#             call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+#             SipService().login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
+#
+#         return self.serve(request, cookies, *args, **kwargs)
 
-        CallAgent.objects.bulk_create(call_agents)
 
-
-class BaseCallCenterService(BaseService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
-        pass
-
+class EnableCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        try:
-            return self.serve_by_sip_token(request, cookies, *args, **kwargs)
-        except SipAPIError:
-            # Try to login
-            filter = {
-                'user': request.user,
-                'deleted_at__isnull': True
-            }
-            user_roles = UserRole.objects.filter(**filter)
-            call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
-            SipService().login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
-
-        return self.serve_by_sip_token(request, cookies, *args, **kwargs)
-
-
-class EnableCallCenterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
@@ -87,8 +87,8 @@ class EnableCallCenterService(BaseCallCenterService):
             raise ManageCompanyNotFound()
 
 
-class DisableCallCenterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class DisableCallCenterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
@@ -108,8 +108,8 @@ class DisableCallCenterService(BaseCallCenterService):
             raise ManageCompanyNotFound()
 
 
-class GetCallCenterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class GetCallCenterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             return CallCenter.objects.get(company_id=kwargs['company_id'])
@@ -119,8 +119,8 @@ class GetCallCenterService(BaseCallCenterService):
             raise ManageCompanyNotFound()
 
 
-class UpdateCallCenterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class UpdateCallCenterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
@@ -149,9 +149,6 @@ class UpdateCallCenterService(BaseCallCenterService):
             if kwargs.get('sip_fee_calculation'):
                 call_center.sip_fee_calculation = kwargs.get('sip_fee_calculation')
 
-            if kwargs.get('call_center_user'):
-                call_center.call_center_user = kwargs.get('call_center_user')
-
             if kwargs.get('discount_type'):
                 call_center.discount_type = kwargs.get('discount_type')
                 call_center.discount_value = 0
@@ -168,8 +165,8 @@ class UpdateCallCenterService(BaseCallCenterService):
             raise ManageCompanyNotFound()
 
 
-class GetAgentsService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class GetAgentsService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
             'user': request.user,
             'deleted_at__isnull': True
@@ -179,8 +176,8 @@ class GetAgentsService(BaseCallCenterService):
         return CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
 
-class UpdateAgentService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class UpdateAgentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             call_agents = []
             for updating_value in kwargs.get('data'):
@@ -194,91 +191,96 @@ class UpdateAgentService(BaseCallCenterService):
             raise CallAgentNotFound()
 
 
-class GetCompanyCallHistoryService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class GetCompanyCallHistoryService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             filter = {
                 'user': request.user,
                 'deleted_at__isnull': True
             }
             user_roles = UserRole.objects.filter(**filter)
-
-            sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
-
             from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
             to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
-            month = kwargs['filter']['from_date'].strftime('%Y%m')
 
-            call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
-                                                            kwargs.get('page'), month, from_date, to_date)
+            call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+            call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                          created_at__gte=from_date, created_at__lte=to_date).order_by('created_at')
 
-            filter_history = []
-            for history in call_history:
-                if kwargs['filter'].get('number') and kwargs['filter'].get('number') not in history['dest_number']:
-                    continue
+            call_history_list = []
+            for call_log in call_logs:
+                call_history_list.append({
+                    'dest_number': call_log.phone,
+                    'calldate': call_log.calldate,
+                    'record_url': call_log.recording,
+                    'direction': call_log.direction,
+                    'duration': call_log.duration
+                })
 
-                if kwargs['filter'].get('user_id') and kwargs['filter'].get('user_id') is not None:
-                    call_agent = CallAgent.objects.get(user_id=kwargs['filter'].get('user_id'))
-                    if history['ext'] != str(call_agent.name):
-                        continue
+            return call_history_list
 
-                filter_history.append(history)
-
-            return filter_history
         except CallAgent.DoesNotExist:
             raise CallAgentNotFound()
 
 
-class GetUserCallHistoryService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class GetUserCallHistoryService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
             'user': request.user,
             'deleted_at__isnull': True
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        call_agent = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        call_agent = CallAgent.objects.filter(user_id=user_roles.first().user_id, deleted_at__isnull=True)
         if not call_agent:
             raise CallAgentNotFound()
+
         call_agent = call_agent.first()
-        sip_info = SipServiceInfo.objects.get(company_id=call_agent.company_id)
 
-        from_date = kwargs.get('from_date')
-        to_date = kwargs.get('to_date')
-        month = timezone.now().strftime('%Y%m')
-        return SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'), kwargs.get('page'), month,
-                                                from_date, to_date, call_agent.sip_id)
+        call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('created_at')
+
+        call_history_list = []
+        for call_log in call_logs:
+            call_history_list.append({
+                'dest_number': call_log.phone,
+                'calldate': call_log.calldate,
+                'record_url': call_log.recording,
+                'direction': call_log.direction,
+                'duration': call_log.duration
+            })
+
+        return call_history_list
 
 
-class GetCallReportService(BaseCallCenterService):
+class GetCallReportService(BaseService):
     def __init__(self):
         self.report = dict()
 
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
-        try:
-            filter = {
-                'user': request.user,
-                'deleted_at__isnull': True
-            }
-            user_roles = UserRole.objects.filter(**filter)
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+        from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
+        to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
 
-            sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
+        call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           created_at__gte=from_date, created_at__lte=to_date).order_by(
+            'created_at')
 
-            from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
-            to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
-            month = kwargs['filter']['from_date']
-            while month < kwargs['filter']['to_date']:
-                month_str = month.strftime('%Y%m')
+        call_history_list = []
+        for call_log in call_logs:
+            call_history_list.append({
+                'dest_number': call_log.phone,
+                'calldate': call_log.calldate,
+                'record_url': call_log.recording,
+                'direction': call_log.direction,
+                'duration': call_log.duration
+            })
 
-                call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
-                                                                kwargs.get('page'), month_str, from_date, to_date)
-                self.process_call_report(call_history)
-                month += relativedelta(months=1)
-
-            return list(self.report.values())
-
-        except CallAgent.DoesNotExist:
-            raise CallAgentNotFound()
+        self.process_call_report(call_history_list)
+        return self.report
 
     def process_call_report(self, call_history):
         for history in call_history:
@@ -303,8 +305,8 @@ class GetCallReportService(BaseCallCenterService):
             self.report[history['ext']]['total_duration'] += int(history['duration'])
 
 
-class CreateAgentRegisterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class CreateAgentRegisterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
             return AgentRegister.objects.create(**kwargs)
@@ -312,16 +314,16 @@ class CreateAgentRegisterService(BaseCallCenterService):
             raise ManageCompanyNotFound()
 
 
-class DeleteAgentRegisterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class DeleteAgentRegisterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             AgentRegister.objects.get(pk=kwargs['id']).delete()
         except AgentRegister.DoesNotExist:
             raise AgentRegisterNotFound()
 
 
-class FilterAgentRegisterService(BaseCallCenterService):
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+class FilterAgentRegisterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = AgentRegister.objects.all()
 
         filters = ['company_id']
@@ -339,11 +341,11 @@ class FilterAgentRegisterService(BaseCallCenterService):
         return query_set
 
 
-class GetExternalPaymentReportService(BaseCallCenterService):
+class GetExternalPaymentReportService(BaseService):
     def __init__(self):
         self.report = list()
 
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             filter = {
                 'user': request.user,
@@ -351,13 +353,11 @@ class GetExternalPaymentReportService(BaseCallCenterService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
-
             from_date = timezone.now()
             to_date = timezone.now()
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
-                call_center = CallCenter.objects.get(company_id=sip_info.company_id)
+                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
                 from_date = call_center.created_at - relativedelta(months=1)
                 to_date = call_center.payment_date
 
@@ -401,11 +401,11 @@ class GetExternalPaymentReportService(BaseCallCenterService):
         return False
 
 
-class GetCreditPaymentReportService(BaseCallCenterService):
+class GetCreditPaymentReportService(BaseService):
     def __init__(self):
         self.report = list()
 
-    def serve_by_sip_token(self, request, cookies: Cookies, *args, **kwargs):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             filter = {
                 'user': request.user,
@@ -483,30 +483,45 @@ class GetCreditPaymentReportService(BaseCallCenterService):
         return False
 
 
+def is_external_number(number):
+    if len(number) == 10:
+        return number[0:2] == '02' or number[0:2] == '05'
+
+    if len(number) == 11:
+        return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
+                                                                                      0:3] == '092' or number[
+                                                                                                       0:3] == '099'
+    return False
+
+
 class IncomingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        pass
+        call_log = CallLog(**kwargs)
+        call_log.is_telco = is_external_number(call_log.phone)
+        call_log.direction = 'incoming'
+        call_log.save()
+        return call_log
 
 
 class OutgoingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        pass
+        call_log = CallLog(**kwargs)
+        call_log.is_telco = is_external_number(call_log.phone)
+        call_log.direction = 'outgoing'
+        call_log.save()
+        return call_log
 
 
 class CallAnsweredService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        call_log = CallLog(**kwargs)
-        call_log.is_telco = self.is_external_number(call_log.phone)
-        call_log.save()
-        return call_log
+        try:
+            call_log = CallLog.objects.get(callid=kwargs.get('callid', None))
+            call_log.calldate = kwargs.get('calldate', None)
+            call_log.duration = kwargs.get('duration', None)
+            call_log.status = kwargs.get('status', None)
+            call_log.recording = kwargs.get('recording', None)
+            call_log.save()
 
-    @staticmethod
-    def is_external_number(number):
-        if len(number) == 10:
-            return number[0:2] == '02' or number[0:2] == '05'
-
-        if len(number) == 11:
-            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
-                                                                                          0:3] == '092' or number[
-                                                                                                           0:3] == '099'
-        return False
+            return call_log
+        except CallLog.DoesNotExist:
+            raise CallLogNotFound()

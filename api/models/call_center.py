@@ -18,8 +18,6 @@ class CallCenter(BaseModel):
     minute_fee = models.TextField(max_length=1024)
     external_fee = models.FloatField()
     sip_fee_calculation = models.CharField(max_length=128)
-    call_center_user = models.CharField(max_length=256)
-    call_center_password = models.CharField(max_length=1024)
     discount_type = models.CharField(max_length=128, null=True)
     discount_value = models.IntegerField(default=0)
     is_enable = models.BooleanField(default=True)
@@ -33,7 +31,6 @@ class CallAgent(BaseModel):
     name = models.CharField(max_length=256)
     secret = models.CharField(max_length=256)
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    sip_id = models.IntegerField()
 
     class Meta:
         db_table = 'call_agent'
@@ -70,8 +67,6 @@ class CallCenterPaymentHistory(BaseModel):
     minute_fee = models.TextField(max_length=1024)
     external_fee = models.FloatField()
     sip_fee_calculation = models.CharField(max_length=128)
-    call_center_user = models.CharField(max_length=256)
-    call_center_password = models.CharField(max_length=1024)
     discount_type = models.CharField(max_length=128, null=True)
     discount_value = models.IntegerField(default=0)
 
@@ -80,14 +75,16 @@ class CallCenterPaymentHistory(BaseModel):
 
 
 class CallLog(BaseModel):
-    callid = models.CharField(max_length=256)
+    callid = models.CharField(max_length=256, db_index=True)
     calldate = models.DateTimeField()
-    extension = models.CharField(max_length=256)
+    extension = models.CharField(max_length=256, db_index=True)
     phone = models.CharField(max_length=32)
     duration = models.IntegerField()
     status = models.CharField(max_length=128)
-    recordingfile = models.CharField(max_length=2048)
+    recording = models.CharField(max_length=2048)
+    direction = models.CharField(max_length=32)
     is_telco = models.BooleanField(default=False)
+    seen = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'call_log'

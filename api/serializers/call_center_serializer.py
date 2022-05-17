@@ -15,7 +15,7 @@ class CallCenterSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallCenter
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
-                  'minute_fee', 'external_fee', 'sip_fee_calculation', 'call_center_user', 'call_center_password',
+                  'minute_fee', 'external_fee', 'sip_fee_calculation',
                   'is_enable', 'discount_type', 'discount_value']
 
 
@@ -63,8 +63,6 @@ class CreateCallCenterRequestSerializer(serializers.Serializer):
     minute_fee = serializers.DictField(required=False)
     external_fee = serializers.FloatField(required=False)
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=True)
-    call_center_user = serializers.CharField(max_length=256, required=True)
-    call_center_password = serializers.CharField(max_length=256, required=True)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
 
@@ -100,8 +98,6 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
     minute_fee = serializers.DictField(required=False)
     external_fee = serializers.FloatField(required=False)
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=False)
-    call_center_user = serializers.CharField(max_length=256, required=False)
-    call_center_password = serializers.CharField(max_length=256, required=False)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
 
@@ -288,7 +284,7 @@ class CallLogRequestSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=32, required=True)
     duration = serializers.IntegerField(required=True)
     status = serializers.CharField(max_length=128)
-    recordingfile = serializers.CharField(max_length=2048, required=True)
+    recording = serializers.CharField(max_length=2048, required=True)
 
 
 class CallLogResponseSerializer(BaseResponseSerializer):

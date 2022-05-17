@@ -124,3 +124,8 @@ class CallAgentNotFound(APIException):
 class AgentRegisterNotFound(APIException):
     code = 3007
     msg = 'Agent Register not found'
+
+
+class CallLogNotFound(APIException):
+    code = 3007
+    msg = 'Call log not found'

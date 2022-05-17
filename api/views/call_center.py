@@ -232,7 +232,6 @@ class GetCompanyCallHistoryView(BaseAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = call_center_serializer.GetCompanyCallHistoryRequestSerializer
     pagination_class = True
-    forward_pagination = True
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
@@ -256,7 +255,6 @@ class GetUserCallHistoryView(BaseAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = call_center_serializer.GetUserCallHistoryRequestSerializer
     pagination_class = True
-    forward_pagination = True
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
