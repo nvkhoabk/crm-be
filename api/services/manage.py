@@ -65,6 +65,24 @@ class UpdateParamService(BaseService):
 class FilterParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Param.objects.all()
+        filters = ['key', 'value', 'group']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'key':
+                query_set = query_set.filter(
+                    key__icontains=value,
+                )
+            if key == 'value':
+                query_set = query_set.filter(
+                    value__icontains=value,
+                )
+            if key == 'group':
+                query_set = query_set.filter(
+                    group__icontains=value,
+                )
         return query_set
 
 
