@@ -1,4 +1,5 @@
 import json
+import math
 
 import requests
 from dateutil.relativedelta import relativedelta
@@ -200,11 +201,12 @@ class GetCompanyCallHistoryService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
             from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
-            to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
+            to_date = (kwargs['filter']['to_date'] + relativedelta(days=1)).strftime('%Y-%m-%d')
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
             call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                          created_at__gte=from_date, created_at__lte=to_date).order_by('created_at')
+                                               calldate__gte=from_date, calldate__lt=to_date).order_by(
+                '-created_at')
 
             call_history_list = []
             for call_log in call_logs:
@@ -236,7 +238,7 @@ class GetUserCallHistoryService(BaseService):
 
         call_agent = call_agent.first()
 
-        call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('created_at')
+        call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
 
         call_history_list = []
         for call_log in call_logs:
@@ -265,13 +267,15 @@ class GetCallReportService(BaseService):
         to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
 
         call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        self.init_call_report(call_agents)
+        
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           created_at__gte=from_date, created_at__lte=to_date).order_by(
-            'created_at')
+                                           created_at__gte=from_date, created_at__lte=to_date, status__isnull=False)
 
         call_history_list = []
         for call_log in call_logs:
             call_history_list.append({
+                'ext': call_log.extension,
                 'dest_number': call_log.phone,
                 'calldate': call_log.calldate,
                 'record_url': call_log.recording,
@@ -280,29 +284,30 @@ class GetCallReportService(BaseService):
             })
 
         self.process_call_report(call_history_list)
-        return self.report
+        return list(self.report.values())
+
+    def init_call_report(self, call_agents):
+        for call_agent in call_agents:
+            self.report[call_agent.name] = {
+                'agent_name': call_agent.name,
+                'number_call_out': 0,
+                'duration_call_out': 0,
+                'number_call_in': 0,
+                'duration_call_in': 0,
+                'total_duration': 0
+            }
 
     def process_call_report(self, call_history):
         for history in call_history:
-            if history['ext'] not in self.report:
-                self.report[history['ext']] = {
-                    'agent_name': history['ext'],
-                    'number_call_out': 0,
-                    'duration_call_out': 0,
-                    'number_call_in': 0,
-                    'duration_call_in': 0,
-                    'total_duration': 0
-                }
-
             if history['direction'] == 'outgoing':
                 self.report[history['ext']]['number_call_out'] += 1
-                self.report[history['ext']]['duration_call_out'] += int(history['duration'])
+                self.report[history['ext']]['duration_call_out'] += history['duration']
 
             if history['direction'] == 'incoming':
                 self.report[history['ext']]['number_call_in'] += 1
-                self.report[history['ext']]['duration_call_in'] += int(history['duration'])
+                self.report[history['ext']]['duration_call_in'] += history['duration']
 
-            self.report[history['ext']]['total_duration'] += int(history['duration'])
+            self.report[history['ext']]['total_duration'] += history['duration']
 
 
 class CreateAgentRegisterService(BaseService):
@@ -356,26 +361,37 @@ class GetExternalPaymentReportService(BaseService):
             from_date = timezone.now()
             to_date = timezone.now()
 
+            call_center = None
+
             if kwargs['report_type'] == 'CURRENT_MONTH':
                 call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
-                from_date = call_center.created_at - relativedelta(months=1)
+                from_date = call_center.payment_date - relativedelta(months=1)
                 to_date = call_center.payment_date
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
-                call_center_history = CallCenterPaymentHistory.objects.filter(company_id=sip_info.company_id).order_by('-id').first()
-                from_date = call_center_history.created_at
-                to_date = call_center_history.payment_date
+                call_center = CallCenterPaymentHistory.objects.filter(
+                    company_id=user_roles.first().company_id).order_by('-id').first()
+                from_date = call_center.payment_date - relativedelta(months=1)
+                to_date = call_center.payment_date
 
-            month = from_date
-            while month < to_date:
-                month_str = month.strftime('%Y%m')
+            call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+            call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                               created_at__gte=from_date, created_at__lte=to_date, is_telco=True,
+                                               direction=CALL_DIRECTION.OUTGOING).order_by('created_at')
 
-                call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
-                                                                kwargs.get('page'), month_str, from_date, to_date)
-                self.process_external_call(call_history)
-                month += relativedelta(months=1)
+            call_history_list = []
+            for call_log in call_logs:
+                call_history_list.append({
+                    'dest_number': call_log.phone,
+                    'calldate': call_log.calldate,
+                    'record_url': call_log.recording,
+                    'direction': call_log.direction,
+                    'duration': call_log.duration,
+                    'fee': call_center.external_fee if call_center is not None else 0,
+                    'chargeable_time': call_log.chargeable_time
+                })
 
-            return self.report
+            return call_history_list
 
         except CallAgent.DoesNotExist:
             raise CallAgentNotFound()
@@ -383,22 +399,6 @@ class GetExternalPaymentReportService(BaseService):
             raise CallCenterNotFound()
         except CallCenterPaymentHistory.DoesNotExist:
             raise CallCenterNotFound()
-
-    def process_external_call(self, call_history):
-        for call in call_history:
-            if call['direction'] == CALL_DIRECTION.OUTGOING and self.is_external_number(call['dest_number']):
-                self.report.append(call)
-
-    @staticmethod
-    def is_external_number(number):
-        if len(number) == 10:
-            return number[0:2] == '02' or number[0:2] == '05'
-
-        if len(number) == 11:
-            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
-                                                                                          0:3] == '092' or number[
-                                                                                                           0:3] == '099'
-        return False
 
 
 class GetCreditPaymentReportService(BaseService):
@@ -496,7 +496,8 @@ def is_external_number(number):
 
 class IncomingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        call_log = CallLog(**kwargs)
+        call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
+                           extension=request.GET.get('extension', None))
         call_log.is_telco = is_external_number(call_log.phone)
         call_log.direction = 'incoming'
         call_log.save()
@@ -505,7 +506,8 @@ class IncomingCallService(BaseService):
 
 class OutgoingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        call_log = CallLog(**kwargs)
+        call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
+                           extension=request.GET.get('extension', None))
         call_log.is_telco = is_external_number(call_log.phone)
         call_log.direction = 'outgoing'
         call_log.save()
@@ -514,14 +516,49 @@ class OutgoingCallService(BaseService):
 
 class CallAnsweredService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        try:
-            call_log = CallLog.objects.get(callid=kwargs.get('callid', None))
-            call_log.calldate = kwargs.get('calldate', None)
-            call_log.duration = kwargs.get('duration', None)
-            call_log.status = kwargs.get('status', None)
-            call_log.recording = kwargs.get('recording', None)
-            call_log.save()
-
-            return call_log
-        except CallLog.DoesNotExist:
+        call_log = CallLog.objects.filter(extension=kwargs.get('extension', None), phone=kwargs.get('phone', None),
+                                          status__isnull=True).order_by('-created_at')
+        if not call_log:
             raise CallLogNotFound()
+
+        call_log = call_log.first()
+
+        call_log.calldate = kwargs.get('calldate', None)
+        call_log.duration = kwargs.get('duration', None)
+        call_log.status = kwargs.get('status', None)
+        call_log.recording = kwargs.get('recording', None)
+        call_log.chargeable_time = self.calculate_chargeable_time(call_log)
+        call_log.save()
+
+        return call_log
+
+    def calculate_chargeable_time(self, call_log):
+        if not call_log.is_telco or call_log.duration == 0:
+            return 0
+        try:
+            filter = {
+                'user': CallAgent.objects.get(name=call_log.extension).user_id,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+            if not user_roles:
+                return 0
+
+            call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
+            if call_center.sip_fee_calculation == '6+1':
+                return self.calculate_by_6_1(call_log.duration)
+
+            if call_center.sip_fee_calculation == '60+1':
+                return self.calculate_by_60_1(call_log.duration)
+
+        except CallAgent.DoesNotExist:
+            return 0
+        except CallCenter.DoesNotExist:
+            return 0
+        return 0
+
+    def calculate_by_6_1(self, duration):
+        return duration if duration > 6 else 6
+
+    def calculate_by_60_1(self, duration):
+        return 60 * (math.floor(duration / 60) + 1)

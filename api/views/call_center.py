@@ -424,9 +424,6 @@ class IncomingCallView(BaseAPIView):
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.IncomingCallService()
         service.serve(request, cookies, *args, **kwargs)
-        request.GET.get('phone', None)
-        request.GET.get('extension', None)
-        request.GET.get('callid', None)
         return self.get_response()
 
 
@@ -442,10 +439,6 @@ class OutgoingCallView(BaseAPIView):
     def get(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.OutgoingCallService()
         service.serve(request, cookies, *args, **kwargs)
-        request.GET.get('secret', None)
-        request.GET.get('phone', None)
-        request.GET.get('extension', None)
-        request.GET.get('callid', None)
         return self.get_response()
 
 

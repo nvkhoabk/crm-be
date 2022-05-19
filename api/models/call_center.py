@@ -76,15 +76,17 @@ class CallCenterPaymentHistory(BaseModel):
 
 class CallLog(BaseModel):
     callid = models.CharField(max_length=256, db_index=True)
-    calldate = models.DateTimeField()
+    calldate = models.DateTimeField(null=True)
     extension = models.CharField(max_length=256, db_index=True)
     phone = models.CharField(max_length=32)
-    duration = models.IntegerField()
-    status = models.CharField(max_length=128)
-    recording = models.CharField(max_length=2048)
-    direction = models.CharField(max_length=32)
+    duration = models.IntegerField(null=True)
+    status = models.CharField(max_length=128, null=True)
+    recording = models.CharField(max_length=2048, null=True)
+    direction = models.CharField(max_length=32, null=True)
     is_telco = models.BooleanField(default=False)
     seen = models.BooleanField(default=False)
+    chargeable_time = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'call_log'
+        index_together = [['extension', 'phone', 'status']]
