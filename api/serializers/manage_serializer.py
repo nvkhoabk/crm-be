@@ -16,7 +16,7 @@ User = get_user_model()
 class ParamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Param
-        fields = ['id', 'key', 'value']
+        fields = ['id', 'key', 'value', 'description', 'group']
 
 
 class CreateParamRequestSerializer(serializers.Serializer):
@@ -48,9 +48,13 @@ class UpdateParamRequestSerializer(serializers.Serializer):
 class UpdateParamResponseSerializer(BaseResponseSerializer):
     data = ParamSerializer()
 
+class FilterParamRequestParamSerializer(serializers.Serializer):
+    key = serializers.CharField(required=False, allow_blank=True)
+    value = serializers.CharField(required=False, allow_blank=True)
+    group = serializers.CharField(required=False, allow_blank=True)
 
 class FilterParamRequestSerializer(BasePagingSerializer):
-    pass
+    filter = FilterParamRequestParamSerializer()
 
 
 class FilterParamResponseSerializer(BaseResponseSerializer):
