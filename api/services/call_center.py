@@ -268,7 +268,7 @@ class GetCallReportService(BaseService):
 
         call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
         self.init_call_report(call_agents)
-        
+
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
                                            created_at__gte=from_date, created_at__lte=to_date, status__isnull=False)
 
@@ -376,16 +376,14 @@ class GetExternalPaymentReportService(BaseService):
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
             call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                               created_at__gte=from_date, created_at__lte=to_date, is_telco=True,
+                                               calldate__gte=from_date, calldate__lte=to_date, is_telco=True,
                                                direction=CALL_DIRECTION.OUTGOING).order_by('created_at')
 
             call_history_list = []
             for call_log in call_logs:
                 call_history_list.append({
-                    'dest_number': call_log.phone,
-                    'calldate': call_log.calldate,
-                    'record_url': call_log.recording,
-                    'direction': call_log.direction,
+                    'number': call_log.phone,
+                    'call_date': call_log.calldate,
                     'duration': call_log.duration,
                     'fee': call_center.external_fee if call_center is not None else 0,
                     'chargeable_time': call_log.chargeable_time

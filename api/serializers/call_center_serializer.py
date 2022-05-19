@@ -248,7 +248,7 @@ class ExternalPaymentReportSerializer(serializers.Serializer):
     number = serializers.CharField(max_length=128)
     duration = serializers.IntegerField()
     fee = serializers.IntegerField()
-    total_fee = serializers.IntegerField()
+    chargeable_time = serializers.IntegerField()
 
 
 class GetExternalPaymentReportRequestSerializer(BasePagingSerializer):
