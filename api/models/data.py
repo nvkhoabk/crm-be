@@ -131,7 +131,7 @@ class CrawlData(BaseModel):
 class Customer(models.Model):
     name = models.CharField(db_index=True, max_length=255)
     phone = models.CharField(db_index=True, max_length=64)
-    address = models.CharField(max_length=2048)
+    address = models.CharField(max_length=2048, null=True)
    
     class Meta:
         db_table = 'customers'

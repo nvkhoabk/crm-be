@@ -1,5 +1,6 @@
 import json
 
+from api.models import Customer
 from api.models.call_center import CallCenter
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
@@ -553,3 +554,50 @@ class GetUserRoleRequestSerializer(serializers.Serializer):
 
 class GetUserRoleResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=UserRoleSerializer())
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['id', 'name', 'phone', 'address']
+
+
+class CreateCustomerRequestSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    phone = serializers.CharField()
+    address = serializers.CharField()
+
+
+class CreateCustomerResponseSerializer(BaseResponseSerializer):
+    data = CustomerSerializer()
+
+
+class GetCustomerRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetCustomerResponseSerializer(BaseResponseSerializer):
+    data = CustomerSerializer()
+
+
+class UpdateCustomerRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    phone = serializers.CharField()
+    address = serializers.CharField()
+
+
+class UpdateCustomerResponseSerializer(BaseResponseSerializer):
+    data = CustomerSerializer()
+
+class FilterCustomerRequestCustomerSerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    address = serializers.CharField(required=False, allow_blank=True)
+
+class FilterCustomerRequestSerializer(BasePagingSerializer):
+    filter = FilterCustomerRequestCustomerSerializer()
+
+
+class FilterCustomerResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=CustomerSerializer())

@@ -1,13 +1,12 @@
-from api.common.base_view import BaseAPIView
-from api.permissions import SuperAdminPermission, CompanyAdminPermission
-from api.serializers import manage_serializer
-from api.services import exceptions
-from api.services import manage as manage_service
-from django.shortcuts import render
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
+
+from api.common.base_view import BaseAPIView
+from api.permissions import SuperAdminPermission
+from api.serializers import manage_serializer
+from api.services import exceptions
+from api.services import manage as manage_service
 
 
 class CreateParamView(BaseAPIView):
@@ -100,7 +99,6 @@ class FilterParamView(BaseAPIView):
         params = filter_param_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=params, request=serializer.validated_data, serializer=manage_serializer.FilterParamResponseSerializer)
-
 
 class CreatePackageView(BaseAPIView):
     authentication_classes = []
@@ -807,3 +805,95 @@ class DeleteUserView(BaseAPIView):
         user = delete_user_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=user, request=request, serializer=manage_serializer.DeleteUserResponseSerializer)
+
+
+class CreateCustomerView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.CreateCustomerRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Customer'],
+        operation_id='Create Customer',
+        operation_description='Create Customer api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateCustomerResponseSerializer,
+            exceptions.ManageCustomerDuplicated.code: exceptions.ManageCustomerDuplicated.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_customer_service = manage_service.CreateCustomerService()
+        Customer = create_customer_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=Customer, request=request, serializer=manage_serializer.CreateCustomerResponseSerializer)
+
+
+class GetCustomerView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.GetCustomerRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Customer'],
+        operation_id='Get Customer',
+        operation_description='Get Customer api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetCustomerResponseSerializer,
+            exceptions.ManageCustomerNotFound.code: exceptions.ManageCustomerNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_Customer_service = manage_service.GetCustomerService()
+        Customer = get_Customer_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=Customer, request=request, serializer=manage_serializer.GetCustomerResponseSerializer)
+
+
+class UpdateCustomerView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission]
+    serializer_class = manage_serializer.UpdateCustomerRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Customer'],
+        operation_id='Update Customer',
+        operation_description='Update Customer api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateCustomerResponseSerializer,
+            exceptions.ManageCustomerNotFound.code: exceptions.ManageCustomerNotFound.msg,
+            exceptions.ManageCustomerDuplicated.code: exceptions.ManageCustomerDuplicated.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_Customer_service = manage_service.UpdateCustomerService()
+        Customer = update_Customer_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=Customer, request=request, serializer=manage_serializer.UpdateCustomerResponseSerializer)
+
+
+class FilterCustomerView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, ]
+    serializer_class = manage_serializer.FilterCustomerRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Customer'],
+        operation_id='Filter Customer',
+        operation_description='Filter Customer api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: manage_serializer.FilterCustomerResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_Customer_service = manage_service.FilterCustomerService()
+        Customers = filter_Customer_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=Customers, request=serializer.validated_data, serializer=manage_serializer.FilterCustomerResponseSerializer)

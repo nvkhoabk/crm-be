@@ -18,6 +18,11 @@ urlpatterns = [
     path('manage/update_param/', manage.UpdateParamView.as_view(), name='manage.update_param'),
     path('manage/filter_param/', manage.FilterParamView.as_view(), name='manage.filter_param'),
 
+    path('manage/create_customer/', manage.CreateCustomerView.as_view(), name='manage.create_customer'),
+    path('manage/get_customer/', manage.GetCustomerView.as_view(), name='manage.get_customer'),
+    path('manage/update_customer/', manage.UpdateCustomerView.as_view(), name='manage.update_customer'),
+    path('manage/filter_customer/', manage.FilterCustomerView.as_view(), name='manage.filter_customer'),
+
     path('manage/create_package/', manage.CreatePackageView.as_view(), name='manage.create_package'),
     path('manage/get_package/', manage.GetPackageView.as_view(), name='manage.get_package'),
     path('manage/update_package/', manage.UpdatePackageView.as_view(), name='manage.update_package'),

@@ -129,3 +129,13 @@ class AgentRegisterNotFound(APIException):
 class CallLogNotFound(APIException):
     code = 3007
     msg = 'Call log not found'
+
+
+class ManageCustomerDuplicated(APIException):
+    code = 3008
+    msg = 'Duplicate param name'
+
+
+class ManageCustomerNotFound(APIException):
+    code = 3009
+    msg = 'Not found param'

@@ -2,6 +2,7 @@ import json
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.models import Customer
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
@@ -19,7 +20,8 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageRoleDuplicated,
                                      ManageRoleNotFound,
                                      ManageUserDuplicated,
-                                     ManageUserNotFound, ManagePackageDuplicated, ManagePackageNotFound, )
+                                     ManageUserNotFound, ManagePackageDuplicated, ManagePackageNotFound,
+                                     ManageCustomerNotFound, ManageCustomerDuplicated, )
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -735,3 +737,64 @@ class DeleteUserService(BaseService):
             user.delete()
         except User.DoesNotExist as e:
             raise ManageUserNotFound()
+
+
+class CreateCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Customer.objects.create(
+                name=kwargs['name'],
+                phone=kwargs['phone'],
+                address=kwargs['address'],
+            )
+        except IntegrityError as e:
+            raise ManageCustomerDuplicated()
+
+
+class GetCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Customer.objects.get(
+                pk=kwargs['id'],
+            )
+        except Customer.DoesNotExist:
+            raise ManageCustomerNotFound()
+
+
+class UpdateCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            customer = Customer.objects.get(pk=kwargs['id'])
+            customer.name = kwargs['name']
+            customer.phone = kwargs['phone']
+            customer.address = kwargs['address']
+            customer.save()
+            return customer
+        except Customer.DoesNotExist:
+            raise ManageCustomerNotFound()
+        except IntegrityError as e:
+            raise ManageCustomerDuplicated()
+
+
+class FilterCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = Customer.objects.all()
+        filters = ['name', 'phone', 'address']
+        customers = dict(kwargs.get('filter', []))
+        for key, value in customers.items():
+            if key not in filters:
+                continue
+
+            if key == 'name':
+                query_set = query_set.filter(
+                    name__icontains=value,
+                )
+            if key == 'phone':
+                query_set = query_set.filter(
+                    phone__icontains=value,
+                )
+            if key == 'address':
+                query_set = query_set.filter(
+                    address__icontains=value,
+                )
+        return query_set
