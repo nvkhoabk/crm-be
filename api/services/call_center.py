@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import CALL_DIRECTION
+from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE
 from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
     CallLog
 from api.models.organization import Company, UserRole
@@ -20,6 +20,8 @@ from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
 
 from api.services.sip import SipService
+from api.utils.date import get_first_of_month, get_last_of_month
+from api.utils.phone import classify_telecom_number
 
 User = get_user_model()
 
@@ -410,40 +412,48 @@ class GetCreditPaymentReportService(BaseService):
                 'deleted_at__isnull': True
             }
             user_roles = UserRole.objects.filter(**filter)
-
-            sip_info = SipServiceInfo.objects.get(company_id=user_roles.first().company_id)
-
+            call_center = None
             from_date = timezone.now()
             to_date = timezone.now()
-            charge_by = ''
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
-                call_center = CallCenter.objects.get(company_id=sip_info.company_id)
-                from_date = call_center.created_at - relativedelta(months=1)
+                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
+                from_date = call_center.payment_date - relativedelta(months=1)
                 to_date = call_center.payment_date
-                charge_by = call_center.charge_by
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
-                call_center_history = CallCenterPaymentHistory.objects.filter(company_id=sip_info.company_id).order_by(
-                    '-id').first()
-                from_date = call_center_history.created_at - relativedelta(months=1)
-                to_date = call_center_history.payment_date
-                charge_by = call_center_history.charge_by
+                call_center = CallCenterPaymentHistory.objects.filter(
+                    company_id=user_roles.first().company_id).order_by('-id').first()
+                from_date = call_center.payment_date - relativedelta(months=1)
+                to_date = call_center.payment_date
 
-            if charge_by == 'AGENT':
-                self.calculate_by_agent(call_center)
+            credit_payment_amount = 0
 
-            if charge_by == 'MINUTE':
-                month = from_date
-                while month < to_date:
-                    month_str = month.strftime('%Y%m')
+            if call_center.payment_method == 'CREDIT':
+                if call_center.charge_by == 'AGENT':
+                    credit_payment_amount = self.calculate_by_agent(call_center)
 
-                    call_history = SipService().filter_call_history(sip_info.company_id, kwargs.get('page_size'),
-                                                                    kwargs.get('page'), month_str, from_date, to_date)
-                    self.process_external_call(call_history)
-                    month += relativedelta(months=1)
+                if call_center.charge_by == 'MINUTE':
+                    credit_payment_amount = self.calculate_by_sip_minute(call_center, from_date, to_date,
+                                                                         user_roles.first().company_id)
 
-            return self.report
+            external_payment_amount = self.calculate_external_payment_amount(call_center, from_date, to_date,
+                                                                         user_roles.first().company_id)
+
+            discount_amount = self.calculate_discount_amount(call_center,
+                                                             external_payment_amount + credit_payment_amount)
+
+            return {
+                'credit_payment_amount': credit_payment_amount,
+                'external_payment_amount': external_payment_amount,
+                'payment_method': call_center.payment_method,
+                'payment_date': call_center.payment_date,
+                'discount_amount': discount_amount,
+                'discount_type': call_center.discount_type,
+                'discount_value': call_center.discount_value,
+                'total_payment_amount': external_payment_amount + credit_payment_amount - discount_amount,
+                'status': 'UNPAID'
+            }
 
         except CallAgent.DoesNotExist:
             raise CallAgentNotFound()
@@ -451,6 +461,44 @@ class GetCreditPaymentReportService(BaseService):
             raise CallCenterNotFound()
         except CallCenterPaymentHistory.DoesNotExist:
             raise CallCenterNotFound()
+
+    def calculate_discount_amount(self, call_center, total_payment_amount):
+        if call_center.discount_type == DISCOUNT_TYPE.PERCENT:
+            return call_center.discount_value * total_payment_amount / 100
+
+        if call_center.discount_type == DISCOUNT_TYPE.VALUE:
+            return call_center.discount_value
+
+        return 0
+
+    def calculate_by_sip_minute(self, call_center, from_date, to_date, company_id):
+        call_agents = CallAgent.objects.filter(company_id=company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           calldate__gte=from_date, calldate__lte=to_date, is_telco=False,
+                                           direction=CALL_DIRECTION.OUTGOING)
+
+        total_viettel_duration = 0
+        total_mobi_duration = 0
+        total_vina_duration = 0
+        for call_log in call_logs:
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
+                total_viettel_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
+                total_mobi_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
+                total_vina_duration += call_log.chargeable_time
+
+        viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
+        mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
+        vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
+        minute_fee = json.loads(call_center.minute_fee)
+
+        viettel_fee = minute_fee.get(TELECOM_NUMBER.VIETTEL, 0)
+        mobi_fee = minute_fee.get(TELECOM_NUMBER.MOBI, 0)
+        vina_fee = minute_fee.get(TELECOM_NUMBER.VINA, 0)
+        return viettel_fee * viettel_minute + mobi_fee * mobi_minute + vina_fee * vina_minute
 
     def calculate_by_agent(self, call_center):
         agent_register_list = AgentRegister.objects.filter(company_id=call_center.company_id)
@@ -462,23 +510,28 @@ class GetCreditPaymentReportService(BaseService):
         return total
 
     def calculate_agent_fee(self, start_date, end_date, fee_per_month):
-        pass
+        total = 0
+        while start_date.month < end_date.month:
+            total += fee_per_month * (get_last_of_month(start_date) - start_date).days / (
+                        get_last_of_month(start_date) - get_first_of_month(start_date)).days
+            start_date = get_first_of_month(start_date + relativedelta(months=1))
 
-    def process_external_call(self, call_history):
-        for call in call_history:
-            if call['direction'] == CALL_DIRECTION.OUTGOING and self.is_external_number(call['dest_number']):
-                self.report.append(call)
+        total += fee_per_month * (end_date - start_date).days / (
+                        get_last_of_month(start_date) - get_first_of_month(start_date)).days
+        return total
 
-    @staticmethod
-    def is_external_number(number):
-        if len(number) == 10:
-            return number[0:2] == '02' or number[0:2] == '05'
+    def calculate_external_payment_amount(self, call_center, from_date, to_date, company_id):
+        call_agents = CallAgent.objects.filter(company_id=company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           calldate__gte=from_date, calldate__lte=to_date, is_telco=True,
+                                           direction=CALL_DIRECTION.OUTGOING)
 
-        if len(number) == 11:
-            return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
-                                                                                          0:3] == '092' or number[
-                                                                                                           0:3] == '099'
-        return False
+        total_duration = 0
+        for call_log in call_logs:
+            total_duration += call_log.chargeable_time
+
+        total_minute = math.floor((total_duration - 1) / 60) + 1
+        return call_center.external_fee * total_minute
 
 
 def is_external_number(number):
@@ -559,4 +612,4 @@ class CallAnsweredService(BaseService):
         return duration if duration > 6 else 6
 
     def calculate_by_60_1(self, duration):
-        return 60 * (math.floor(duration / 60) + 1)
+        return 60 * (math.floor((duration - 1) / 60) + 1)

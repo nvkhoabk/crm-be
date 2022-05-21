@@ -393,7 +393,6 @@ class GetCreditPaymentReportView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated]
     serializer_class = call_center_serializer.GetCreditPaymentRequestSerializer
-    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
@@ -406,7 +405,7 @@ class GetCreditPaymentReportView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        service = call_center_service.GetExternalPaymentReportService()
+        service = call_center_service.GetCreditPaymentReportService()
         results = service.serve(request, cookies, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=call_center_serializer.GetCreditPaymentResponseSerializer)

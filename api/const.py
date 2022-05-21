@@ -42,3 +42,14 @@ class CALL_DIRECTION:
     INCOMING = 'incoming'
     OUTGOING = 'outgoing'
 
+
+class TELECOM_NUMBER:
+    VIETTEL = 'Viettel'
+    MOBI = 'Mobi'
+    VINA = 'Vina'
+    OTHER = 'Other'
+
+
+class DISCOUNT_TYPE:
+    PERCENT = 'PERCENT'
+    VALUE = 'VALUE'

@@ -271,10 +271,20 @@ class GetCreditPaymentRequestSerializer(serializers.Serializer):
     report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
 
 
-class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
-    total_fee = serializers.IntegerField()
+class CreditPaymentReportSerializer(serializers.Serializer):
+    credit_payment_amount = serializers.IntegerField()
+    external_payment_amount = serializers.IntegerField()
+    payment_method = serializers.CharField(max_length=256)
     payment_date = serializers.DateField()
-    payment_type = serializers.CharField(max_length=256)
+    status = serializers.CharField(max_length=128)
+    discount_type = serializers.CharField(max_length=128)
+    discount_value = serializers.IntegerField()
+    discount_amount = serializers.IntegerField()
+    total_payment_amount = serializers.IntegerField()
+
+
+class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
+    data = CreditPaymentReportSerializer()
 
 
 class CallLogRequestSerializer(serializers.Serializer):
