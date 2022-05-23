@@ -87,7 +87,8 @@ class AuthGetUserInfoService(BaseService):
         response['menu'] = []
 
         if user.is_superuser:
-            response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT]
+            response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT,
+                                MODULES.CALL_CENTER_LIST_MANAGEMENT, MODULES.PARAM_CONFIG]
         elif len(response['roles']) == 1 and response['roles'][0]['role'] is None \
                 and response['roles'][0]['department'] is None:
             response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE]
