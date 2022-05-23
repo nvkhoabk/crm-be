@@ -83,6 +83,7 @@ class FilterCallCenterView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, SuperAdminPermission]
     serializer_class = call_center_serializer.FilterCallCenterRequestSerializer
+    pagination_class = True
 
     @swagger_auto_schema(
         tags=['Manage Call Center'],
@@ -99,7 +100,7 @@ class FilterCallCenterView(BaseAPIView):
         service = call_center_service.FilterCallCenterService()
         results = service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=results, request=request,
+        return self.get_response(results=results, request=serializer.validated_data,
                                  serializer=call_center_serializer.FilterCallCenterResponseSerializer)
 
 

@@ -52,6 +52,10 @@ class TELECOM_NUMBER:
     OTHER = 'Other'
 
 
+class PAYMENT_STATUS:
+    PAID = 'PAID'
+    UNPAID = 'UNPAID'
+
 class DISCOUNT_TYPE:
     PERCENT = 'PERCENT'
     VALUE = 'VALUE'

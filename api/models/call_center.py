@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 
+from api.const import PAYMENT_STATUS
 from api.models.base import BaseModel
 from django.db import models
 
@@ -21,6 +22,8 @@ class CallCenter(BaseModel):
     discount_type = models.CharField(max_length=128, null=True)
     discount_value = models.IntegerField(default=0)
     is_enable = models.BooleanField(default=True)
+    payment_start_date = models.DateField()
+    payment_status = models.CharField(max_length=128, default=PAYMENT_STATUS.UNPAID)
 
     class Meta:
         db_table = 'call_center'

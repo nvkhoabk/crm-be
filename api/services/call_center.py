@@ -124,7 +124,7 @@ class GetCallCenterService(BaseService):
 
 class FilterCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        query_set = CallCenter.objects.all()
+        query_set = CallCenter.objects.filter(deleted_at__isnull=True)
 
         filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type']
         params = dict(kwargs.get('filter', []))
@@ -192,6 +192,12 @@ class UpdateCallCenterService(BaseService):
 
             if kwargs.get('discount_value'):
                 call_center.discount_value = kwargs.get('discount_value')
+
+            if kwargs.get('payment_start_date'):
+                call_center.payment_start_date = kwargs.get('payment_start_date')
+
+            if kwargs.get('payment_status'):
+                call_center.payment_status = kwargs.get('payment_status')
 
             call_center.save()
             return call_center

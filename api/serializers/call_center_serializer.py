@@ -1,5 +1,6 @@
 import json
 
+from api.const import PAYMENT_STATUS
 from api.models.call_center import CallCenter, CallAgent, AgentRegister
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
@@ -19,8 +20,8 @@ class CallCenterSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallCenter
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
-                  'minute_fee', 'external_fee', 'sip_fee_calculation',
-                  'is_enable', 'discount_type', 'discount_value', 'company_name']
+                  'minute_fee', 'external_fee', 'sip_fee_calculation', 'is_enable', 'discount_type', 'discount_value',
+                  'company_name', 'payment_start_date', 'payment_status']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -69,6 +70,7 @@ class CreateCallCenterRequestSerializer(serializers.Serializer):
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=True)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
+    payment_start_date = serializers.DateField(required=True)
 
 
 class CreateCallCenterResponseSerializer(BaseResponseSerializer):
@@ -92,6 +94,10 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
         ('VALUE', 'VALUE'),
         ('PERCENT', 'PERCENT')
     )
+    PAYMENT_STATUS_CHOICES = (
+        (PAYMENT_STATUS.PAID, PAYMENT_STATUS.PAID),
+        (PAYMENT_STATUS.UNPAID, PAYMENT_STATUS.UNPAID)
+    )
 
     company_id = serializers.IntegerField(required=True)
     charge_by = serializers.ChoiceField(choices=CHARGE_CHOICES, allow_blank=False, required=False)
@@ -104,6 +110,8 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=False)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
+    payment_start_date = serializers.DateField(required=False)
+    payment_status = serializers.ChoiceField(choices=PAYMENT_STATUS_CHOICES)
 
 
 class FilterCallCenterParamSerializer(serializers.Serializer):
