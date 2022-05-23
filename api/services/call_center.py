@@ -178,7 +178,7 @@ class UpdateCallCenterService(BaseService):
                 call_center.agent_fee = kwargs.get('agent_fee')
 
             if kwargs.get('minute_fee'):
-                call_center.minute_fee = kwargs.get('minute_fee')
+                call_center.minute_fee = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
 
             if kwargs.get('external_fee'):
                 call_center.external_fee = kwargs.get('external_fee')
