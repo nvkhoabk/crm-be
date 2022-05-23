@@ -122,6 +122,40 @@ class GetCallCenterService(BaseService):
             raise ManageCompanyNotFound()
 
 
+class FilterCallCenterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = CallCenter.objects.all()
+
+        filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'company_id' and value is not None:
+                query_set = query_set.filter(
+                    company_id=value,
+                )
+            if key == 'charge_by' and value is not None:
+                query_set = query_set.filter(
+                    charge_by=value,
+                )
+            if key == 'payment_method' and value is not None:
+                query_set = query_set.filter(
+                    payment_method=value,
+                )
+            if key == 'sip_fee_calculation' and value is not None:
+                query_set = query_set.filter(
+                    sip_fee_calculation=value,
+                )
+            if key == 'discount_type' and value is not None:
+                query_set = query_set.filter(
+                    discount_type=value,
+                )
+
+        return query_set
+
+
 class UpdateCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:

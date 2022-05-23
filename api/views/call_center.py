@@ -79,6 +79,30 @@ class UpdateCallCenterView(BaseAPIView):
                                  serializer=call_center_serializer.UpdateCallCenterResponseSerializer)
 
 
+class FilterCallCenterView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SuperAdminPermission]
+    serializer_class = call_center_serializer.FilterCallCenterRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Filter Call Center',
+        operation_description='Filter Call Center',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.FilterCallCenterResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+            exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.FilterCallCenterService()
+        results = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=call_center_serializer.FilterCallCenterResponseSerializer)
+
+
 class EnableCallCenterView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, SuperAdminPermission]

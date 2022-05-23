@@ -10,13 +10,17 @@ class CallCenterSerializer(serializers.ModelSerializer):
     def get_minute_fee(self, call_center):
         return json.loads(call_center.minute_fee)
 
+    def get_company_name(self, call_center):
+        return call_center.company.name
+
     minute_fee = serializers.SerializerMethodField(source='get_minute_fee')
+    company_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CallCenter
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
                   'minute_fee', 'external_fee', 'sip_fee_calculation',
-                  'is_enable', 'discount_type', 'discount_value']
+                  'is_enable', 'discount_type', 'discount_value', 'company_name']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -100,6 +104,42 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=False)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
+
+
+class FilterCallCenterParamSerializer(serializers.Serializer):
+    CHARGE_CHOICES = (
+        ('AGENT', 'AGENT'),
+        ('MINUTE', 'MINUTE')
+    )
+    PAYMENT_METHOD_CHOICES = (
+        ('CREDIT', 'CREDIT'),
+        ('DEBIT', 'DEBIT')
+    )
+    SIP_FEE_CALCULATION_CHOICES = (
+        ('6+1', '6+1'),
+        ('60+1', '60+1')
+    )
+    DISCOUNT_TYPE_CHOICES = (
+        ('VALUE', 'VALUE'),
+        ('PERCENT', 'PERCENT')
+    )
+
+    company_id = serializers.IntegerField(required=False, allow_null=True)
+    charge_by = serializers.ChoiceField(choices=CHARGE_CHOICES, allow_blank=False, required=False, allow_null=True)
+    payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=False, required=False,
+                                             allow_null=True)
+    sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False,
+                                                  allow_blank=False, allow_null=True)
+    discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False,
+                                            allow_null=True)
+
+
+class FilterCallCenterResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=CallCenterSerializer())
+
+
+class FilterCallCenterRequestSerializer(BasePagingSerializer):
+    filter = FilterCallCenterParamSerializer()
 
 
 class UpdateCallCenterResponseSerializer(BaseResponseSerializer):
