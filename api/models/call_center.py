@@ -24,6 +24,10 @@ class CallCenter(BaseModel):
     is_enable = models.BooleanField(default=True)
     payment_start_date = models.DateField()
     payment_status = models.CharField(max_length=128, default=PAYMENT_STATUS.UNPAID)
+    total_payment_amount = models.IntegerField(default=0)
+    credit_payment_amount = models.IntegerField(default=0)
+    external_payment_amount = models.IntegerField(default=0)
+    discount_amount = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'call_center'
@@ -72,6 +76,13 @@ class CallCenterPaymentHistory(BaseModel):
     sip_fee_calculation = models.CharField(max_length=128)
     discount_type = models.CharField(max_length=128, null=True)
     discount_value = models.IntegerField(default=0)
+    is_enable = models.BooleanField(default=True)
+    payment_start_date = models.DateField()
+    payment_status = models.CharField(max_length=128, default=PAYMENT_STATUS.UNPAID)
+    total_payment_amount = models.IntegerField(default=0)
+    credit_payment_amount = models.IntegerField(default=0)
+    external_payment_amount = models.IntegerField(default=0)
+    discount_amount = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'callcenter_payment_history'

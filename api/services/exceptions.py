@@ -139,3 +139,8 @@ class ManageCustomerDuplicated(APIException):
 class ManageCustomerNotFound(APIException):
     code = 3009
     msg = 'Not found param'
+
+
+class CallCenterPaymentNotDue(APIException):
+    code = 3010
+    msg = 'Call center payment is not due'

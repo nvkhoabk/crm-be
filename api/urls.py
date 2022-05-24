@@ -66,6 +66,7 @@ urlpatterns = [
     path('callcenter/filter_callcenter/', call_center.FilterCallCenterView.as_view(), name='callcenter.filter_callcenter'),
     path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
     path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.disable_callcenter'),
+    path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(), name='callcenter.calculate_payment'),
     path('callcenter/start_callin/', call_center.StartCallInView.as_view(), name='callcenter.start_callin'),
     path('callcenter/end_callin/', call_center.EndCallInView.as_view(), name='callcenter.end_callin'),
     path('callcenter/start_callout/', call_center.StartCallOutView.as_view(), name='callcenter.start_callout'),

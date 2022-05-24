@@ -3,18 +3,19 @@ import math
 
 import requests
 from dateutil.relativedelta import relativedelta
+from django.db.models import Sum
 from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE
+from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS
 from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
     CallLog
 from api.models.organization import Company, UserRole
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
-                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound)
+                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound, CallCenterPaymentNotDue)
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -26,6 +27,17 @@ from api.utils.phone import classify_telecom_number
 User = get_user_model()
 
 
+def is_external_number(number):
+    if len(number) == 10:
+        return number[0:2] == '02' or number[0:2] == '05'
+
+    if len(number) == 11:
+        return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
+                                                                                      0:3] == '092' or number[
+                                                                                                       0:3] == '099'
+    return False
+
+
 class CreateCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         with transaction.atomic():
@@ -33,46 +45,12 @@ class CreateCallCenterService(BaseService):
                 Company.objects.get(pk=kwargs['company_id'])
                 if kwargs.get('minute_fee') is not None:
                     kwargs['minute_fee'] = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
-
                 call_center = CallCenter.objects.create(**kwargs)
-                #self.create_agent_list(call_center)
-
                 return call_center
             except IntegrityError as e:
                 raise CallCenterDuplicated()
             except Company.DoesNotExist:
                 raise ManageCompanyNotFound()
-
-    # def create_agent_list(self, call_center):
-    #     sip_service = SipService()
-    #     sip_service.login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
-    #     agent_list = sip_service.get_agent_list(call_center.company_id)
-    #     call_agents = []
-    #     for agent in agent_list:
-    #         call_agents.append(CallAgent(company_id=call_center.company_id, name=agent['ext'], secret=agent['secret'],
-    #                                      sip_id=agent['sip_id']))
-    #
-    #     CallAgent.objects.bulk_create(call_agents)
-#
-#
-# class BaseService(BaseService):
-#     def serve(self, request, cookies: Cookies, *args, **kwargs):
-#         pass
-#
-#     def serve(self, request, cookies: Cookies, *args, **kwargs):
-#         try:
-#             return self.serve(request, cookies, *args, **kwargs)
-#         except SipAPIError:
-#             # Try to login
-#             filter = {
-#                 'user': request.user,
-#                 'deleted_at__isnull': True
-#             }
-#             user_roles = UserRole.objects.filter(**filter)
-#             call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
-#             SipService().login(call_center.call_center_user, call_center.call_center_password, call_center.company_id)
-#
-#         return self.serve(request, cookies, *args, **kwargs)
 
 
 class EnableCallCenterService(BaseService):
@@ -109,6 +87,22 @@ class DisableCallCenterService(BaseService):
             raise CallCenterNotFound()
         except Company.DoesNotExist:
             raise ManageCompanyNotFound()
+
+
+class CalculatePaymentCallCenterService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        call_center_list = CallCenter.objects.filter(deleted_at__isnull=True, is_enable=True)
+        for call_center in call_center_list:
+            payment_calculator = CallCenterPaymentCalculatorService(call_center)
+            call_center.total_payment_amount = payment_calculator.get_total_payment_amount()
+            call_center.credit_payment_amount = payment_calculator.get_credit_payment_amount()
+            call_center.external_payment_amount = payment_calculator.get_external_payment_amount()
+            call_center.discount_amount = payment_calculator.get_discount_amount()
+            call_center.updated_at = timezone.now()
+
+        CallCenter.objects.bulk_update(call_center_list, fields=['total_payment_amount', 'credit_payment_amount',
+                                                                 'external_payment_amount', 'discount_amount',
+                                                                 'updated_at'])
 
 
 class GetCallCenterService(BaseService):
@@ -162,6 +156,8 @@ class UpdateCallCenterService(BaseService):
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
 
+            old_call_center = CallCenter(call_center)
+
             if kwargs.get('charge_by'):
                 call_center.charge_by = kwargs.get('charge_by')
 
@@ -196,8 +192,8 @@ class UpdateCallCenterService(BaseService):
             if kwargs.get('payment_start_date'):
                 call_center.payment_start_date = kwargs.get('payment_start_date')
 
-            if kwargs.get('payment_status'):
-                call_center.payment_status = kwargs.get('payment_status')
+            if kwargs.get('payment_status') and kwargs.get('payment_status') == PAYMENT_STATUS.PAID:
+                self.pay_call_center(call_center, old_call_center)
 
             call_center.save()
             return call_center
@@ -206,6 +202,37 @@ class UpdateCallCenterService(BaseService):
             raise CallCenterNotFound()
         except Company.DoesNotExist:
             raise ManageCompanyNotFound()
+
+    def pay_call_center(self, call_center, old_call_center):
+        if timezone.now().date() < get_first_of_month(old_call_center.payment_date):
+            raise CallCenterPaymentNotDue()
+
+        CallCenterPaymentHistory.objects.create(company_id=old_call_center.company_id,
+                                                charge_by=old_call_center.charge_by,
+                                                payment_method=old_call_center.payment_method,
+                                                payment_date=old_call_center.payment_date,
+                                                payment_notify=old_call_center.payment_notify,
+                                                agent_fee=old_call_center.agent_fee,
+                                                minute_fee=old_call_center.minute_fee,
+                                                external_fee=old_call_center.external_fee,
+                                                sip_fee_calculation=old_call_center.sip_fee_calculation,
+                                                discount_type=old_call_center.discount_type,
+                                                discount_value=old_call_center.discount_value,
+                                                is_enable=old_call_center.is_enable,
+                                                payment_start_date=old_call_center.payment_start_date,
+                                                payment_status=PAYMENT_STATUS.PAID)
+
+        total_old_agent = AgentRegister.objects.filter(company_id=old_call_center.company_id,
+                                                       deleted_at__isnull=True).aggregate(Sum('number'))
+
+        if total_old_agent > 0:
+            AgentRegister.objects.filter(company_id=old_call_center.company_id,
+                                         deleted_at__isnull=True).update(deleted_at=timezone.now())
+            new_charge_to = get_last_of_month(call_center.payment_date - relativedelta(months=1))
+
+            AgentRegister.objects.create(number=total_old_agent, use_from=call_center.payment_start_date,
+                                         use_to=call_center.payment_date, charge_from=call_center.payment_start_date,
+                                         charge_to=new_charge_to)
 
 
 class GetAgentsService(BaseService):
@@ -453,45 +480,26 @@ class GetCreditPaymentReportService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
             call_center = None
-            from_date = timezone.now()
-            to_date = timezone.now()
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
                 call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
-                from_date = call_center.payment_date - relativedelta(months=1)
-                to_date = call_center.payment_date
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
                 call_center = CallCenterPaymentHistory.objects.filter(
                     company_id=user_roles.first().company_id).order_by('-id').first()
-                from_date = call_center.payment_date - relativedelta(months=1)
-                to_date = call_center.payment_date
 
-            credit_payment_amount = 0
-
-            if call_center.payment_method == 'CREDIT':
-                if call_center.charge_by == 'AGENT':
-                    credit_payment_amount = self.calculate_by_agent(call_center)
-
-                if call_center.charge_by == 'MINUTE':
-                    credit_payment_amount = self.calculate_by_sip_minute(call_center, from_date, to_date,
-                                                                         user_roles.first().company_id)
-
-            external_payment_amount = self.calculate_external_payment_amount(call_center, from_date, to_date,
-                                                                         user_roles.first().company_id)
-
-            discount_amount = self.calculate_discount_amount(call_center,
-                                                             external_payment_amount + credit_payment_amount)
+            payment_calculator = CallCenterPaymentCalculatorService(call_center)
+            payment_calculator.calculate()
 
             return {
-                'credit_payment_amount': credit_payment_amount,
-                'external_payment_amount': external_payment_amount,
+                'credit_payment_amount': payment_calculator.get_credit_payment_amount(),
+                'external_payment_amount': payment_calculator.get_external_payment_amount(),
                 'payment_method': call_center.payment_method,
                 'payment_date': call_center.payment_date,
-                'discount_amount': discount_amount,
+                'discount_amount': payment_calculator.get_discount_amount(),
                 'discount_type': call_center.discount_type,
                 'discount_value': call_center.discount_value,
-                'total_payment_amount': external_payment_amount + credit_payment_amount - discount_amount,
+                'total_payment_amount': payment_calculator.get_total_payment_amount(),
                 'status': 'UNPAID'
             }
 
@@ -501,88 +509,6 @@ class GetCreditPaymentReportService(BaseService):
             raise CallCenterNotFound()
         except CallCenterPaymentHistory.DoesNotExist:
             raise CallCenterNotFound()
-
-    def calculate_discount_amount(self, call_center, total_payment_amount):
-        if call_center.discount_type == DISCOUNT_TYPE.PERCENT:
-            return call_center.discount_value * total_payment_amount / 100
-
-        if call_center.discount_type == DISCOUNT_TYPE.VALUE:
-            return call_center.discount_value
-
-        return 0
-
-    def calculate_by_sip_minute(self, call_center, from_date, to_date, company_id):
-        call_agents = CallAgent.objects.filter(company_id=company_id, deleted_at__isnull=True)
-        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=from_date, calldate__lte=to_date, is_telco=False,
-                                           direction=CALL_DIRECTION.OUTGOING)
-
-        total_viettel_duration = 0
-        total_mobi_duration = 0
-        total_vina_duration = 0
-        for call_log in call_logs:
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
-                total_viettel_duration += call_log.chargeable_time
-
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
-                total_mobi_duration += call_log.chargeable_time
-
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
-                total_vina_duration += call_log.chargeable_time
-
-        viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
-        mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
-        vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
-        minute_fee = json.loads(call_center.minute_fee)
-
-        viettel_fee = minute_fee.get(TELECOM_NUMBER.VIETTEL, 0)
-        mobi_fee = minute_fee.get(TELECOM_NUMBER.MOBI, 0)
-        vina_fee = minute_fee.get(TELECOM_NUMBER.VINA, 0)
-        return viettel_fee * viettel_minute + mobi_fee * mobi_minute + vina_fee * vina_minute
-
-    def calculate_by_agent(self, call_center):
-        agent_register_list = AgentRegister.objects.filter(company_id=call_center.company_id)
-        total = 0
-        for agent_register in agent_register_list:
-            total += agent_register.number * self.calculate_agent_fee(agent_register.charge_from,
-                                                                      agent_register.charge_to, call_center.agent_fee)
-
-        return total
-
-    def calculate_agent_fee(self, start_date, end_date, fee_per_month):
-        total = 0
-        while start_date.month < end_date.month:
-            total += fee_per_month * (get_last_of_month(start_date) - start_date).days / (
-                        get_last_of_month(start_date) - get_first_of_month(start_date)).days
-            start_date = get_first_of_month(start_date + relativedelta(months=1))
-
-        total += fee_per_month * (end_date - start_date).days / (
-                        get_last_of_month(start_date) - get_first_of_month(start_date)).days
-        return total
-
-    def calculate_external_payment_amount(self, call_center, from_date, to_date, company_id):
-        call_agents = CallAgent.objects.filter(company_id=company_id, deleted_at__isnull=True)
-        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=from_date, calldate__lte=to_date, is_telco=True,
-                                           direction=CALL_DIRECTION.OUTGOING)
-
-        total_duration = 0
-        for call_log in call_logs:
-            total_duration += call_log.chargeable_time
-
-        total_minute = math.floor((total_duration - 1) / 60) + 1
-        return call_center.external_fee * total_minute
-
-
-def is_external_number(number):
-    if len(number) == 10:
-        return number[0:2] == '02' or number[0:2] == '05'
-
-    if len(number) == 11:
-        return number[0:2] == '02' or number[0:3] == '080' or number[0:3] == '087' or number[
-                                                                                      0:3] == '092' or number[
-                                                                                                       0:3] == '099'
-    return False
 
 
 class IncomingCallService(BaseService):
@@ -653,3 +579,112 @@ class CallAnsweredService(BaseService):
 
     def calculate_by_60_1(self, duration):
         return 60 * (math.floor((duration - 1) / 60) + 1)
+
+
+class CallCenterPaymentCalculatorService:
+    def __init__(self, call_center):
+        self.call_center = call_center
+        self.total_payment_amount = 0
+        self.credit_payment_amount = 0
+        self.external_payment_amount = 0
+        self.discount_amount = 0
+
+    def get_credit_payment_amount(self):
+        return self.credit_payment_amount
+
+    def get_total_payment_amount(self):
+        return self.total_payment_amount
+
+    def get_external_payment_amount(self):
+        return self.external_payment_amount
+
+    def get_discount_amount(self):
+        return self.discount_amount
+
+    def calculate(self):
+        if self.call_center.payment_method == 'CREDIT':
+            if self.call_center.charge_by == 'AGENT':
+                self.credit_payment_amount = self.calculate_by_agent()
+
+            if self.call_center.charge_by == 'MINUTE':
+                self.credit_payment_amount = self.calculate_by_sip_minute()
+
+        self.external_payment_amount = self.calculate_external_payment_amount()
+
+        self.discount_amount = self.calculate_discount_amount(self.external_payment_amount + self.credit_payment_amount)
+
+        self.total_payment_amount = self.external_payment_amount + self.credit_payment_amount - self.discount_amount
+
+    def calculate_discount_amount(self, total_payment_amount):
+        if self.call_center.discount_type == DISCOUNT_TYPE.PERCENT:
+            return self.call_center.discount_value * total_payment_amount / 100
+
+        if self.call_center.discount_type == DISCOUNT_TYPE.VALUE:
+            return self.call_center.discount_value
+
+        return 0
+
+    def calculate_by_sip_minute(self):
+        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
+        call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           calldate__gte=self.call_center.payment_start_date, calldate__lte=due_date,
+                                           is_telco=False, direction=CALL_DIRECTION.OUTGOING)
+
+        total_viettel_duration = 0
+        total_mobi_duration = 0
+        total_vina_duration = 0
+        for call_log in call_logs:
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
+                total_viettel_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
+                total_mobi_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
+                total_vina_duration += call_log.chargeable_time
+
+        viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
+        mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
+        vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
+        minute_fee = json.loads(call_center.minute_fee)
+
+        viettel_fee = minute_fee.get(TELECOM_NUMBER.VIETTEL, 0)
+        mobi_fee = minute_fee.get(TELECOM_NUMBER.MOBI, 0)
+        vina_fee = minute_fee.get(TELECOM_NUMBER.VINA, 0)
+        return viettel_fee * viettel_minute + mobi_fee * mobi_minute + vina_fee * vina_minute
+
+    def calculate_by_agent(self):
+        agent_register_list = AgentRegister.objects.filter(company_id=self.call_center.company_id)
+        total = 0
+        for agent_register in agent_register_list:
+            total += agent_register.number * self.calculate_agent_fee(agent_register.charge_from,
+                                                                      agent_register.charge_to,
+                                                                      self.call_center.agent_fee)
+
+        return total
+
+    def calculate_agent_fee(self, start_date, end_date, fee_per_month):
+        total = 0
+        while start_date.month < end_date.month:
+            total += fee_per_month * (get_last_of_month(start_date) - start_date).days / (
+                    get_last_of_month(start_date) - get_first_of_month(start_date)).days
+            start_date = get_first_of_month(start_date + relativedelta(months=1))
+
+        total += fee_per_month * (end_date - start_date).days / (
+                get_last_of_month(start_date) - get_first_of_month(start_date)).days
+        return total
+
+    def calculate_external_payment_amount(self):
+        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
+        call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           calldate__gte=self.call_center.payment_start_date, calldate__lte=due_date,
+                                           is_telco=True, direction=CALL_DIRECTION.OUTGOING)
+
+        total_duration = 0
+        for call_log in call_logs:
+            total_duration += call_log.chargeable_time
+
+        total_minute = math.floor((total_duration - 1) / 60) + 1
+        return self.call_center.external_fee * total_minute

@@ -149,6 +149,26 @@ class DisableCallCenterView(BaseAPIView):
         return self.get_response(results=call_center, request=request,
                                  serializer=call_center_serializer.DisableCallCenterResponseSerializer)
 
+class CalculatePayemntCallCenterView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SuperAdminPermission]
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center'],
+        operation_id='Calculate payment call center',
+        operation_description='Calculate payment call center',
+        responses={
+            0: call_center_serializer.CalculatePayemntCallCenterResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.CalculatePaymentCallCenterService()
+        results = service.serve(
+            request, cookies, *args, **kwargs)
+        return self.get_response(results=results, request=request,
+                                 serializer=call_center_serializer.CalculatePayemntCallCenterResponseSerializer)
+
 
 class GetAgentsView(BaseAPIView):
     authentication_classes = []

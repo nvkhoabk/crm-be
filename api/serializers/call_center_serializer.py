@@ -21,7 +21,8 @@ class CallCenterSerializer(serializers.ModelSerializer):
         model = CallCenter
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
                   'minute_fee', 'external_fee', 'sip_fee_calculation', 'is_enable', 'discount_type', 'discount_value',
-                  'company_name', 'payment_start_date', 'payment_status']
+                  'company_name', 'payment_start_date', 'payment_status', 'total_payment_amount',
+                  'credit_payment_amount', 'external_payment_amount', 'discount_amount']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -168,6 +169,10 @@ class DisableCallCenterRequestSerializer(serializers.Serializer):
 
 class DisableCallCenterResponseSerializer(BaseResponseSerializer):
     data = CallCenterSerializer()
+
+
+class CalculatePayemntCallCenterResponseSerializer(BaseResponseSerializer):
+    pass
 
 
 class GetCallCenterRequestSerializer(serializers.Serializer):
