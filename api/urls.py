@@ -88,6 +88,8 @@ urlpatterns = [
     path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),
     path('callcenter/call_answered', call_center.CallAnsweredView.as_view(), name='callcenter.call_answered'),
 
+    path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
+
     # Product
     path('product/create_product/', product.CreateProductView.as_view(), name='product.create_product'),
     path('product/filter_product/', product.FilterProductView.as_view(), name='product.filter_product'),

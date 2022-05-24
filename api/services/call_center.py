@@ -1,3 +1,4 @@
+import csv
 import json
 import math
 
@@ -12,6 +13,7 @@ from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STA
 from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
     CallLog
 from api.models.organization import Company, UserRole
+from api.serializers.call_center_serializer import UploadExtFileRequestSerializer
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
@@ -579,6 +581,24 @@ class CallAnsweredService(BaseService):
 
     def calculate_by_60_1(self, duration):
         return 60 * (math.floor((duration - 1) / 60) + 1)
+
+class UploadExtFileService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        serializer_class = UploadExtFileRequestSerializer(data=request.data)
+        if 'file' not in request.FILES or not serializer_class.is_valid():
+            return 'failed'
+        else:
+            file = request.FILES['file']
+            with open(file.name, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+            with open(file.name, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                call_agents = []
+                for row in csv_reader:
+                    call_agents.append(CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2]))
+                CallAgent.objects.bulk_create(call_agents)
+            return call_agents
 
 
 class CallCenterPaymentCalculatorService:
