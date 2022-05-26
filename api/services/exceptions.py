@@ -149,3 +149,8 @@ class CallLogNotFound(APIException):
 class ReportNotFound(APIException):
     code = 3012
     msg = 'Report does not exists'
+
+
+class NumberAgentRegisterNotMatch(APIException):
+    code = 3013
+    msg = 'Number agent register not match'
