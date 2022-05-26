@@ -97,6 +97,7 @@ class CalculatePaymentCallCenterService(BaseService):
         call_center_list = CallCenter.objects.filter(deleted_at__isnull=True, is_enable=True)
         for call_center in call_center_list:
             payment_calculator = CallCenterPaymentCalculatorService(call_center)
+            payment_calculator.calculate()
             call_center.total_payment_amount = payment_calculator.get_total_payment_amount()
             call_center.credit_payment_amount = payment_calculator.get_credit_payment_amount()
             call_center.external_payment_amount = payment_calculator.get_external_payment_amount()
@@ -580,6 +581,7 @@ class CallAnsweredService(BaseService):
     def calculate_by_60_1(self, duration):
         return 60 * (math.floor((duration - 1) / 60) + 1)
 
+
 class UploadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         serializer_class = UploadExtFileRequestSerializer(data=request.data)
@@ -594,7 +596,9 @@ class UploadExtFileService(BaseService):
                 csv_reader = csv.reader(csv_file)
                 call_agents = []
                 for row in csv_reader:
-                    call_agents.append(CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2]))
+                    call_agents.append(
+                        CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
+                                  agent_register_id=serializer_class.data['agent_register_id']))
                 CallAgent.objects.bulk_create(call_agents)
             return call_agents
 
