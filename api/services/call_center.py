@@ -17,7 +17,8 @@ from api.serializers.call_center_serializer import UploadExtFileRequestSerialize
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
-                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound, CallCenterPaymentNotDue)
+                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound, CallCenterPaymentNotDue,
+                                     ReportNotFound)
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -485,7 +486,8 @@ class GetCreditPaymentReportService(BaseService):
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
                 call_center = CallCenterPaymentHistory.objects.filter(
                     company_id=user_roles.first().company_id).order_by('-id').first()
-
+            if call_center is None:
+                raise ReportNotFound()
             payment_calculator = CallCenterPaymentCalculatorService(call_center)
             payment_calculator.calculate()
 
