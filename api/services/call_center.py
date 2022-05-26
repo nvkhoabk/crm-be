@@ -594,24 +594,21 @@ class UploadExtFileService(BaseService):
                     destination.write(chunk)
             with open(file.name, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file)
-                self.validate(csv_reader, serializer_class.data['agent_register_id'])
-
                 call_agents = []
                 for row in csv_reader:
                     call_agents.append(
                         CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
                                   agent_register_id=serializer_class.data['agent_register_id'],
                                   status=CALL_AGENT_STATUS.ACTIIVE))
+                self.validate(csv_reader, serializer_class.data['agent_register_id'])
                 CallAgent.objects.bulk_create(call_agents)
             return call_agents
 
     def validate(self, csv_reader, agent_register_id):
         try:
-            total_ext = len(list(csv_reader))
+            total_ext = csv_reader.line_num
             if total_ext != AgentRegister.objects.get(pk=agent_register_id).number:
                 raise NumberAgentRegisterNotMatch()
-
-            AgentRegister.objects.filter(pk=agent_register_id).delete()
         except AgentRegister.DoesNotExist:
             raise AgentRegisterNotFound()
 
