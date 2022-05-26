@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS
+from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS
 from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
     CallLog
 from api.models.organization import Company, UserRole
@@ -595,12 +595,13 @@ class UploadExtFileService(BaseService):
             with open(file.name, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file)
                 self.validate(csv_reader, serializer_class.data['agent_register_id'])
-                
+
                 call_agents = []
                 for row in csv_reader:
                     call_agents.append(
                         CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
-                                  agent_register_id=serializer_class.data['agent_register_id']))
+                                  agent_register_id=serializer_class.data['agent_register_id'],
+                                  status=CALL_AGENT_STATUS.ACTIIVE))
                 CallAgent.objects.bulk_create(call_agents)
             return call_agents
 
