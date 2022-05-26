@@ -126,11 +126,6 @@ class AgentRegisterNotFound(APIException):
     msg = 'Agent Register not found'
 
 
-class CallLogNotFound(APIException):
-    code = 3007
-    msg = 'Call log not found'
-
-
 class ManageCustomerDuplicated(APIException):
     code = 3008
     msg = 'Duplicate param name'
@@ -144,3 +139,13 @@ class ManageCustomerNotFound(APIException):
 class CallCenterPaymentNotDue(APIException):
     code = 3010
     msg = 'Call center payment is not due'
+
+
+class CallLogNotFound(APIException):
+    code = 3011
+    msg = 'Call log not found'
+
+
+class ReportNotFound(APIException):
+    code = 3012
+    msg = 'Report does not exists'
