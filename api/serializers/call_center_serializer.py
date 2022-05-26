@@ -358,4 +358,6 @@ class CallLogResponseSerializer(BaseResponseSerializer):
 
 class UploadExtFileRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(required=True)
+    agent_register_id = serializers.IntegerField(required=True)
     file = serializers.FileField(max_length=None, allow_empty_file=False)
+    
