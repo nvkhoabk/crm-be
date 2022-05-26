@@ -142,6 +142,9 @@ class FilterCallCenterParamSerializer(serializers.Serializer):
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False,
                                             allow_null=True)
 
+    from_date = serializers.DateField(allow_null=True, required=False)
+    to_date = serializers.DateField(allow_null=True, required=False)
+
 
 class FilterCallCenterResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=CallCenterSerializer())

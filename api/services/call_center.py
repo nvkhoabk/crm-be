@@ -122,7 +122,7 @@ class FilterCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = CallCenter.objects.filter(deleted_at__isnull=True)
 
-        filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type']
+        filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type', 'from_date', 'to_date']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -147,6 +147,14 @@ class FilterCallCenterService(BaseService):
             if key == 'discount_type' and value is not None:
                 query_set = query_set.filter(
                     discount_type=value,
+                )
+            if key == 'from_date' and value is not None:
+                query_set = query_set.filter(
+                    payment_date__gte=value
+                )
+            if key == 'to_date' and value is not None:
+                query_set = query_set.filter(
+                    payment_date__lte=value
                 )
 
         return query_set
@@ -223,18 +231,6 @@ class UpdateCallCenterService(BaseService):
                                                 is_enable=old_call_center.is_enable,
                                                 payment_start_date=old_call_center.payment_start_date,
                                                 payment_status=PAYMENT_STATUS.PAID)
-
-        total_old_agent = AgentRegister.objects.filter(company_id=old_call_center.company_id,
-                                                       deleted_at__isnull=True).aggregate(Sum('number'))
-
-        if total_old_agent > 0:
-            AgentRegister.objects.filter(company_id=old_call_center.company_id,
-                                         deleted_at__isnull=True).update(deleted_at=timezone.now())
-            new_charge_to = get_last_of_month(call_center.payment_date - relativedelta(months=1))
-
-            AgentRegister.objects.create(number=total_old_agent, use_from=call_center.payment_start_date,
-                                         use_to=call_center.payment_date, charge_from=call_center.payment_start_date,
-                                         charge_to=new_charge_to)
 
 
 class GetAgentsService(BaseService):
@@ -667,7 +663,7 @@ class CallCenterPaymentCalculatorService:
         viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
         mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
         vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
-        minute_fee = json.loads(call_center.minute_fee)
+        minute_fee = json.loads(self.call_center.minute_fee)
 
         viettel_fee = minute_fee.get(TELECOM_NUMBER.VIETTEL, 0)
         mobi_fee = minute_fee.get(TELECOM_NUMBER.MOBI, 0)
@@ -677,9 +673,12 @@ class CallCenterPaymentCalculatorService:
     def calculate_by_agent(self):
         agent_register_list = AgentRegister.objects.filter(company_id=self.call_center.company_id)
         total = 0
+        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
         for agent_register in agent_register_list:
-            total += agent_register.number * self.calculate_agent_fee(agent_register.charge_from,
-                                                                      agent_register.charge_to,
+            charge_from = max(agent_register.charge_from, self.call_center.payment_start_date)
+            charge_to = min(agent_register.charge_to, due_date)
+            total += agent_register.number * self.calculate_agent_fee(charge_from,
+                                                                      charge_to,
                                                                       self.call_center.agent_fee)
 
         return total

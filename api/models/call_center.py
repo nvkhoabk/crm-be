@@ -33,16 +33,6 @@ class CallCenter(BaseModel):
         db_table = 'call_center'
 
 
-class CallAgent(BaseModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=256)
-    secret = models.CharField(max_length=256)
-    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-
-    class Meta:
-        db_table = 'call_agent'
-
-
 class SipServiceInfo(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     token = models.CharField(max_length=1024)
@@ -62,6 +52,18 @@ class AgentRegister(BaseModel):
 
     class Meta:
         db_table = 'agent_register'
+
+
+class CallAgent(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=256)
+    secret = models.CharField(max_length=256)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    agent_register = models.ForeignKey(AgentRegister, on_delete=models.SET_NULL)
+    status = models.CharField(max_length=256)
+
+    class Meta:
+        db_table = 'call_agent'
 
 
 class CallCenterPaymentHistory(BaseModel):
