@@ -59,6 +59,12 @@ urlpatterns = [
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
+    path('manage/create_order/', manage.CreateCompanyView.as_view(), name='manage.create_order'),
+    path('manage/get_order/', manage.GetCompanyView.as_view(), name='manage.get_order'),
+    path('manage/update_order/', manage.UpdateCompanyView.as_view(), name='manage.update_order'),
+    path('manage/filter_order/', manage.FilterCompanyView.as_view(), name='manage.filter_order'),
+    path('manage/delete_order/', manage.DeleteCompanyView.as_view(), name='manage.delete_order'),
+
     # Call center
     path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(), name='callcenter.create_callcenter'),
     path('callcenter/get_callcenter/', call_center.GetCallCenterView.as_view(), name='callcenter.get_callcenter'),
@@ -66,7 +72,7 @@ urlpatterns = [
     path('callcenter/filter_callcenter/', call_center.FilterCallCenterView.as_view(), name='callcenter.filter_callcenter'),
     path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
     path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.disable_callcenter'),
-    path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(), name='callcenter.calculate_payment'),
+
     path('callcenter/start_callin/', call_center.StartCallInView.as_view(), name='callcenter.start_callin'),
     path('callcenter/end_callin/', call_center.EndCallInView.as_view(), name='callcenter.end_callin'),
     path('callcenter/start_callout/', call_center.StartCallOutView.as_view(), name='callcenter.start_callout'),
@@ -74,21 +80,25 @@ urlpatterns = [
 
     path('callcenter/get_agents/', call_center.GetAgentsView.as_view(), name='callcenter.get_agents'),
     path('callcenter/update_agents/', call_center.UpdateAgentsView.as_view(), name='callcenter.update_agents'),
+    path('callcenter/create_agent_register/', call_center.CreateAgentRegisterCenterView.as_view(),
+         name='callcenter.create_agent_register'),
+    path('callcenter/delete_agent_register/', call_center.DeleteAgentRegisterCenterView.as_view(),
+         name='callcenter.delete_agent_register'),
+    path('callcenter/filter_agent_register/', call_center.FilterAgentRegisterCenterView.as_view(),
+         name='callcenter.filter_agent_register'),
 
     path('callcenter/get_company_call_history/', call_center.GetCompanyCallHistoryView.as_view(), name='callcenter.get_company_call_history'),
     path('callcenter/get_user_call_history/', call_center.GetUserCallHistoryView.as_view(), name='callcenter.get_user_call_history'),
+
     path('callcenter/get_call_report/', call_center.GetCallReportView.as_view(), name='callcenter.get_call_report'),
     path('callcenter/get_external_report/', call_center.GetExternalPaymentReportView.as_view(), name='callcenter.get_external_report'),
     path('callcenter/get_credit_payment_report/', call_center.GetCreditPaymentReportView.as_view(), name='callcenter.get_external_report'),
+    path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(), name='callcenter.calculate_payment'),
+    path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
 
-    path('callcenter/create_agent_register/', call_center.CreateAgentRegisterCenterView.as_view(), name='callcenter.create_agent_register'),
-    path('callcenter/delete_agent_register/', call_center.DeleteAgentRegisterCenterView.as_view(), name='callcenter.delete_agent_register'),
-    path('callcenter/filter_agent_register/', call_center.FilterAgentRegisterCenterView.as_view(), name='callcenter.filter_agent_register'),
     path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
     path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),
     path('callcenter/call_answered', call_center.CallAnsweredView.as_view(), name='callcenter.call_answered'),
-
-    path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
 
     # Product
     path('product/create_product/', product.CreateProductView.as_view(), name='product.create_product'),

@@ -897,3 +897,121 @@ class FilterCustomerView(BaseAPIView):
         Customers = filter_Customer_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=Customers, request=serializer.validated_data, serializer=manage_serializer.FilterCustomerResponseSerializer)
+
+
+class CreateOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.CreateCompanyRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Create company',
+        operation_description='Create company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.CreateCompanyResponseSerializer,
+            exceptions.ManageCompanyDuplicated.code: exceptions.ManageCompanyDuplicated.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_company_service = manage_service.CreateCompanyService()
+        company = create_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=company, request=request, serializer=manage_serializer.CreateCompanyResponseSerializer)
+
+
+class GetOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.GetCompanyRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Get company',
+        operation_description='Get company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.GetCompanyResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_company_service = manage_service.GetCompanyService()
+        company = get_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=company, request=request, serializer=manage_serializer.GetCompanyResponseSerializer)
+
+
+class UpdateOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.UpdateCompanyRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Update company',
+        operation_description='Update company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.UpdateCompanyResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+            exceptions.ManageCompanyDuplicated.code: exceptions.ManageCompanyDuplicated.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_company_service = manage_service.UpdateCompanyService()
+        company = update_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=company, request=request, serializer=manage_serializer.UpdateCompanyResponseSerializer)
+
+
+class FilterOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.FilterCompanyRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Filter company',
+        operation_description='Filter company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterCompanyResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_company_service = manage_service.FilterCompanyService()
+        companies = filter_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=companies, request=serializer.validated_data,
+                                 serializer=manage_serializer.FilterCompanyResponseSerializer,
+                                 )
+
+
+class DeleteOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [SuperAdminPermission, ]
+    serializer_class = manage_serializer.DeleteCompanyRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Company'],
+        operation_id='Delete company',
+        operation_description='Delete company api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.DeleteCompanyRequestSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_company_service = manage_service.DeleteCompanyService()
+        delete_company_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results={}, request=request, serializer=manage_serializer.DeleteCompanyResponseSerializer)
