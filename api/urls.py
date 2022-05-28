@@ -5,6 +5,7 @@ from api.views import product
 from api.views import call_center
 from api.views import crawl
 from api.views import data
+from api.views import system_configuration
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -66,12 +67,17 @@ urlpatterns = [
     path('manage/delete_order/', manage.DeleteCompanyView.as_view(), name='manage.delete_order'),
 
     # Call center
-    path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(), name='callcenter.create_callcenter'),
+    path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(),
+         name='callcenter.create_callcenter'),
     path('callcenter/get_callcenter/', call_center.GetCallCenterView.as_view(), name='callcenter.get_callcenter'),
-    path('callcenter/update_callcenter/', call_center.UpdateCallCenterView.as_view(), name='callcenter.update_callcenter'),
-    path('callcenter/filter_callcenter/', call_center.FilterCallCenterView.as_view(), name='callcenter.filter_callcenter'),
-    path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(), name='callcenter.enable_callcenter'),
-    path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(), name='callcenter.disable_callcenter'),
+    path('callcenter/update_callcenter/', call_center.UpdateCallCenterView.as_view(),
+         name='callcenter.update_callcenter'),
+    path('callcenter/filter_callcenter/', call_center.FilterCallCenterView.as_view(),
+         name='callcenter.filter_callcenter'),
+    path('callcenter/enable_callcenter/', call_center.EnableCallCenterView.as_view(),
+         name='callcenter.enable_callcenter'),
+    path('callcenter/disable_callcenter/', call_center.DisableCallCenterView.as_view(),
+         name='callcenter.disable_callcenter'),
 
     path('callcenter/start_callin/', call_center.StartCallInView.as_view(), name='callcenter.start_callin'),
     path('callcenter/end_callin/', call_center.EndCallInView.as_view(), name='callcenter.end_callin'),
@@ -87,13 +93,18 @@ urlpatterns = [
     path('callcenter/filter_agent_register/', call_center.FilterAgentRegisterCenterView.as_view(),
          name='callcenter.filter_agent_register'),
 
-    path('callcenter/get_company_call_history/', call_center.GetCompanyCallHistoryView.as_view(), name='callcenter.get_company_call_history'),
-    path('callcenter/get_user_call_history/', call_center.GetUserCallHistoryView.as_view(), name='callcenter.get_user_call_history'),
+    path('callcenter/get_company_call_history/', call_center.GetCompanyCallHistoryView.as_view(),
+         name='callcenter.get_company_call_history'),
+    path('callcenter/get_user_call_history/', call_center.GetUserCallHistoryView.as_view(),
+         name='callcenter.get_user_call_history'),
 
     path('callcenter/get_call_report/', call_center.GetCallReportView.as_view(), name='callcenter.get_call_report'),
-    path('callcenter/get_external_report/', call_center.GetExternalPaymentReportView.as_view(), name='callcenter.get_external_report'),
-    path('callcenter/get_credit_payment_report/', call_center.GetCreditPaymentReportView.as_view(), name='callcenter.get_external_report'),
-    path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(), name='callcenter.calculate_payment'),
+    path('callcenter/get_external_report/', call_center.GetExternalPaymentReportView.as_view(),
+         name='callcenter.get_external_report'),
+    path('callcenter/get_credit_payment_report/', call_center.GetCreditPaymentReportView.as_view(),
+         name='callcenter.get_external_report'),
+    path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(),
+         name='callcenter.calculate_payment'),
     path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
 
     path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
@@ -106,6 +117,18 @@ urlpatterns = [
     path('product/get_product/', product.GetProductView.as_view(), name='product.get_product'),
     path('product/update_product/', product.UpdateProductView.as_view(), name='product.update_product'),
     path('product/delete_product/', product.DeleteProductView.as_view(), name='product.delete_product'),
+
+    # Sysconfig
+    path('sysconfig/create_company_email/', system_configuration.CreateCompanyEmailView.as_view(),
+         name='sysconfig.create_company_email'),
+    path('sysconfig/filter_product/', system_configuration.FilterCompanyEmailView.as_view(),
+         name='sysconfig.filter_company_email'),
+    path('sysconfig/get_product/', system_configuration.GetCompanyEmailView.as_view(),
+         name='sysconfig.get_company_email'),
+    path('sysconfig/update_product/', system_configuration.UpdateCompanyEmailView.as_view(),
+         name='sysconfig.update_company_email'),
+    path('sysconfig/delete_product/', system_configuration.DeleteCompanyEmailView.as_view(),
+         name='sysconfig.delete_company_email'),
 
 
     # Auth

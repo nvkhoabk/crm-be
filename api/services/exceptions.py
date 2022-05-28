@@ -34,7 +34,7 @@ class ManagePackageNotFound(APIException):
 class ManageCompanyDuplicated(APIException):
     code = 2020
     msg = 'Duplicate company name'
- 
+
 
 class ManageCompanyNotFound(APIException):
     code = 2021
@@ -154,3 +154,13 @@ class ReportNotFound(APIException):
 class NumberAgentRegisterNotMatch(APIException):
     code = 3013
     msg = 'Number agent register not match'
+
+
+class CompanyEmailDuplicated(APIException):
+    code = 4001
+    msg = 'Duplicated email'
+
+
+class CompanyEmailNotFound(APIException):
+    code = 4002
+    msg = 'Email not found'
