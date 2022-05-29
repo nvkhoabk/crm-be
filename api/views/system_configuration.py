@@ -246,3 +246,364 @@ class DeleteDataStatusView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=system_configuration_serializer.DeleteDataStatusResponseSerializer)
+
+
+class CreateDataSubStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateDataSubStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSubStatus'],
+        operation_id='Create data sub status',
+        operation_description='Create data sub status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateDataSubStatusResponseSerializer,
+            exceptions.DataSubStatusDuplicated.code: exceptions.DataSubStatusDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateDataSubStatusService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateDataSubStatusResponseSerializer)
+
+
+class GetDataSubStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetDataSubStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSubStatus'],
+        operation_id='Get data sub status',
+        operation_description='Get data sub status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetDataSubStatusResponseSerializer,
+            exceptions.DataSubStatusNotFound.code: exceptions.DataSubStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetDataSubStatusService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetDataSubStatusResponseSerializer)
+
+
+class UpdateDataSubStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateDataSubStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSubStatus'],
+        operation_id='Update data sub status',
+        operation_description='Update data sub status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateDataSubStatusResponseSerializer,
+            exceptions.DataSubStatusNotFound.code: exceptions.DataSubStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateDataSubStatusService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateDataSubStatusResponseSerializer)
+
+
+class FilterDataSubStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterDataSubStatusRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['DataSubStatus'],
+        operation_id='Filter data sub status',
+        operation_description='Filter data sub status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterDataSubStatusResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterDataSubStatusService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterDataSubStatusResponseSerializer)
+
+
+class DeleteDataSubStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteDataSubStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSubStatus'],
+        operation_id='Delete data sub status',
+        operation_description='Delete data sub status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteDataSubStatusResponseSerializer,
+            exceptions.DataSubStatusNotFound.code: exceptions.DataSubStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteDataSubStatusService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteDataSubStatusResponseSerializer)
+
+
+
+class CreateDataSourceView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateDataSourceRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSource'],
+        operation_id='Create data source',
+        operation_description='Create data source api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateDataSourceResponseSerializer,
+            exceptions.DataSourceDuplicated.code: exceptions.DataSourceDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateDataSourceService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateDataSourceResponseSerializer)
+
+
+class GetDataSourceView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetDataSourceRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSource'],
+        operation_id='Get data source',
+        operation_description='Get data source api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetDataSourceResponseSerializer,
+            exceptions.DataSourceNotFound.code: exceptions.DataSourceNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetDataSourceService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetDataSourceResponseSerializer)
+
+
+class UpdateDataSourceView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateDataSourceRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSource'],
+        operation_id='Update data source',
+        operation_description='Update data source api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateDataSourceResponseSerializer,
+            exceptions.DataSourceNotFound.code: exceptions.DataSourceNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateDataSourceService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateDataSourceResponseSerializer)
+
+
+class FilterDataSourceView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterDataSourceRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['DataSource'],
+        operation_id='Filter data source',
+        operation_description='Filter data source api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterDataSourceResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterDataSourceService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterDataSourceResponseSerializer)
+
+
+class DeleteDataSourceView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteDataSourceRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataSource'],
+        operation_id='Delete data source',
+        operation_description='Delete data source api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteDataSourceResponseSerializer,
+            exceptions.DataSourceNotFound.code: exceptions.DataSourceNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteDataSourceService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteDataSourceResponseSerializer)
+
+
+class CreateDataChannelView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateDataChannelRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataChannel'],
+        operation_id='Create data channel',
+        operation_description='Create data channel api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateDataChannelResponseSerializer,
+            exceptions.DataChannelDuplicated.code: exceptions.DataChannelDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateDataChannelService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateDataChannelResponseSerializer)
+
+
+class GetDataChannelView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetDataChannelRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataChannel'],
+        operation_id='Get data channel',
+        operation_description='Get data channel api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetDataChannelResponseSerializer,
+            exceptions.DataChannelNotFound.code: exceptions.DataChannelNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetDataChannelService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetDataChannelResponseSerializer)
+
+
+class UpdateDataChannelView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateDataChannelRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataChannel'],
+        operation_id='Update data channel',
+        operation_description='Update data channel api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateDataChannelResponseSerializer,
+            exceptions.DataChannelNotFound.code: exceptions.DataChannelNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateDataChannelService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateDataChannelResponseSerializer)
+
+
+class FilterDataChannelView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterDataChannelRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['DataChannel'],
+        operation_id='Filter data channel',
+        operation_description='Filter data channel api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterDataChannelResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterDataChannelService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterDataChannelResponseSerializer)
+
+
+class DeleteDataChannelView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteDataChannelRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataChannel'],
+        operation_id='Delete data channel',
+        operation_description='Delete data channel api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteDataChannelResponseSerializer,
+            exceptions.DataChannelNotFound.code: exceptions.DataChannelNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteDataChannelService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteDataChannelResponseSerializer)

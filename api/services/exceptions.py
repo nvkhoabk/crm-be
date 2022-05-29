@@ -167,10 +167,40 @@ class CompanyEmailNotFound(APIException):
 
 
 class DataStatusDuplicated(APIException):
-    code = 4001
+    code = 4003
     msg = 'Duplicated data status'
 
 
 class DataStatusNotFound(APIException):
-    code = 4002
+    code = 4004
     msg = 'Data status not found'
+
+
+class DataSubStatusDuplicated(APIException):
+    code = 4005
+    msg = 'Duplicated data sub status'
+
+
+class DataSubStatusNotFound(APIException):
+    code = 4006
+    msg = 'Data sub status not found'
+
+
+class DataSourceDuplicated(APIException):
+    code = 4007
+    msg = 'Duplicated data source'
+
+
+class DataSourceNotFound(APIException):
+    code = 4008
+    msg = 'Data source not found'
+
+
+class DataChannelDuplicated(APIException):
+    code = 4009
+    msg = 'Duplicated data channel'
+
+
+class DataChannelNotFound(APIException):
+    code = 4010
+    msg = 'Data channel not found'

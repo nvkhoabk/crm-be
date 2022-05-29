@@ -26,7 +26,7 @@ class DataStatus(BaseModel):
 
 class DataSubStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
+    data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
     name = models.CharField(max_length=1024)
 
     class Meta:

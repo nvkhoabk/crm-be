@@ -1,6 +1,6 @@
 import json
 
-from api.models.system_configuration import CompanyEmail, DataStatus
+from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -111,4 +111,162 @@ class DeleteDataStatusRequestSerializer(serializers.Serializer):
 
 
 class DeleteDataStatusResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class DataSubStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSubStatus
+        fields = ['name', 'data_status', 'company']
+
+
+class CreateDataSubStatusRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=True)
+    data_status_id = serializers.IntegerField(required=True)
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateDataSubStatusResponseSerializer(BaseResponseSerializer):
+    data = DataSubStatusSerializer()
+
+
+class GetDataSubStatusRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetDataSubStatusResponseSerializer(BaseResponseSerializer):
+    data = DataSubStatusSerializer()
+
+
+class UpdateDataSubStatusRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataSubStatus id', required=True)
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class UpdateDataSubStatusResponseSerializer(BaseResponseSerializer):
+    data = DataSubStatusSerializer()
+
+
+class FilterDataSubStatusRequestParamSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class FilterDataSubStatusRequestSerializer(BasePagingSerializer):
+    filter = FilterDataSubStatusRequestParamSerializer()
+
+
+class FilterDataSubStatusResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=DataSubStatusSerializer())
+
+
+class DeleteDataSubStatusRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataSubStatus id')
+
+
+class DeleteDataSubStatusResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class DataSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSource
+        fields = ['name', 'company']
+
+
+class CreateDataSourceRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=True)
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateDataSourceResponseSerializer(BaseResponseSerializer):
+    data = DataSourceSerializer()
+
+
+class GetDataSourceRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetDataSourceResponseSerializer(BaseResponseSerializer):
+    data = DataSourceSerializer()
+
+
+class UpdateDataSourceRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataSource id', required=True)
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class UpdateDataSourceResponseSerializer(BaseResponseSerializer):
+    data = DataSourceSerializer()
+
+
+class FilterDataSourceRequestParamSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class FilterDataSourceRequestSerializer(BasePagingSerializer):
+    filter = FilterDataSourceRequestParamSerializer()
+
+
+class FilterDataSourceResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=DataSourceSerializer())
+
+
+class DeleteDataSourceRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataSource id')
+
+
+class DeleteDataSourceResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class DataChannelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataChannel
+        fields = ['name', 'data_source', 'company']
+
+
+class CreateDataChannelRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=True)
+    data_source_id = serializers.IntegerField(required=True)
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateDataChannelResponseSerializer(BaseResponseSerializer):
+    data = DataChannelSerializer()
+
+
+class GetDataChannelRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetDataChannelResponseSerializer(BaseResponseSerializer):
+    data = DataChannelSerializer()
+
+
+class UpdateDataChannelRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataChannel id', required=True)
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class UpdateDataChannelResponseSerializer(BaseResponseSerializer):
+    data = DataChannelSerializer()
+
+
+class FilterDataChannelRequestParamSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024, required=False)
+
+
+class FilterDataChannelRequestSerializer(BasePagingSerializer):
+    filter = FilterDataChannelRequestParamSerializer()
+
+
+class FilterDataChannelResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=DataChannelSerializer())
+
+
+class DeleteDataChannelRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='DataChannel id')
+
+
+class DeleteDataChannelResponseSerializer(BaseResponseSerializer):
     pass
