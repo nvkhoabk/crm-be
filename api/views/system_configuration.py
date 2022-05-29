@@ -126,3 +126,123 @@ class DeleteCompanyEmailView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=system_configuration_serializer.DeleteCompanyEmailResponseSerializer)
+
+
+class CreateDataStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateDataStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataStatus'],
+        operation_id='Create data status',
+        operation_description='Create data status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateDataStatusResponseSerializer,
+            exceptions.DataStatusDuplicated.code: exceptions.DataStatusDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateDataStatusService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateDataStatusResponseSerializer)
+
+
+class GetDataStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetDataStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataStatus'],
+        operation_id='Get data status',
+        operation_description='Get data status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetDataStatusResponseSerializer,
+            exceptions.DataStatusNotFound.code: exceptions.DataStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetDataStatusService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetDataStatusResponseSerializer)
+
+
+class UpdateDataStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateDataStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataStatus'],
+        operation_id='Update data status',
+        operation_description='Update data status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateDataStatusResponseSerializer,
+            exceptions.DataStatusNotFound.code: exceptions.DataStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateDataStatusService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateDataStatusResponseSerializer)
+
+
+class FilterDataStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterDataStatusRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['DataStatus'],
+        operation_id='Filter data status',
+        operation_description='Filter data status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterDataStatusResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterDataStatusService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterDataStatusResponseSerializer)
+
+
+class DeleteDataStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteDataStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['DataStatus'],
+        operation_id='Delete data status',
+        operation_description='Delete data status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteDataStatusResponseSerializer,
+            exceptions.DataStatusNotFound.code: exceptions.DataStatusNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteDataStatusService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteDataStatusResponseSerializer)

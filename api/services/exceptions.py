@@ -164,3 +164,13 @@ class CompanyEmailDuplicated(APIException):
 class CompanyEmailNotFound(APIException):
     code = 4002
     msg = 'Email not found'
+
+
+class DataStatusDuplicated(APIException):
+    code = 4001
+    msg = 'Duplicated data status'
+
+
+class DataStatusNotFound(APIException):
+    code = 4002
+    msg = 'Data status not found'

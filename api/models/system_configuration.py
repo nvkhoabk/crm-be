@@ -12,24 +12,41 @@ class CompanyEmail(BaseModel):
     email = models.CharField(max_length=1024)
     password = models.CharField(max_length=1024, null=True)
 
+    class Meta:
+        db_table = 'company_emails'
 
-class Status(BaseModel):
+
+class DataStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=1024, unique=True)
+
+    class Meta:
+        db_table = 'data_status'
+
+
+class DataSubStatus(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
     name = models.CharField(max_length=1024)
 
-
-class SubStatus(BaseModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    status = models.ForeignKey(Status, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    class Meta:
+        db_table = 'data_substatus'
+        unique_together = ('name', 'status', 'company')
 
 
 class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=1024, unique=True)
+
+    class Meta:
+        db_table = 'data_sources'
 
 
 class DataChannel(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     name = models.CharField(max_length=1024)
+
+    class Meta:
+        db_table = 'data_channels'
+        unique_together = ('name', 'data_source', 'company')
