@@ -224,3 +224,13 @@ class EmailTemplateDuplicated(APIException):
 class EmailTemplateNotFound(APIException):
     code = 4014
     msg = 'Email template not found'
+
+
+class CompanyLogoDuplicated(APIException):
+    code = 4013
+    msg = 'Logo is already set'
+
+
+class CompanyLogoNotFound(APIException):
+    code = 4014
+    msg = 'Logo is not found'

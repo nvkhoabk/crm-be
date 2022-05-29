@@ -730,7 +730,6 @@ class DeleteEmailSyntaxView(BaseAPIView):
                                  serializer=system_configuration_serializer.DeleteEmailSyntaxResponseSerializer)
 
 
-
 class CreateEmailTemplateView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
@@ -849,3 +848,99 @@ class DeleteEmailTemplateView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=system_configuration_serializer.DeleteEmailTemplateResponseSerializer)
+
+
+class CreateCompanyLogoView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateCompanyLogoRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['CompanyLogo'],
+        operation_id='Create company logo',
+        operation_description='Create company logo api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateCompanyLogoResponseSerializer,
+            exceptions.CompanyLogoDuplicated.code: exceptions.CompanyLogoDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateCompanyLogoService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateCompanyLogoResponseSerializer)
+
+
+class GetCompanyLogoView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetCompanyLogoRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['CompanyLogo'],
+        operation_id='Get company logo',
+        operation_description='Get company logo api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetCompanyLogoResponseSerializer,
+            exceptions.CompanyLogoNotFound.code: exceptions.CompanyLogoNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetCompanyLogoService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetCompanyLogoResponseSerializer)
+
+
+class UpdateCompanyLogoView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateCompanyLogoRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['CompanyLogo'],
+        operation_id='Update company logo',
+        operation_description='Update company logo api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateCompanyLogoResponseSerializer,
+            exceptions.CompanyLogoNotFound.code: exceptions.CompanyLogoNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateCompanyLogoService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateCompanyLogoResponseSerializer)
+
+
+class DeleteCompanyLogoView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteCompanyLogoRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['CompanyLogo'],
+        operation_id='Delete company logo',
+        operation_description='Delete company logo api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteCompanyLogoResponseSerializer,
+            exceptions.CompanyLogoNotFound.code: exceptions.CompanyLogoNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteCompanyLogoService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteCompanyLogoResponseSerializer)

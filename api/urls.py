@@ -196,6 +196,15 @@ urlpatterns = [
     path('sysconfig/delete_email_template/', system_configuration.DeleteEmailTemplateView.as_view(),
          name='sysconfig.delete_email_template'),
 
+    path('sysconfig/create_company_log/', system_configuration.CreateCompanyLogoView.as_view(),
+         name='sysconfig.create_company_log'),
+    path('sysconfig/get_company_log/', system_configuration.GetCompanyLogoView.as_view(),
+         name='sysconfig.get_company_log'),
+    path('sysconfig/update_company_log/', system_configuration.UpdateCompanyLogoView.as_view(),
+         name='sysconfig.update_company_log'),
+    path('sysconfig/delete_company_log/', system_configuration.DeleteCompanyLogoView.as_view(),
+         name='sysconfig.delete_company_log'),
+
     # Auth
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
 

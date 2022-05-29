@@ -5,14 +5,15 @@ from api.common.cookies import Cookies
 from api.models.organization import UserRole
 from api.models.product import Product
 from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel, \
-    EmailSyntax, EmailTemplate
+    EmailSyntax, EmailTemplate, CompanyLogo
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (CompanyEmailDuplicated, CompanyEmailNotFound,
                                      DataStatusDuplicated, DataStatusNotFound, DataSubStatusDuplicated,
                                      DataSubStatusNotFound, DataSourceDuplicated, DataSourceNotFound,
                                      DataChannelNotFound, DataChannelDuplicated, EmailSyntaxNotFound,
-                                     EmailSyntaxDuplicated, EmailTemplateDuplicated, EmailTemplateNotFound, )
+                                     EmailSyntaxDuplicated, EmailTemplateDuplicated, EmailTemplateNotFound,
+                                     CompanyLogoDuplicated, CompanyLogoNotFound, )
 from django.db import IntegrityError
 
 
@@ -783,3 +784,80 @@ class DeleteEmailTemplateService(BaseService):
             ).delete()
         except EmailTemplate.DoesNotExist as e:
             raise EmailTemplateNotFound()
+
+
+class CreateCompanyLogoService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if not request.user.is_superuser:
+                user_roles = UserRole.objects.filter(user_id=request.user)
+
+                if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                    raise PermissionDenied()
+
+            return CompanyLogo.objects.create(
+                **kwargs
+            )
+        except IntegrityError as e:
+            raise CompanyLogoDuplicated()
+
+
+class GetCompanyLogoService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return CompanyLogo.objects.get(
+                company_id=user_roles.first().company_id
+            )
+        except CompanyLogo.DoesNotExist as e:
+            raise CompanyLogoNotFound()
+
+
+class UpdateCompanyLogoService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                logo = CompanyLogo.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                logo = CompanyLogo.objects.get(
+                    company_id=user_roles.first().company_id
+                )
+
+            if kwargs.get('logo'):
+                logo.logo = kwargs['logo']
+
+            logo.save()
+
+            return logo
+        except CompanyLogo.DoesNotExist:
+            raise CompanyLogoNotFound()
+
+
+class DeleteCompanyLogoService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            return CompanyLogo.objects.get(
+                company_id=user_roles.first().company_id
+            ).delete()
+        except CompanyLogo.DoesNotExist as e:
+            raise CompanyLogoNotFound()

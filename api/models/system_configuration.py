@@ -74,9 +74,8 @@ class EmailTemplate(BaseModel):
 
 
 class CompanyLogo(BaseModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    logo_path = models.CharField(max_length=1024)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)
+    logo = models.FileField(upload_to='uploads/%Y/%m/%d/')
 
     class Meta:
         db_table = 'company_logos'
-        unique_together = ('logo_path', 'company')

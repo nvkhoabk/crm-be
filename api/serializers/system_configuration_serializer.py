@@ -1,7 +1,7 @@
 import json
 
 from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel, \
-    EmailSyntax, EmailTemplate
+    EmailSyntax, EmailTemplate, CompanyLogo
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -382,4 +382,43 @@ class DeleteEmailTemplateRequestSerializer(serializers.Serializer):
 
 
 class DeleteEmailTemplateResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class CompanyLogoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyLogo
+        fields = ['logo', 'company']
+
+
+class CreateCompanyLogoRequestSerializer(serializers.Serializer):
+    logo = serializers.FileField()
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateCompanyLogoResponseSerializer(BaseResponseSerializer):
+    data = CompanyLogoSerializer()
+
+
+class GetCompanyLogoRequestSerializer(serializers.Serializer):
+    pass
+
+
+class GetCompanyLogoResponseSerializer(BaseResponseSerializer):
+    data = CompanyLogoSerializer()
+
+
+class UpdateCompanyLogoRequestSerializer(serializers.Serializer):
+    logo = serializers.FileField()
+
+
+class UpdateCompanyLogoResponseSerializer(BaseResponseSerializer):
+    data = CompanyLogoSerializer()
+
+
+class DeleteCompanyLogoRequestSerializer(serializers.Serializer):
+    pass
+
+
+class DeleteCompanyLogoResponseSerializer(BaseResponseSerializer):
     pass
