@@ -174,6 +174,28 @@ urlpatterns = [
     path('sysconfig/delete_data_channel/', system_configuration.DeleteDataChannelView.as_view(),
          name='sysconfig.delete_data_channel'),
 
+    path('sysconfig/create_email_syntax/', system_configuration.CreateEmailSyntaxView.as_view(),
+         name='sysconfig.create_email_syntax'),
+    path('sysconfig/filter_email_syntax/', system_configuration.FilterEmailSyntaxView.as_view(),
+         name='sysconfig.filter_email_syntax'),
+    path('sysconfig/get_email_syntax/', system_configuration.GetEmailSyntaxView.as_view(),
+         name='sysconfig.get_email_syntax'),
+    path('sysconfig/update_email_syntax/', system_configuration.UpdateEmailSyntaxView.as_view(),
+         name='sysconfig.update_email_syntax'),
+    path('sysconfig/delete_email_syntax/', system_configuration.DeleteEmailSyntaxView.as_view(),
+         name='sysconfig.delete_email_syntax'),
+
+    path('sysconfig/create_email_template/', system_configuration.CreateEmailTemplateView.as_view(),
+         name='sysconfig.create_email_template'),
+    path('sysconfig/filter_email_template/', system_configuration.FilterEmailTemplateView.as_view(),
+         name='sysconfig.filter_email_template'),
+    path('sysconfig/get_email_template/', system_configuration.GetEmailTemplateView.as_view(),
+         name='sysconfig.get_email_template'),
+    path('sysconfig/update_email_template/', system_configuration.UpdateEmailTemplateView.as_view(),
+         name='sysconfig.update_email_template'),
+    path('sysconfig/delete_email_template/', system_configuration.DeleteEmailTemplateView.as_view(),
+         name='sysconfig.delete_email_template'),
+
     # Auth
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
 

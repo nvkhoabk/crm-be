@@ -1,6 +1,7 @@
 import json
 
-from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel
+from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel, \
+    EmailSyntax, EmailTemplate
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -269,4 +270,116 @@ class DeleteDataChannelRequestSerializer(serializers.Serializer):
 
 
 class DeleteDataChannelResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class EmailSyntaxSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailSyntax
+        fields = ['code', 'column_name', 'company']
+
+
+class CreateEmailSyntaxRequestSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=256, required=True)
+    column_name = serializers.CharField(max_length=256, required=False, allow_null=True)
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateEmailSyntaxResponseSerializer(BaseResponseSerializer):
+    data = EmailSyntaxSerializer()
+
+
+class GetEmailSyntaxRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetEmailSyntaxResponseSerializer(BaseResponseSerializer):
+    data = EmailSyntaxSerializer()
+
+
+class UpdateEmailSyntaxRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField(max_length=256, required=False, allow_null=True)
+    column_name = serializers.CharField(max_length=256, required=False, allow_null=True)
+
+
+class UpdateEmailSyntaxResponseSerializer(BaseResponseSerializer):
+    data = EmailSyntaxSerializer()
+
+
+class FilterEmailSyntaxRequestParamSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=256, required=True)
+    column_name = serializers.CharField(max_length=256, required=False)
+
+
+class FilterEmailSyntaxRequestSerializer(BasePagingSerializer):
+    filter = FilterEmailSyntaxRequestParamSerializer()
+
+
+class FilterEmailSyntaxResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=EmailSyntaxSerializer())
+
+
+class DeleteEmailSyntaxRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='EmailSyntax id')
+
+
+class DeleteEmailSyntaxResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class EmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailTemplate
+        fields = ['code', 'email_name', 'content', 'company']
+
+
+class CreateEmailTemplateRequestSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=256, required=True)
+    email_name = serializers.CharField()
+    content = serializers.CharField()
+    company_id = serializers.IntegerField(required=True)
+
+
+class CreateEmailTemplateResponseSerializer(BaseResponseSerializer):
+    data = EmailTemplateSerializer()
+
+
+class GetEmailTemplateRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetEmailTemplateResponseSerializer(BaseResponseSerializer):
+    data = EmailTemplateSerializer()
+
+
+class UpdateEmailTemplateRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField(max_length=256, required=False, allow_null=True)
+    email_name = serializers.CharField(required=False, allow_null=True)
+    content = serializers.CharField(required=False, allow_null=True)
+
+
+class UpdateEmailTemplateResponseSerializer(BaseResponseSerializer):
+    data = EmailTemplateSerializer()
+
+
+class FilterEmailTemplateRequestParamSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=256, required=True)
+    column_name = serializers.CharField(max_length=256, required=False)
+
+
+class FilterEmailTemplateRequestSerializer(BasePagingSerializer):
+    filter = FilterEmailTemplateRequestParamSerializer()
+
+
+class FilterEmailTemplateResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=EmailTemplateSerializer())
+
+
+class DeleteEmailTemplateRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='EmailTemplate id')
+
+
+class DeleteEmailTemplateResponseSerializer(BaseResponseSerializer):
     pass

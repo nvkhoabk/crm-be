@@ -607,3 +607,245 @@ class DeleteDataChannelView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=system_configuration_serializer.DeleteDataChannelResponseSerializer)
+
+
+
+class CreateEmailSyntaxView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateEmailSyntaxRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailSyntax'],
+        operation_id='Create email syntax',
+        operation_description='Create email syntax api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateEmailSyntaxResponseSerializer,
+            exceptions.EmailSyntaxDuplicated.code: exceptions.EmailSyntaxDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateEmailSyntaxService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateEmailSyntaxResponseSerializer)
+
+
+class GetEmailSyntaxView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetEmailSyntaxRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailSyntax'],
+        operation_id='Get email syntax',
+        operation_description='Get email syntax api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetEmailSyntaxResponseSerializer,
+            exceptions.EmailSyntaxNotFound.code: exceptions.EmailSyntaxNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetEmailSyntaxService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetEmailSyntaxResponseSerializer)
+
+
+class UpdateEmailSyntaxView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateEmailSyntaxRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailSyntax'],
+        operation_id='Update email syntax',
+        operation_description='Update email syntax api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateEmailSyntaxResponseSerializer,
+            exceptions.EmailSyntaxNotFound.code: exceptions.EmailSyntaxNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateEmailSyntaxService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateEmailSyntaxResponseSerializer)
+
+
+class FilterEmailSyntaxView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterEmailSyntaxRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['EmailSyntax'],
+        operation_id='Filter email syntax',
+        operation_description='Filter email syntax api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterEmailSyntaxResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterEmailSyntaxService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterEmailSyntaxResponseSerializer)
+
+
+class DeleteEmailSyntaxView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteEmailSyntaxRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailSyntax'],
+        operation_id='Delete email syntax',
+        operation_description='Delete email syntax api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteEmailSyntaxResponseSerializer,
+            exceptions.EmailSyntaxNotFound.code: exceptions.EmailSyntaxNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteEmailSyntaxService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteEmailSyntaxResponseSerializer)
+
+
+
+class CreateEmailTemplateView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.CreateEmailTemplateRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailTemplate'],
+        operation_id='Create email template',
+        operation_description='Create email template api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.CreateEmailTemplateResponseSerializer,
+            exceptions.EmailTemplateDuplicated.code: exceptions.EmailTemplateDuplicated.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = system_configuration_service.CreateEmailTemplateService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.CreateEmailTemplateResponseSerializer)
+
+
+class GetEmailTemplateView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.GetEmailTemplateRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailTemplate'],
+        operation_id='Get email template',
+        operation_description='Get email template api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.GetEmailTemplateResponseSerializer,
+            exceptions.EmailTemplateNotFound.code: exceptions.EmailTemplateNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = system_configuration_service.GetEmailTemplateService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.GetEmailTemplateResponseSerializer)
+
+
+class UpdateEmailTemplateView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.UpdateEmailTemplateRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailTemplate'],
+        operation_id='Update email template',
+        operation_description='Update email template api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.UpdateEmailTemplateResponseSerializer,
+            exceptions.EmailTemplateNotFound.code: exceptions.EmailTemplateNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = system_configuration_service.UpdateEmailTemplateService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.UpdateEmailTemplateResponseSerializer)
+
+
+class FilterEmailTemplateView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    serializer_class = system_configuration_serializer.FilterEmailTemplateRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['EmailTemplate'],
+        operation_id='Filter email template',
+        operation_description='Filter email template api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.FilterEmailTemplateResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = system_configuration_service.FilterEmailTemplateService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=system_configuration_serializer.FilterEmailTemplateResponseSerializer)
+
+
+class DeleteEmailTemplateView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, SystemConfigurationEditPermission]
+    serializer_class = system_configuration_serializer.DeleteEmailTemplateRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['EmailTemplate'],
+        operation_id='Delete email template',
+        operation_description='Delete email template api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: system_configuration_serializer.DeleteEmailTemplateResponseSerializer,
+            exceptions.EmailTemplateNotFound.code: exceptions.EmailTemplateNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = system_configuration_service.DeleteEmailTemplateService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=system_configuration_serializer.DeleteEmailTemplateResponseSerializer)

@@ -204,3 +204,23 @@ class DataChannelDuplicated(APIException):
 class DataChannelNotFound(APIException):
     code = 4010
     msg = 'Data channel not found'
+
+
+class EmailSyntaxDuplicated(APIException):
+    code = 4011
+    msg = 'Duplicated email syntax'
+
+
+class EmailSyntaxNotFound(APIException):
+    code = 4012
+    msg = 'Email syntax not found'
+
+
+class EmailTemplateDuplicated(APIException):
+    code = 4013
+    msg = 'Duplicated email template'
+
+
+class EmailTemplateNotFound(APIException):
+    code = 4014
+    msg = 'Email template not found'

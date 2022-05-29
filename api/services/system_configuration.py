@@ -4,13 +4,15 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.models.organization import UserRole
 from api.models.product import Product
-from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel
+from api.models.system_configuration import CompanyEmail, DataStatus, DataSubStatus, DataSource, DataChannel, \
+    EmailSyntax, EmailTemplate
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
-from api.services.exceptions import (ProductNotFound, CompanyEmailDuplicated, CompanyEmailNotFound,
+from api.services.exceptions import (CompanyEmailDuplicated, CompanyEmailNotFound,
                                      DataStatusDuplicated, DataStatusNotFound, DataSubStatusDuplicated,
                                      DataSubStatusNotFound, DataSourceDuplicated, DataSourceNotFound,
-                                     DataChannelNotFound, DataChannelDuplicated, )
+                                     DataChannelNotFound, DataChannelDuplicated, EmailSyntaxNotFound,
+                                     EmailSyntaxDuplicated, EmailTemplateDuplicated, EmailTemplateNotFound, )
 from django.db import IntegrityError
 
 
@@ -554,3 +556,230 @@ class DeleteDataChannelService(BaseService):
             ).delete()
         except DataChannel.DoesNotExist as e:
             raise DataChannelNotFound()
+
+
+class CreateEmailSyntaxService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if not request.user.is_superuser:
+                user_roles = UserRole.objects.filter(user_id=request.user)
+
+                if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                    raise PermissionDenied()
+
+            return EmailSyntax.objects.create(
+                **kwargs
+            )
+        except IntegrityError as e:
+            raise EmailSyntaxDuplicated()
+
+
+class GetEmailSyntaxService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return EmailSyntax.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+        except EmailSyntax.DoesNotExist as e:
+            raise EmailSyntaxNotFound()
+
+
+class UpdateEmailSyntaxService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                syntax = EmailSyntax.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                syntax = EmailSyntax.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            if kwargs.get('code'):
+                syntax.code = kwargs['code']
+
+            if kwargs.get('column_name'):
+                syntax.column_name = kwargs['column_name']
+
+            syntax.save()
+
+            return syntax
+        except EmailSyntax.DoesNotExist:
+            raise EmailSyntaxNotFound()
+
+
+class FilterEmailSyntaxService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = EmailSyntax.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['code', 'column_name']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'code':
+                query_set = query_set.filter(
+                    code__icontains=value,
+                )
+
+            if key == 'column_name':
+                query_set = query_set.filter(
+                    column_name__icontains=value,
+                )
+
+        return query_set
+
+
+class DeleteEmailSyntaxService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            return EmailSyntax.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            ).delete()
+        except EmailSyntax.DoesNotExist as e:
+            raise EmailSyntaxNotFound()
+
+
+class CreateEmailTemplateService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if not request.user.is_superuser:
+                user_roles = UserRole.objects.filter(user_id=request.user)
+
+                if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                    raise PermissionDenied()
+
+            return EmailTemplate.objects.create(
+                **kwargs
+            )
+        except IntegrityError as e:
+            raise EmailTemplateDuplicated()
+
+
+class GetEmailTemplateService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return EmailTemplate.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+        except EmailTemplate.DoesNotExist as e:
+            raise EmailTemplateNotFound()
+
+
+class UpdateEmailTemplateService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                template = EmailTemplate.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                template = EmailTemplate.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            if kwargs.get('code'):
+                template.code = kwargs['code']
+
+            if kwargs.get('email_name'):
+                template.email_name = kwargs['email_name']
+
+            if kwargs.get('content'):
+                template.content = kwargs['content']
+
+            template.save()
+
+            return template
+        except EmailTemplate.DoesNotExist:
+            raise EmailTemplateNotFound()
+
+
+class FilterEmailTemplateService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = EmailTemplate.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['code', 'email_name']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'code':
+                query_set = query_set.filter(
+                    code__icontains=value,
+                )
+
+            if key == 'email_name':
+                query_set = query_set.filter(
+                    email_name__icontains=value,
+                )
+
+        return query_set
+
+
+class DeleteEmailTemplateService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            return EmailTemplate.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            ).delete()
+        except EmailTemplate.DoesNotExist as e:
+            raise EmailTemplateNotFound()
