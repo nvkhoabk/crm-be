@@ -1,0 +1,81 @@
+from django.db import models
+
+from api.models import BaseModel
+from api.models.organization import Company
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class CompanyEmail(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    email = models.CharField(max_length=1024)
+    password = models.CharField(max_length=1024, null=True)
+
+    class Meta:
+        db_table = 'company_emails'
+
+
+class DataStatus(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=1024, unique=True)
+
+    class Meta:
+        db_table = 'data_status'
+
+
+class DataSubStatus(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
+    name = models.CharField(max_length=1024)
+
+    class Meta:
+        db_table = 'data_substatus'
+        unique_together = ('name', 'status', 'company')
+
+
+class DataSource(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=1024, unique=True)
+
+    class Meta:
+        db_table = 'data_sources'
+
+
+class DataChannel(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+    name = models.CharField(max_length=1024)
+
+    class Meta:
+        db_table = 'data_channels'
+        unique_together = ('name', 'data_source', 'company')
+
+
+class EmailSyntax(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    code = models.CharField(max_length=256)
+    column_name = models.CharField(max_length=256)
+
+    class Meta:
+        db_table = 'email_templates'
+        unique_together = ('code', 'company')
+
+
+class EmailTemplate(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    code = models.CharField(max_length=256)
+    email_name = models.TextField()
+    content = models.TextField()
+
+    class Meta:
+        db_table = 'email_templates'
+        unique_together = ('code', 'company')
+
+
+class CompanyLogo(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)
+    logo = models.FileField(upload_to='uploads/%Y/%m/%d/')
+
+    class Meta:
+        db_table = 'company_logos'

@@ -154,7 +154,7 @@ class CalculatePayemntCallCenterView(BaseAPIView):
     permission_classes = [IsAuthenticated, SuperAdminPermission]
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Center Report'],
         operation_id='Calculate payment call center',
         operation_description='Calculate payment call center',
         responses={
@@ -176,7 +176,7 @@ class GetAgentsView(BaseAPIView):
     serializer_class = call_center_serializer.GetAgentsRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Agents'],
         operation_id='Get Agents',
         operation_description='Get Agents',
         request_body=serializer_class,
@@ -199,7 +199,7 @@ class UpdateAgentsView(BaseAPIView):
     serializer_class = call_center_serializer.UpdateAgentsRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Agents'],
         operation_id='Update Agents',
         operation_description='Update Agents',
         request_body=serializer_class,
@@ -221,7 +221,7 @@ class StartCallInView(BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Events'],
         operation_id='Start Call In',
         operation_description='Start Call In',
         responses={}
@@ -235,7 +235,7 @@ class EndCallInView(BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Events'],
         operation_id='End Call In',
         operation_description='End Call In',
         responses={}
@@ -249,7 +249,7 @@ class StartCallOutView(BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Events'],
         operation_id='Start Call Out',
         operation_description='End Call Out',
         responses={}
@@ -263,7 +263,7 @@ class EndCallOutView(BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Events'],
         operation_id='End Call Out',
         operation_description='End Call Out',
         responses={}
@@ -279,7 +279,7 @@ class GetCompanyCallHistoryView(BaseAPIView):
     pagination_class = True
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call History'],
         operation_id='Get company call history',
         operation_description='Get company call history',
         request_body=serializer_class,
@@ -302,7 +302,7 @@ class GetUserCallHistoryView(BaseAPIView):
     pagination_class = True
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call History'],
         operation_id='Get call history',
         operation_description='Get user call history',
         request_body=serializer_class,
@@ -325,7 +325,7 @@ class GetCallReportView(BaseAPIView):
     pagination_class = True
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Center Report'],
         operation_id='Get call report',
         operation_description='Get call report',
         request_body=serializer_class,
@@ -347,7 +347,7 @@ class CreateAgentRegisterCenterView(BaseAPIView):
     serializer_class = call_center_serializer.CreateAgentResiterRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Agents'],
         operation_id='Create Agent Register',
         operation_description='Create Agent Register',
         request_body=serializer_class,
@@ -370,7 +370,7 @@ class DeleteAgentRegisterCenterView(BaseAPIView):
     serializer_class = call_center_serializer.DeleteAgentRegisterRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Agents'],
         operation_id='Delete Agent Register',
         operation_description='Delete Agent Register',
         request_body=serializer_class,
@@ -394,7 +394,7 @@ class FilterAgentRegisterCenterView(BaseAPIView):
     pagination_class = True
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Agents'],
         operation_id='Filter Agent Register',
         operation_description='Filter Agent Register',
         request_body=serializer_class,
@@ -418,7 +418,7 @@ class GetExternalPaymentReportView(BaseAPIView):
     pagination_class = True
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Center Report'],
         operation_id='Get external report',
         operation_description='Get external report',
         request_body=serializer_class,
@@ -440,7 +440,7 @@ class GetCreditPaymentReportView(BaseAPIView):
     serializer_class = call_center_serializer.GetCreditPaymentRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center'],
+        tags=['Manage Call Center Report'],
         operation_id='Get credit payment report',
         operation_description='Get credit payment report',
         request_body=serializer_class,
@@ -506,11 +506,22 @@ class CallAnsweredView(BaseAPIView):
         service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response()
 
+
 class UploadExtFile(BaseAPIView):
     authentication_classes = []
     permission_classes = []
     serializer_class = call_center_serializer.UploadExtFileRequestSerializer
 
+    @swagger_auto_schema(
+        tags=['Manage Call Center Report'],
+        operation_id='Upload extension file',
+        operation_description='Upload extension file',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.CallLogResponseSerializer,
+            exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
+        }
+    )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.UploadExtFileService()
         service.serve(request, cookies, *args, **serializer.validated_data)
