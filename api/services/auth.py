@@ -91,9 +91,9 @@ class AuthGetUserInfoService(BaseService):
                                 MODULES.CALL_CENTER_LIST_MANAGEMENT, MODULES.PARAM_CONFIG]
         elif len(response['roles']) == 1 and response['roles'][0]['role'] is None \
                 and response['roles'][0]['department'] is None:
-            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE]
+            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK]
             call_center = CallCenter.objects.filter(company_id=company_id)
-            if call_center:
+            if len(call_center) > 0 and call_center[0].is_enable:
                 response['menu'].append(MODULES.CALL_CENTER_MANAGEMENT)
             else:
                 response['menu'].append(MODULES.CALL_CENTER_ABOUT)
