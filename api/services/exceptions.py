@@ -234,3 +234,23 @@ class CompanyLogoDuplicated(APIException):
 class CompanyLogoNotFound(APIException):
     code = 4014
     msg = 'Logo is not found'
+
+
+class OrderDuplicated(APIException):
+    code = 5001
+    msg = 'Order is duplicated'
+
+
+class OrderNotFound(APIException):
+    code = 5002
+    msg = 'Order is not found'
+
+
+class OrderDetailDuplicated(APIException):
+    code = 5003
+    msg = 'Order detail is duplicated'
+
+
+class OrderDetailNotFound(APIException):
+    code = 5004
+    msg = 'Order detail is not found'

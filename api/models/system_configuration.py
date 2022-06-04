@@ -1,6 +1,6 @@
 from django.db import models
 
-from api.models import BaseModel
+from api.models.base import BaseModel
 from api.models.organization import Company
 from django.contrib.auth import get_user_model
 
@@ -18,7 +18,7 @@ class CompanyEmail(BaseModel):
 
 class DataStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024, unique=True)
+    name = models.CharField(max_length=128, unique=True)
 
     class Meta:
         db_table = 'data_status'
@@ -27,16 +27,16 @@ class DataStatus(BaseModel):
 class DataSubStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=128)
 
     class Meta:
         db_table = 'data_substatus'
-        unique_together = ('name', 'status', 'company')
+        unique_together = ('name', 'data_status', 'company')
 
 
 class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024, unique=True)
+    name = models.CharField(max_length=128, unique=True)
 
     class Meta:
         db_table = 'data_sources'
@@ -58,7 +58,7 @@ class EmailSyntax(BaseModel):
     column_name = models.CharField(max_length=256)
 
     class Meta:
-        db_table = 'email_templates'
+        db_table = 'email_syntax'
         unique_together = ('code', 'company')
 
 

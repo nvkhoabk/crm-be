@@ -3,6 +3,9 @@ from django.db import models
 from api.models.organization import Company
 from django.contrib.auth import get_user_model
 
+from api.models.product import Product
+from api.models.system_configuration import DataStatus, DataSubStatus, DataSource, DataChannel
+
 User = get_user_model()
 
 
@@ -149,13 +152,45 @@ class Data(models.Model):
     class Meta:
         db_table = 'data'
 
-#
-# class Order(BaseModel):
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=255, db_index=True, unique=True)
-#     type = models.CharField(max_length=255)
-#     owner = models.CharField(max_length=255)
-#     phone = models.CharField(max_length=255)
-#     class Meta:
-#         db_table = 'companies'
-#         unique_together = ('name', 'deleted_at',)
+
+class Order(BaseModel):
+    created_date = models.DateField(db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    price = models.IntegerField(default=0)
+    debt = models.IntegerField(default=0)
+    due_date = models.DateField(db_index=True)
+    annual_debt = models.IntegerField(default=0)
+    annual_due_date = models.DateField(db_index=True)
+    pic = models.ForeignKey(User, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    shipping_code = models.CharField(max_length=1024, default='')
+    shipping_fee = models.BigIntegerField(default=0)
+    data_status = models.ForeignKey(DataStatus, null=True, on_delete=models.SET_NULL)
+    data_sub_status = models.ForeignKey(DataSubStatus, null=True, on_delete=models.SET_NULL)
+    debt_status = models.CharField(max_length=128)
+    data_source = models.ForeignKey(DataSource, null=True, on_delete=models.SET_NULL)
+    data_channel = models.ForeignKey(DataChannel, null=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        db_table = 'orders'
+
+
+class OrderDetail(BaseModel):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    type = models.CharField(max_length=64)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.BigIntegerField()
+    discount = models.BigIntegerField()
+    remaining_payment_amount = models.BigIntegerField()
+    paid_payment_amount = models.BigIntegerField()
+    debt = models.BigIntegerField()
+    due_date = models.DateField()
+    file_attach = models.FileField()
+    invoice = models.TextField()
+
+
+    class Meta:
+        db_table = 'order_details'
+        index_together = ('order', 'type')
+

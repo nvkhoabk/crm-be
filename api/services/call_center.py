@@ -333,13 +333,13 @@ class GetCallReportService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
         from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
-        to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
+        to_date = (kwargs['filter']['to_date'] + relativedelta(days=1)).strftime('%Y-%m-%d')
 
         call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
         self.init_call_report(call_agents)
 
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           created_at__gte=from_date, created_at__lte=to_date, status__isnull=False)
+                                           created_at__gte=from_date, created_at__lt=to_date, status__isnull=False)
 
         call_history_list = []
         for call_log in call_logs:
