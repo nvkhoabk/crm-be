@@ -272,7 +272,7 @@ class DeleteOrderDetailView(BaseAPIView):
                                  serializer=data_serializer.DeleteOrderDetailResponseSerializer)
 
 
-class FilterOrderHistoryDetailView(BaseAPIView):
+class FilterOrderHistoryView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataReadPermission]
     serializer_class = data_serializer.FilterOrderHistoryRequestSerializer
@@ -280,7 +280,7 @@ class FilterOrderHistoryDetailView(BaseAPIView):
 
     @swagger_auto_schema(
         tags=['OrderHistory'],
-        operation_id='Filter order detail',
+        operation_id='Filter order history',
         operation_description='Filter order detail api',
         request_body=serializer_class,
         responses={
@@ -293,4 +293,76 @@ class FilterOrderHistoryDetailView(BaseAPIView):
         products = filter_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=products, request=serializer.validated_data,
-                                 serializer=data_serializer.FilterOrderDetailResponseSerializer)
+                                 serializer=data_serializer.FilterOrderHistoryResponseSerializer)
+
+
+class FilterOrderDetailHistoryView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.FilterOrderHistoryRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['OrderDetailHistory'],
+        operation_id='Filter order detail history',
+        operation_description='Filter order detail history api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.FilterOrderDetailHistoryResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = data_service.FilterOrderDetailService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=data_serializer.FilterOrderDetailHistoryResponseSerializer)
+
+
+class BulkUpdateOrderStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.BulkUpdateOrderStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='Bulk update order status',
+        operation_description='Bulk update order status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.BulkUpdateOrderStatusResponseSerializer,
+            exceptions.OrderNotFound.code: exceptions.OrderNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = data_service.BulkUpdateOrderStatusService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.BulkUpdateOrderStatusResponseSerializer)
+
+
+class BulkUpdateOrderPicView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.BulkUpdateOrderPicRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='Bulk update order pic',
+        operation_description='Bulk update order pic api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.BulkUpdateOrderPicResponseSerializer,
+            exceptions.OrderNotFound.code: exceptions.OrderNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = data_service.BulkUpdateOrderPicService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.BulkUpdateOrderPicResponseSerializer)

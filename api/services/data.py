@@ -1,7 +1,8 @@
 import json
+import math
 
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 
 from api.common.base_service import BaseService
@@ -51,9 +52,19 @@ class CreateOrderService(BaseService):
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
 
-            return Order.objects.create(
+            order = Order.objects.create(
                 **kwargs
             )
+
+            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date, product_id=order.product_id,
+                                        price=order.price, debt=order.debt, due_date=order.due_date,
+                                        annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
+                                        pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
+                                        shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
+                                        data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
+                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id)
+
+            return order
         except IntegrityError as e:
             raise OrderDuplicated()
 
@@ -129,6 +140,14 @@ class UpdateOrderService(BaseService):
                 order.email = kwargs['shipping_fee']
 
             order.save()
+
+            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date, product_id=order.product_id,
+                                        price=order.price, debt=order.debt, due_date=order.due_date,
+                                        annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
+                                        pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
+                                        shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
+                                        data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
+                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id)
 
             return order
         except Order.DoesNotExist:
@@ -217,9 +236,20 @@ class CreateOrderDetailService(BaseService):
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
 
-            return OrderDetail.objects.create(
+            order_detail = OrderDetail.objects.create(
                 **kwargs
             )
+
+            OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+                                              type=order_detail.type, product_id=order_detail.product_id,
+                                              quantity=order_detail.quantity, price=order_detail.price,
+                                              discount=order_detail.discount,
+                                              remaining_payment_amount=order_detail.remaining_payment_amount,
+                                              paid_payment_amount=order_detail.paid_payment_amount,
+                                              debt=order_detail.debt, due_date=order_detail.due_date,
+                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice)
+
+            return order_detail
         except IntegrityError as e:
             raise OrderDetailDuplicated()
 
@@ -322,9 +352,17 @@ class UpdateOrderDetailService(BaseService):
                 order_detail.order_id = kwargs['invoice']
 
 
-            OrderDetail.save()
+            order_detail.save()
+            OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+                                              type=order_detail.type, product_id=order_detail.product_id,
+                                              quantity=order_detail.quantity, price=order_detail.price,
+                                              discount=order_detail.discount,
+                                              remaining_payment_amount=order_detail.remaining_payment_amount,
+                                              paid_payment_amount=order_detail.paid_payment_amount,
+                                              debt=order_detail.debt, due_date=order_detail.due_date,
+                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice)
 
-            return OrderDetail
+            return order_detail
         except OrderDetail.DoesNotExist:
             raise OrderDetailNotFound()
 
@@ -367,7 +405,7 @@ class FilterOrderHistoryService(BaseService):
                     order_id=value,
                 )
 
-        return query_set
+        return query_set.order_by('-id')
 
 
 class FilterOrderDetailHistoryService(BaseService):
@@ -401,4 +439,62 @@ class FilterOrderDetailHistoryService(BaseService):
                     type=value,
                 )
 
-        return query_set
+        return query_set.order_by('order_detail_id', '-created_at')
+
+
+class BulkUpdateOrderStatusService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                order_id_list = kwargs.get('order_id_list')
+
+                for order_id in order_id_list:
+                    order = Order.objects.get(pk=order_id)
+                    OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
+                                                product_id=order.product_id,
+                                                price=order.price, debt=order.debt, due_date=order.due_date,
+                                                annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
+                                                pic=order.pic, customer_id=order.customer_id,
+                                                shipping_code=order.shipping_code,
+                                                shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
+                                                data_sub_status_id=order.data_sub_status_id,
+                                                debt_status=order.debt_status,
+                                                data_source_id=order.data_source_id,
+                                                data_channel_id=order.data_channel_id)
+
+                    order.data_status_id = kwargs.get('data_status_id')
+                    order.data_sub_status_id = kwargs.get('data_sub_status_id')
+                    order.save()
+
+        except Order.DoesNotExist:
+            raise OrderNotFound()
+
+
+class BulkUpdateOrderPicService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                order_id_list = kwargs.get('order_id_list')
+                pic_list = kwargs.get('pic_list')
+                number_order_per_pic = math.floor(len(order_id_list) / len(pic_list)) + 1
+
+                for index, order_id in enumerate(order_id_list):
+                    pic_index = math.floor(index / number_order_per_pic)
+                    order = Order.objects.get(pk=order_id)
+                    OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
+                                                product_id=order.product_id,
+                                                price=order.price, debt=order.debt, due_date=order.due_date,
+                                                annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
+                                                pic=order.pic, customer_id=order.customer_id,
+                                                shipping_code=order.shipping_code,
+                                                shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
+                                                data_sub_status_id=order.data_sub_status_id,
+                                                debt_status=order.debt_status,
+                                                data_source_id=order.data_source_id,
+                                                data_channel_id=order.data_channel_id)
+
+                    order.pic = pic_list[pic_index]
+                    order.save()
+
+        except Order.DoesNotExist:
+            raise OrderNotFound()

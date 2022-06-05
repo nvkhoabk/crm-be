@@ -229,3 +229,22 @@ class FilterOrderDetailHistoryRequestSerializer(BasePagingSerializer):
 
 class FilterOrderDetailHistoryResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=OrderDetailSerializer())
+
+
+class BulkUpdateOrderStatusRequestSerializer(serializers.Serializer):
+    order_id_list = serializers.ListField(child=serializers.IntegerField())
+    data_status_id = serializers.IntegerField()
+    data_sub_status_id = serializers.IntegerField(allow_null=True, required=False)
+
+
+class BulkUpdateOrderStatusResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class BulkUpdateOrderPicRequestSerializer(serializers.Serializer):
+    order_id_list = serializers.ListField(child=serializers.IntegerField())
+    pic_list = serializers.ListField(child=serializers.IntegerField())
+
+
+class BulkUpdateOrderPicResponseSerializer(BaseResponseSerializer):
+    pass

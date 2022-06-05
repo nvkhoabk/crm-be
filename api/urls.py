@@ -227,4 +227,6 @@ urlpatterns = [
     path('data/get_order_detail/', data.GetOrderDetailView.as_view(), name='data.get_order_detail'),
     path('data/update_order_detail/', data.UpdateOrderDetailView.as_view(), name='data.update_order_detail'),
     path('data/delete_order_detail/', data.DeleteOrderDetailView.as_view(), name='data.delete_order_detail'),
+    path('data/filter_order_history/', data.FilterOrderHistoryView.as_view(), name='data.filter_order_history'),
+    path('data/filter_order_detail_history/', data.FilterOrderDetailHistoryView.as_view(), name='data.filter_order_detail_history'),
 ]
