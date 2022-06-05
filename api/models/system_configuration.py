@@ -31,7 +31,7 @@ class DataSubStatus(BaseModel):
 
     class Meta:
         db_table = 'data_substatus'
-        unique_together = ('name', 'status', 'company')
+        unique_together = ('name', 'data_status', 'company')
 
 
 class DataSource(BaseModel):
@@ -58,7 +58,7 @@ class EmailSyntax(BaseModel):
     column_name = models.CharField(max_length=256)
 
     class Meta:
-        db_table = 'email_templates'
+        db_table = 'email_syntax'
         unique_together = ('code', 'company')
 
 
