@@ -356,8 +356,16 @@ class CallLogRequestSerializer(serializers.Serializer):
 class CallLogResponseSerializer(BaseResponseSerializer):
     None
 
+class ErrorExtFileSerializer(serializers.Serializer):
+    error_call_agents = serializers.ListField(child=serializers.CharField())
+
+class UploadExtFileResponseSerializer(BaseResponseSerializer):
+    data = ErrorExtFileSerializer()
+
 class UploadExtFileRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(required=True)
     agent_register_id = serializers.IntegerField(required=True)
     file = serializers.FileField(max_length=None, allow_empty_file=False)
-    
+
+class DownloadExtFileRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField(required=True)

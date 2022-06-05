@@ -228,6 +228,29 @@ class Common:
 
         return file_name
 
+    def upload_ext_file(self, myfile, path_root):
+        """
+        Upload menu image
+        :param myfile:
+        :return:
+        """
+        if(myfile is None):
+            return None
+        # Handle file name
+        tt = time.time()
+        name = myfile._name
+        extention = name.split('.')[-1]
+        real_name = name.replace(extention, "")
+        templ_name = ''.join(e for e in real_name if e.isalnum())
+        file_name = templ_name + "_" + str(tt) + "." + extention
+        file_name = file_name.strip()
+
+        # Plus root url
+        image_path_temp = file_name.replace(" ", "")
+        image_path = path_root + image_path_temp
+        default_storage.save(image_path, ContentFile(myfile.read()))
+        return name
+
     def get_data_frame_from_excel_file(self, import_file, sheet_name, list_column):
         """
         Get data frame from excel file

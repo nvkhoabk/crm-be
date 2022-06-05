@@ -1,4 +1,6 @@
 from django.urls import path, include
+
+from api.const import Const
 from api.views import auth
 from api.views import manage
 from api.views import product
@@ -6,6 +8,7 @@ from api.views import call_center
 from api.views import crawl
 from api.views import data
 from api.views import system_configuration
+from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -106,6 +109,7 @@ urlpatterns = [
     path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(),
          name='callcenter.calculate_payment'),
     path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
+    path('callcenter/download_ext_file/', call_center.DownloadExtFile.as_view(), name='download_ext_file'),
 
     path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
     path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),
@@ -229,4 +233,4 @@ urlpatterns = [
     path('data/delete_order_detail/', data.DeleteOrderDetailView.as_view(), name='data.delete_order_detail'),
     path('data/filter_order_history/', data.FilterOrderHistoryView.as_view(), name='data.filter_order_history'),
     path('data/filter_order_detail_history/', data.FilterOrderDetailHistoryView.as_view(), name='data.filter_order_detail_history'),
-]
+] + static('files/', document_root=Const.FILE_ROOT)

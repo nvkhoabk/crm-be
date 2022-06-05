@@ -110,6 +110,8 @@ DATABASES = {
     }
 }
 
+SILENCED_SYSTEM_CHECKS = ['mysql.E001']
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Ho_Chi_Minh'

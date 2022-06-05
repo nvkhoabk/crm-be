@@ -110,6 +110,9 @@ class FBCrawler(Daemon):
             for page in fbpages:
                 self.crawl_posts(page)
                 self.crawl_messages(page)
+            
+            user.need_crawl = False
+            user.save()
 
     def run(self):
         while True:
@@ -160,6 +163,8 @@ class ZaloCrawler(Daemon):
 
         for oa in oas:
             self.crawl_messages(oa)
+            os.need_crawl = False
+            oa.save()
 
     def run(self):
         while True:
