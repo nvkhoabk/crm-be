@@ -45,7 +45,7 @@ class DataSource(BaseModel):
 class DataChannel(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=128)
 
     class Meta:
         db_table = 'data_channels'
@@ -54,7 +54,7 @@ class DataChannel(BaseModel):
 
 class EmailSyntax(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.CharField(max_length=256)
+    code = models.CharField(max_length=64)
     column_name = models.CharField(max_length=256)
 
     class Meta:
@@ -64,7 +64,7 @@ class EmailSyntax(BaseModel):
 
 class EmailTemplate(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.CharField(max_length=256)
+    code = models.CharField(max_length=128)
     email_name = models.TextField()
     content = models.TextField()
 

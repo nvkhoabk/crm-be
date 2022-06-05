@@ -30,3 +30,5 @@ class FilterCrawlDataView(BaseAPIView):
         data = filter_crawl_data_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=data, request=serializer.validated_data, serializer=data_serializer.FilterCrawlDataResponseSerializer)
+
+

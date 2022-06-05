@@ -241,6 +241,34 @@ class GetOrderDetailService(BaseService):
         except OrderDetail.DoesNotExist as e:
             raise OrderDetailNotFound()
 
+class FilterOrderDetailService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = OrderDetail.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['order_id', 'type']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'order_id' and value is not None:
+                query_set = query_set.filter(
+                    order_id=value,
+                )
+
+            if key == 'type' and value is not None:
+                query_set = query_set.filter(
+                    type=value,
+                )
+
+        return query_set
+
 
 class UpdateOrderDetailService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -261,11 +289,6 @@ class UpdateOrderDetailService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            if kwargs.get('order_id'):
-                order_detail.order_id = kwargs['order_id']
-
-            if kwargs.get('type'):
-                order_detail.order_id = kwargs['type']
 
             if kwargs.get('product_id'):
                 order_detail.order_id = kwargs['product_id']

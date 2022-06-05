@@ -140,19 +140,6 @@ class Customer(models.Model):
         db_table = 'customers'
 
 
-class Data(models.Model):
-    created_date = models.DateField(db_index=True)
-    price = models.IntegerField(default=0)
-    debt = models.IntegerField(default=0)
-    due_date = models.DateField(db_index=True)
-    annual_debt = models.IntegerField(default=0)
-    pic = models.ForeignKey(User, on_delete=models.CASCADE)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'data'
-
-
 class Order(BaseModel):
     created_date = models.DateField(db_index=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -194,3 +181,44 @@ class OrderDetail(BaseModel):
         db_table = 'order_details'
         index_together = ('order', 'type')
 
+
+class OrderHistory(BaseModel):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_index=True)
+    created_date = models.DateField(db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    price = models.IntegerField(default=0)
+    debt = models.IntegerField(default=0)
+    due_date = models.DateField(db_index=True)
+    annual_debt = models.IntegerField(default=0)
+    annual_due_date = models.DateField(db_index=True)
+    pic = models.ForeignKey(User, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    shipping_code = models.CharField(max_length=1024, default='')
+    shipping_fee = models.BigIntegerField(default=0)
+    data_status = models.ForeignKey(DataStatus, null=True, on_delete=models.SET_NULL)
+    data_sub_status = models.ForeignKey(DataSubStatus, null=True, on_delete=models.SET_NULL)
+    debt_status = models.CharField(max_length=128)
+    data_source = models.ForeignKey(DataSource, null=True, on_delete=models.SET_NULL)
+    data_channel = models.ForeignKey(DataChannel, null=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        db_table = 'order_histories'
+
+
+class OrderDetailHistory(BaseModel):
+    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE, db_index=True)
+    type = models.CharField(max_length=64)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.BigIntegerField()
+    discount = models.BigIntegerField()
+    remaining_payment_amount = models.BigIntegerField()
+    paid_payment_amount = models.BigIntegerField()
+    debt = models.BigIntegerField()
+    due_date = models.DateField()
+    file_attach = models.FileField()
+    invoice = models.TextField()
+
+
+    class Meta:
+        db_table = 'order_detail_histories'
