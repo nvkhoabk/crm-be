@@ -518,11 +518,27 @@ class UploadExtFile(BaseAPIView):
         operation_description='Upload extension file',
         request_body=serializer_class,
         responses={
-            0: call_center_serializer.CallLogResponseSerializer,
+            0: call_center_serializer.UploadExtFileResponseSerializer,
             exceptions.CallCenterNotFound.code: exceptions.CallCenterNotFound.msg
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = call_center_service.UploadExtFileService()
-        service.serve(request, cookies, *args, **serializer.validated_data)
-        return self.get_response()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=call_center_serializer.UploadExtFileResponseSerializer)
+
+class DownloadExtFile(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = call_center_serializer.DownloadExtFileRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center Report'],
+        operation_id='Download extension file',
+        operation_description='Download extension file',
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.DownloadExtFileService()
+        response = service.serve(request, cookies, *args, **serializer.validated_data)
+        return response

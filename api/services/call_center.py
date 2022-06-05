@@ -1,29 +1,27 @@
 import csv
 import json
 import math
+import mimetypes
+from wsgiref.util import FileWrapper
 
-import requests
 from dateutil.relativedelta import relativedelta
-from django.db.models import Sum
+from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage
+from django.db import IntegrityError, transaction
+from django.http import HttpResponse
 from django.utils import timezone
 
+from api.common.common import Common
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS
-from api.models.call_center import CallCenter, CallAgent, SipServiceInfo, AgentRegister, CallCenterPaymentHistory, \
-    CallLog
+from api.models.call_center import CallCenter, CallAgent, AgentRegister, CallCenterPaymentHistory, \
+    CallLog, ExtFileHistory
 from api.models.organization import Company, UserRole
-from api.serializers.call_center_serializer import UploadExtFileRequestSerializer
-from api.services import utils
-from rest_framework.exceptions import PermissionDenied
+from api.serializers.call_center_serializer import UploadExtFileRequestSerializer, DownloadExtFileRequestSerializer
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
-                                     AgentRegisterNotFound, SipAPIError, CallLogNotFound, CallCenterPaymentNotDue,
+                                     AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch)
-from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.db import IntegrityError, transaction
-from groups_manager.models import Group, GroupType, Member
-
-from api.services.sip import SipService
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.phone import classify_telecom_number
 
@@ -581,6 +579,17 @@ class CallAnsweredService(BaseService):
     def calculate_by_60_1(self, duration):
         return 60 * (math.floor((duration - 1) / 60) + 1)
 
+class DownloadExtFileService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        serializer_class = DownloadExtFileRequestSerializer(data=request.data)
+        ext_file = ExtFileHistory.objects.filter(company_id=serializer_class.data['company_id']).order_by('created_at').first()
+        csv_file = open(ext_file.file_name, 'r')
+        mime_type, _ = mimetypes.guess_type(csv_file)
+        response = HttpResponse(csv_file, content_type=mime_type)
+        response['Content-Disposition'] = 'attachment; filename="%s"' % csv_file.name
+        return response
+
+
 
 class UploadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -588,21 +597,41 @@ class UploadExtFileService(BaseService):
         if 'file' not in request.FILES or not serializer_class.is_valid():
             return 'failed'
         else:
+            common = Common()
             file = request.FILES['file']
-            with open(file.name, 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            with open(file.name, 'r') as csv_file:
+            file_name = common.upload_ext_file(file, 'files/ext_files/')
+            ext_file = ExtFileHistory(file_name='files/ext_files/' + file_name, company_id=serializer_class.data['company_id'])
+            ext_file.save()
+            with default_storage.open('files/ext_files/' + file_name, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file)
                 call_agents = []
+                error_call_agents = []
+                existed_call_agents = CallAgent.objects.filter(company_id=serializer_class.data['company_id'])
                 for row in csv_reader:
-                    call_agents.append(
-                        CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
-                                  agent_register_id=serializer_class.data['agent_register_id'],
-                                  status=CALL_AGENT_STATUS.ACTIIVE))
+                    call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
+                              agent_register_id=serializer_class.data['agent_register_id'],
+                              status=CALL_AGENT_STATUS.ACTIVE)
+                    if not self.exists_call_agent(existed_call_agents=existed_call_agents, ext_name=row[1]):
+                        call_agents.append(call_agent)
+                    else:
+                        error_call_agents.append(row[1])
                 self.validate(csv_reader, serializer_class.data['agent_register_id'])
                 CallAgent.objects.bulk_create(call_agents)
-            return call_agents
+            return {
+                'error_call_agents': error_call_agents
+            }
+
+    def exists_call_agent(self, existed_call_agents, ext_name):
+        for existed_call_agent in existed_call_agents:
+            if existed_call_agent.name == ext_name:
+                return True
+        return False
+
+    def exists_ext_file(self, ext_files, ext_file_name):
+        for ext_file in ext_files:
+            if ext_file.file_name == ext_file_name:
+                return True
+        return False
 
     def validate(self, csv_reader, agent_register_id):
         try:

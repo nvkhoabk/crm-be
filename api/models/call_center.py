@@ -65,6 +65,11 @@ class CallAgent(BaseModel):
     class Meta:
         db_table = 'call_agent'
 
+class ExtFileHistory(BaseModel):
+    file_name = models.CharField(max_length=256)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    class Meta:
+        db_table = 'ext_files'
 
 class CallCenterPaymentHistory(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)

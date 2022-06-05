@@ -1,4 +1,6 @@
 from django.urls import path, include
+
+from api.const import Const
 from api.views import auth
 from api.views import manage
 from api.views import product
@@ -6,6 +8,7 @@ from api.views import call_center
 from api.views import crawl
 from api.views import data
 from api.views import system_configuration
+from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -106,6 +109,7 @@ urlpatterns = [
     path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(),
          name='callcenter.calculate_payment'),
     path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
+    path('callcenter/download_ext_file/', call_center.DownloadExtFile.as_view(), name='download_ext_file'),
 
     path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
     path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),
@@ -217,4 +221,4 @@ urlpatterns = [
     path('zalo/login/', crawl.ZaloLoginView.as_view(), name='data.zalo_login'),
     path('zalo/login/callback', crawl.ZaloLoginCallBackView.as_view(), name='data.zalo_login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
-]
+] + static('files/', document_root=Const.FILE_ROOT)
