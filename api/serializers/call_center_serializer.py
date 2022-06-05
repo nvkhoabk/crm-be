@@ -1,5 +1,6 @@
 import json
 
+from api.const import PAYMENT_STATUS
 from api.models.call_center import CallCenter, CallAgent, AgentRegister
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
@@ -10,13 +11,18 @@ class CallCenterSerializer(serializers.ModelSerializer):
     def get_minute_fee(self, call_center):
         return json.loads(call_center.minute_fee)
 
+    def get_company_name(self, call_center):
+        return call_center.company.name
+
     minute_fee = serializers.SerializerMethodField(source='get_minute_fee')
+    company_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CallCenter
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
-                  'minute_fee', 'external_fee', 'sip_fee_calculation', 'call_center_user', 'call_center_password',
-                  'is_enable', 'discount_type', 'discount_value']
+                  'minute_fee', 'external_fee', 'sip_fee_calculation', 'is_enable', 'discount_type', 'discount_value',
+                  'company_name', 'payment_start_date', 'payment_status', 'total_payment_amount',
+                  'credit_payment_amount', 'external_payment_amount', 'discount_amount']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -63,10 +69,9 @@ class CreateCallCenterRequestSerializer(serializers.Serializer):
     minute_fee = serializers.DictField(required=False)
     external_fee = serializers.FloatField(required=False)
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=True)
-    call_center_user = serializers.CharField(max_length=256, required=True)
-    call_center_password = serializers.CharField(max_length=256, required=True)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
+    payment_start_date = serializers.DateField(required=True)
 
 
 class CreateCallCenterResponseSerializer(BaseResponseSerializer):
@@ -90,6 +95,10 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
         ('VALUE', 'VALUE'),
         ('PERCENT', 'PERCENT')
     )
+    PAYMENT_STATUS_CHOICES = (
+        (PAYMENT_STATUS.PAID, PAYMENT_STATUS.PAID),
+        (PAYMENT_STATUS.UNPAID, PAYMENT_STATUS.UNPAID)
+    )
 
     company_id = serializers.IntegerField(required=True)
     charge_by = serializers.ChoiceField(choices=CHARGE_CHOICES, allow_blank=False, required=False)
@@ -100,10 +109,49 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
     minute_fee = serializers.DictField(required=False)
     external_fee = serializers.FloatField(required=False)
     sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False, allow_blank=False)
-    call_center_user = serializers.CharField(max_length=256, required=False)
-    call_center_password = serializers.CharField(max_length=256, required=False)
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
+    payment_start_date = serializers.DateField(required=False)
+    payment_status = serializers.ChoiceField(choices=PAYMENT_STATUS_CHOICES)
+
+
+class FilterCallCenterParamSerializer(serializers.Serializer):
+    CHARGE_CHOICES = (
+        ('AGENT', 'AGENT'),
+        ('MINUTE', 'MINUTE')
+    )
+    PAYMENT_METHOD_CHOICES = (
+        ('CREDIT', 'CREDIT'),
+        ('DEBIT', 'DEBIT')
+    )
+    SIP_FEE_CALCULATION_CHOICES = (
+        ('6+1', '6+1'),
+        ('60+1', '60+1')
+    )
+    DISCOUNT_TYPE_CHOICES = (
+        ('VALUE', 'VALUE'),
+        ('PERCENT', 'PERCENT')
+    )
+
+    company_id = serializers.IntegerField(required=False, allow_null=True)
+    charge_by = serializers.ChoiceField(choices=CHARGE_CHOICES, allow_blank=False, required=False, allow_null=True)
+    payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=False, required=False,
+                                             allow_null=True)
+    sip_fee_calculation = serializers.ChoiceField(choices=SIP_FEE_CALCULATION_CHOICES, required=False,
+                                                  allow_blank=False, allow_null=True)
+    discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False,
+                                            allow_null=True)
+
+    from_date = serializers.DateField(allow_null=True, required=False)
+    to_date = serializers.DateField(allow_null=True, required=False)
+
+
+class FilterCallCenterResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=CallCenterSerializer())
+
+
+class FilterCallCenterRequestSerializer(BasePagingSerializer):
+    filter = FilterCallCenterParamSerializer()
 
 
 class UpdateCallCenterResponseSerializer(BaseResponseSerializer):
@@ -124,6 +172,10 @@ class DisableCallCenterRequestSerializer(serializers.Serializer):
 
 class DisableCallCenterResponseSerializer(BaseResponseSerializer):
     data = CallCenterSerializer()
+
+
+class CalculatePayemntCallCenterResponseSerializer(BaseResponseSerializer):
+    pass
 
 
 class GetCallCenterRequestSerializer(serializers.Serializer):
@@ -252,7 +304,7 @@ class ExternalPaymentReportSerializer(serializers.Serializer):
     number = serializers.CharField(max_length=128)
     duration = serializers.IntegerField()
     fee = serializers.IntegerField()
-    total_fee = serializers.IntegerField()
+    chargeable_time = serializers.IntegerField()
 
 
 class GetExternalPaymentReportRequestSerializer(BasePagingSerializer):
@@ -275,7 +327,37 @@ class GetCreditPaymentRequestSerializer(serializers.Serializer):
     report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
 
 
-class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
-    total_fee = serializers.IntegerField()
+class CreditPaymentReportSerializer(serializers.Serializer):
+    credit_payment_amount = serializers.IntegerField()
+    external_payment_amount = serializers.IntegerField()
+    payment_method = serializers.CharField(max_length=256)
     payment_date = serializers.DateField()
-    payment_type = serializers.CharField(max_length=256)
+    status = serializers.CharField(max_length=128)
+    discount_type = serializers.CharField(max_length=128)
+    discount_value = serializers.IntegerField()
+    discount_amount = serializers.IntegerField()
+    total_payment_amount = serializers.IntegerField()
+
+
+class GetCreditPaymentResponseSerializer(BaseResponseSerializer):
+    data = CreditPaymentReportSerializer()
+
+
+class CallLogRequestSerializer(serializers.Serializer):
+    callid = serializers.CharField(max_length=256, required=True)
+    calldate = serializers.DateTimeField(required=True)
+    extension = serializers.CharField(max_length=256, required=True)
+    phone = serializers.CharField(max_length=32, required=True)
+    duration = serializers.IntegerField(required=True)
+    status = serializers.CharField(max_length=128)
+    recording = serializers.CharField(max_length=2048, required=True)
+
+
+class CallLogResponseSerializer(BaseResponseSerializer):
+    None
+
+class UploadExtFileRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField(required=True)
+    agent_register_id = serializers.IntegerField(required=True)
+    file = serializers.FileField(max_length=None, allow_empty_file=False)
+    

@@ -34,7 +34,7 @@ class ManagePackageNotFound(APIException):
 class ManageCompanyDuplicated(APIException):
     code = 2020
     msg = 'Duplicate company name'
- 
+
 
 class ManageCompanyNotFound(APIException):
     code = 2021
@@ -124,3 +124,113 @@ class CallAgentNotFound(APIException):
 class AgentRegisterNotFound(APIException):
     code = 3007
     msg = 'Agent Register not found'
+
+
+class ManageCustomerDuplicated(APIException):
+    code = 3008
+    msg = 'Duplicate param name'
+
+
+class ManageCustomerNotFound(APIException):
+    code = 3009
+    msg = 'Not found param'
+
+
+class CallCenterPaymentNotDue(APIException):
+    code = 3010
+    msg = 'Call center payment is not due'
+
+
+class CallLogNotFound(APIException):
+    code = 3011
+    msg = 'Call log not found'
+
+
+class ReportNotFound(APIException):
+    code = 3012
+    msg = 'Report does not exists'
+
+
+class NumberAgentRegisterNotMatch(APIException):
+    code = 3013
+    msg = 'Number agent register not match'
+
+
+class CompanyEmailDuplicated(APIException):
+    code = 4001
+    msg = 'Duplicated email'
+
+
+class CompanyEmailNotFound(APIException):
+    code = 4002
+    msg = 'Email not found'
+
+
+class DataStatusDuplicated(APIException):
+    code = 4003
+    msg = 'Duplicated data status'
+
+
+class DataStatusNotFound(APIException):
+    code = 4004
+    msg = 'Data status not found'
+
+
+class DataSubStatusDuplicated(APIException):
+    code = 4005
+    msg = 'Duplicated data sub status'
+
+
+class DataSubStatusNotFound(APIException):
+    code = 4006
+    msg = 'Data sub status not found'
+
+
+class DataSourceDuplicated(APIException):
+    code = 4007
+    msg = 'Duplicated data source'
+
+
+class DataSourceNotFound(APIException):
+    code = 4008
+    msg = 'Data source not found'
+
+
+class DataChannelDuplicated(APIException):
+    code = 4009
+    msg = 'Duplicated data channel'
+
+
+class DataChannelNotFound(APIException):
+    code = 4010
+    msg = 'Data channel not found'
+
+
+class EmailSyntaxDuplicated(APIException):
+    code = 4011
+    msg = 'Duplicated email syntax'
+
+
+class EmailSyntaxNotFound(APIException):
+    code = 4012
+    msg = 'Email syntax not found'
+
+
+class EmailTemplateDuplicated(APIException):
+    code = 4013
+    msg = 'Duplicated email template'
+
+
+class EmailTemplateNotFound(APIException):
+    code = 4014
+    msg = 'Email template not found'
+
+
+class CompanyLogoDuplicated(APIException):
+    code = 4013
+    msg = 'Logo is already set'
+
+
+class CompanyLogoNotFound(APIException):
+    code = 4014
+    msg = 'Logo is not found'

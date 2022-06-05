@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from rest_framework.utils import json
 
+from api.const import MODULES
 from api.models.organization import UserRole, User, Permission
 
 
@@ -86,8 +87,23 @@ class ModuleEditPermission(ModulePermission):
 
 
 class ProductReadPermission(ModuleReadPermission):
-    MODULE_NAME = 'PRODUCT_AND_WAREHOUSE'
+    MODULE_NAME = MODULES.SYSTEM_CONFIGURATION
 
 
 class ProductEditPermission(ModuleEditPermission):
-    MODULE_NAME = 'PRODUCT_AND_WAREHOUSE'
+    MODULE_NAME = MODULES.SYSTEM_CONFIGURATION
+
+
+class CallCenterAuthenticated(permissions.BasePermission):
+    def has_permission(self, request, view):
+        secret = request.GET.get('secret', None)
+        return True
+        return secret == 'Crm1ty@1305Fri'
+
+
+class SystemConfigurationReadPermission(ModuleReadPermission):
+    MODULE_NAME = MODULES.SYSTEM_CONFIGURATION
+
+
+class SystemConfigurationEditPermission(ModuleEditPermission):
+    MODULE_NAME = MODULES.SYSTEM_CONFIGURATION

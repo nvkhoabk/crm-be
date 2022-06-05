@@ -107,8 +107,13 @@ class BaseAPIView(APIView):
                     serializer.is_valid(raise_exception=True)
                 else:
                     try:
+                        data = ""
+                        if "form-data" in request.content_type:
+                            data = request.data
+                        else:
+                            data = JSONParser().parse(request)
                         serializer = self.serializer_class(
-                            data=JSONParser().parse(request), many=self.serializer_many)
+                            data=data, many=self.serializer_many)
                         serializer.is_valid(raise_exception=True)
                     except Exception as e:
                         raise serializers.ValidationError(str(e))

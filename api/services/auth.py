@@ -3,7 +3,7 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from django.contrib.auth import authenticate, login, logout
 
-from api.models.call_center import CallAgent
+from api.models.call_center import CallAgent, CallCenter
 from api.services import exceptions
 from api.models.organization import UserRole, Permission
 from api.const import MODULES, Const
@@ -40,7 +40,7 @@ class AuthGetUserInfoService(BaseService):
         )
 
         roles = []
-
+        company_id = 0
         for position in user_roles:
             data = {
                 'company': None,
@@ -55,7 +55,7 @@ class AuthGetUserInfoService(BaseService):
                 'id': company.id,
                 'name': company.name,
             }
-
+            company_id = company.id
             department = position.department
             if department:
                 data['department'] = {
@@ -87,10 +87,16 @@ class AuthGetUserInfoService(BaseService):
         response['menu'] = []
 
         if user.is_superuser:
-            response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT]
-        elif len(response['roles']) == 1 and response['roles'][0]['role'] is None and response['roles'][0][
-            'department'] is None:
-            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE]
+            response['menu'] = [MODULES.COMPANY_MANAGEMENT, MODULES.ADMIN_MANAGEMENT,
+                                MODULES.CALL_CENTER_LIST_MANAGEMENT, MODULES.PARAM_CONFIG]
+        elif len(response['roles']) == 1 and response['roles'][0]['role'] is None \
+                and response['roles'][0]['department'] is None:
+            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK]
+            call_center = CallCenter.objects.filter(company_id=company_id)
+            if len(call_center) > 0 and call_center[0].is_enable:
+                response['menu'].append(MODULES.CALL_CENTER_MANAGEMENT)
+            else:
+                response['menu'].append(MODULES.CALL_CENTER_ABOUT)
         else:
             for role in roles:
                 for permission in role['edit_permissions']:

@@ -2,6 +2,7 @@ import json
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.models import Customer
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
@@ -19,7 +20,8 @@ from api.services.exceptions import (ManageCompanyNotFound,
                                      ManageRoleDuplicated,
                                      ManageRoleNotFound,
                                      ManageUserDuplicated,
-                                     ManageUserNotFound, ManagePackageDuplicated, ManagePackageNotFound, )
+                                     ManageUserNotFound, ManagePackageDuplicated, ManagePackageNotFound,
+                                     ManageCustomerNotFound, ManageCustomerDuplicated, )
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -65,6 +67,24 @@ class UpdateParamService(BaseService):
 class FilterParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Param.objects.all()
+        filters = ['key', 'value', 'group']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'key':
+                query_set = query_set.filter(
+                    key__icontains=value,
+                )
+            if key == 'value':
+                query_set = query_set.filter(
+                    value__icontains=value,
+                )
+            if key == 'group':
+                query_set = query_set.filter(
+                    group__icontains=value,
+                )
         return query_set
 
 
@@ -717,3 +737,149 @@ class DeleteUserService(BaseService):
             user.delete()
         except User.DoesNotExist as e:
             raise ManageUserNotFound()
+
+
+class CreateCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Customer.objects.create(
+                name=kwargs['name'],
+                phone=kwargs['phone'],
+                address=kwargs['address'],
+            )
+        except IntegrityError as e:
+            raise ManageCustomerDuplicated()
+
+
+class GetCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Customer.objects.get(
+                pk=kwargs['id'],
+            )
+        except Customer.DoesNotExist:
+            raise ManageCustomerNotFound()
+
+
+class UpdateCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            customer = Customer.objects.get(pk=kwargs['id'])
+            customer.name = kwargs['name']
+            customer.phone = kwargs['phone']
+            customer.address = kwargs['address']
+            customer.save()
+            return customer
+        except Customer.DoesNotExist:
+            raise ManageCustomerNotFound()
+        except IntegrityError as e:
+            raise ManageCustomerDuplicated()
+
+
+class FilterCustomerService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = Customer.objects.all()
+        filters = ['name', 'phone', 'address']
+        customers = dict(kwargs.get('filter', []))
+        for key, value in customers.items():
+            if key not in filters:
+                continue
+
+            if key == 'name':
+                query_set = query_set.filter(
+                    name__icontains=value,
+                )
+            if key == 'phone':
+                query_set = query_set.filter(
+                    phone__icontains=value,
+                )
+            if key == 'address':
+                query_set = query_set.filter(
+                    address__icontains=value,
+                )
+        return query_set
+
+
+class CreateOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        with transaction.atomic():
+            try:
+                company = Company.objects.create(
+                    **kwargs
+                )
+                # Create group permission
+                company_group = Group.objects.create(
+                    name=utils.get_company_group_name(company.id))
+                company_admins = Group.objects.create(name=utils.get_company_admins_group(company.id),
+                                                      parent=company_group)
+                company_admins.assign_object(company)
+                return company
+            except IntegrityError as e:
+                raise ManageCompanyDuplicated()
+
+
+class GetOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Company.objects.get(
+                pk=kwargs['id']
+            )
+        except Company.DoesNotExists:
+            raise ManageCompanyNotFound()
+
+
+class UpdateOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            Company.objects.get(pk=kwargs['id'])
+        except Company.DoesNotExist:
+            raise ManageCompanyNotFound()
+
+        try:
+            Company.objects.filter(pk=kwargs['id']).update(**kwargs)
+        except IntegrityError as e:
+            raise ManageCreateCompanyDuplicated()
+
+        return Company.objects.get(pk=kwargs['id'])
+
+
+class DeleteOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        id = kwargs['id']
+        with transaction.atomic():
+            try:
+                return Company.objects.get(
+                    id=id,
+                ).delete()
+            except Company.DoesNotExist as e:
+                raise ManageCompanyNotFound()
+
+
+class FilterOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        query_set = Company.objects.all()
+
+        filters = ['name', 'type', 'owner', 'phone']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'name':
+                query_set = query_set.filter(
+                    name__icontains=value,
+                )
+            if key == 'type':
+                query_set = query_set.filter(
+                    type__icontains=value,
+                )
+            if key == 'owner':
+                query_set = query_set.filter(
+                    owner__icontains=value,
+                )
+            if key == 'phone':
+                query_set = query_set.filter(
+                    phone__icontains=value,
+                )
+
+        return query_set
