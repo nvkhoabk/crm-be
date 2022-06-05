@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models.data import CrawlData, Order, Customer, OrderDetail
+from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated
@@ -241,6 +241,7 @@ class GetOrderDetailService(BaseService):
         except OrderDetail.DoesNotExist as e:
             raise OrderDetailNotFound()
 
+
 class FilterOrderDetailService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
@@ -343,3 +344,61 @@ class DeleteOrderDetailService(BaseService):
             ).delete()
         except OrderDetail.DoesNotExist as e:
             raise OrderDetailNotFound()
+
+
+class FilterOrderHistoryService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = OrderHistory.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['order_id']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'order_id' and value is not None:
+                query_set = query_set.filter(
+                    order_id=value,
+                )
+
+        return query_set
+
+
+class FilterOrderDetailHistoryService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = OrderDetailHistory.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['order_detail_id', 'order_id', 'type']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'order_detail_id' and value is not None:
+                query_set = query_set.filter(
+                    order_detail_id=value,
+                )
+
+            if key == 'order_id' and value is not None:
+                query_set = query_set.filter(
+                    order_id=value,
+                )
+
+            if key == 'type' and value is not None:
+                query_set = query_set.filter(
+                    type=value,
+                )
+
+        return query_set

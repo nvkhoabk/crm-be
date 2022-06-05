@@ -1,6 +1,6 @@
 import json
 
-from api.models import Customer
+from api.models.data import Customer
 from api.models.call_center import CallCenter
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package

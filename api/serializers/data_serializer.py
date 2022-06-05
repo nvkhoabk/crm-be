@@ -203,3 +203,29 @@ class DeleteOrderDetailRequestSerializer(serializers.Serializer):
 
 class DeleteOrderDetailResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class FilterOrderHistoryRequestParamSerializer(serializers.Serializer):
+    order_id = serializers.IntegerField()
+
+
+class FilterOrderHistoryRequestSerializer(BasePagingSerializer):
+    filter = FilterOrderHistoryRequestParamSerializer()
+
+
+class FilterOrderHistoryResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=OrderSerializer())
+
+
+class FilterOrderDetailHistoryRequestParamSerializer(serializers.Serializer):
+    order_id = serializers.IntegerField()
+    type = serializers.CharField(max_length=64)
+    order_detail_id = serializers.IntegerField(required=False)
+
+
+class FilterOrderDetailHistoryRequestSerializer(BasePagingSerializer):
+    filter = FilterOrderDetailHistoryRequestParamSerializer()
+
+
+class FilterOrderDetailHistoryResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=OrderDetailSerializer())

@@ -68,29 +68,29 @@ class FBLoginCallBackService(BaseService):
         user_info = fb.get_user_info()
 
         try:
-            user = FBUser.objects.get(uid=user_info['id'])
+            fb_user = FBUser.objects.get(uid=user_info['id'])
         except FBUser.DoesNotExist:
-            user = FBUser.objects.create(
+            fb_user = FBUser.objects.create(
                 uid=user_info['id'],
                 name=user_info['name'],
                 company=user_roles.company,
                 user=user,
             )
-        user.access_token = api.access_token
-        user.need_crawl = True
-        user.save()
+        fb_user.access_token = api.access_token
+        fb_user.need_crawl = True
+        fb_user.save()
 
         pages = fb.get_pages()
         for page_info in pages:
             try:
                 page = FBPage.objects.get(
-                    user__uid=user.uid, page_id=page_info['id'])
+                    user__uid=fb_user.uid, page_id=page_info['id'])
                 page.access_token = page_info['access_token']
                 page.name = page_info['name']
                 page.save()
             except FBPage.DoesNotExist:
                 page = FBPage.objects.create(
-                    user=user,
+                    user=fb_user,
                     company=user_roles.company,
                     page_id=page_info['id'],
                     page_name=page_info['name'],

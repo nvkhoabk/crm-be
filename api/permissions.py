@@ -107,3 +107,11 @@ class SystemConfigurationReadPermission(ModuleReadPermission):
 
 class SystemConfigurationEditPermission(ModuleEditPermission):
     MODULE_NAME = MODULES.SYSTEM_CONFIGURATION
+
+
+class DataReadPermission(ModuleReadPermission):
+    MODULE_NAME = MODULES.DATA_MANAGEMENT
+
+
+class DataEditPermission(ModuleEditPermission):
+    MODULE_NAME = MODULES.DATA_MANAGEMENT
