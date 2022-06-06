@@ -18,7 +18,7 @@ class Command(BaseCommand):
         print("Call center:", call_centers)
         for call_center in call_centers:
             service = DisableCallCenterService()
-            service.serve(**{'company_id': call_center.company_id})
+            service.serve(request=None, cookies=None, **{'company_id': call_center.company_id})
 
     def disable_call_agent(self, tomorrow):
         agent_registers = AgentRegister.objects.filter(deleted_at__isnull=True, use_to=tomorrow)
