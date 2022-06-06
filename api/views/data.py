@@ -299,7 +299,7 @@ class FilterOrderHistoryView(BaseAPIView):
 class FilterOrderDetailHistoryView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataReadPermission]
-    serializer_class = data_serializer.FilterOrderHistoryRequestSerializer
+    serializer_class = data_serializer.FilterOrderDetailHistoryRequestSerializer
     pagination_class = True
 
     @swagger_auto_schema(

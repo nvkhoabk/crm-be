@@ -62,6 +62,13 @@ class EnableCallCenterService(BaseService):
             call_center.is_enable = True
             call_center.save()
 
+            call_agents = CallAgent.objects.filter(company_id=kwargs['company_id'])
+
+            for agent in call_agents:
+                agent.status = CALL_AGENT_STATUS.ACTIVE
+
+            call_agents.bulk_update(call_agents, fields=['status'])
+
             return call_center
         except CallCenter.DoesNotExist as e:
             raise CallCenterNotFound()
@@ -80,9 +87,9 @@ class DisableCallCenterService(BaseService):
             call_agents = CallAgent.objects.filter(company_id=kwargs['company_id'])
 
             for agent in call_agents:
-                agent.deleted_at = timezone.now()
+                agent.status = CALL_AGENT_STATUS.INACTIVE
 
-            call_agents.bulk_update(call_agents, fields=['deleted_at'])
+            call_agents.bulk_update(call_agents, fields=['status'])
             return call_center
         except CallCenter.DoesNotExist as e:
             raise CallCenterNotFound()
