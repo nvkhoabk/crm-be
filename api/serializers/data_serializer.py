@@ -1,8 +1,14 @@
 import json
-from api.models.data import CrawlData, Order, OrderDetail
+
+from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS
+from api.models.data import CrawlData, Order, OrderDetail, Customer
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
+from api.serializers.manage_serializer import CustomerSerializer
 from api.utils import validate
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class CrawlDataSerializer(serializers.ModelSerializer):
@@ -34,14 +40,28 @@ class FilterCrawlDataResponseSerializer(BaseResponseSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    def get_pic_name(self, order):
+        if order.pic is None:
+            return None
+        return User.object.get(pk=order.pic).name
+
+    customer = CustomerSerializer()
+    pic_name = serializers.SerializerMethodField(source='get_pic')
+
     class Meta:
         model = Order
         fields = ['created_date', 'product', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
-                  'data_source', 'data_channel']
+                  'data_source', 'data_channel', 'pic_name']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
+    DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
+        (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
+        (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
+    )
+
     created_date = serializers.DateField(required=False, allow_null=True)
     product_id = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
@@ -57,7 +77,7 @@ class CreateOrderRequestSerializer(serializers.Serializer):
     data_sub_status_id = serializers.IntegerField(required=False, allow_null=True)
     data_source_id = serializers.IntegerField(required=False, allow_null=True)
     data_channel_id = serializers.IntegerField(required=False, allow_null=True)
-    debt_status = serializers.CharField(max_length=128, required=False, allow_null=True)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
 
 
 class CreateOrderResponseSerializer(BaseResponseSerializer):
@@ -73,6 +93,12 @@ class GetOrderResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateOrderRequestSerializer(serializers.Serializer):
+    DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
+        (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
+        (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
+    )
+
     id = serializers.IntegerField(help_text='Order id', required=True)
     created_date = serializers.DateField(required=False, allow_null=True)
     product_id = serializers.IntegerField(required=False, allow_null=True)
@@ -89,7 +115,7 @@ class UpdateOrderRequestSerializer(serializers.Serializer):
     data_sub_status_id = serializers.IntegerField(required=False, allow_null=True)
     data_source_id = serializers.IntegerField(required=False, allow_null=True)
     data_channel_id = serializers.IntegerField(required=False, allow_null=True)
-    debt_status = serializers.CharField(max_length=128, required=False, allow_null=True)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
 
 
 class UpdateOrderResponseSerializer(BaseResponseSerializer):
@@ -107,6 +133,12 @@ class DataSourceFilterParamSerializer(serializers.Serializer):
 
 
 class FilterOrderRequestParamSerializer(serializers.Serializer):
+    DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
+        (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
+        (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
+    )
+
     from_date = serializers.DateField(required=False, allow_null=True)
     to_date = serializers.DateField(required=False, allow_null=True)
     pics = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
@@ -114,6 +146,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     data_source = serializers.ListField(child=DataSourceFilterParamSerializer(), required=False, allow_null=True)
     phone = serializers.CharField(required=False, allow_null=True)
     customer_name = serializers.CharField(required=False, allow_null=True)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):
@@ -140,8 +173,13 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
+    TYPE_CHOICES = (
+        (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
+        (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY),
+    )
+
     order_id = serializers.IntegerField()
-    type = serializers.CharField(max_length=64)
+    type = serializers.ChoiceField(choices=TYPE_CHOICES)
     product_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
@@ -185,8 +223,13 @@ class UpdateOrderDetailResponseSerializer(BaseResponseSerializer):
 
 
 class FilterOrderDetailRequestParamSerializer(serializers.Serializer):
+    TYPE_CHOICES = (
+        (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
+        (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY),
+    )
+
     order_id = serializers.IntegerField()
-    type = serializers.CharField(max_length=64)
+    type = serializers.ChoiceField(choices=TYPE_CHOICES)
 
 
 class FilterOrderDetailRequestSerializer(BasePagingSerializer):
@@ -218,8 +261,13 @@ class FilterOrderHistoryResponseSerializer(BaseResponseSerializer):
 
 
 class FilterOrderDetailHistoryRequestParamSerializer(serializers.Serializer):
+    TYPE_CHOICES = (
+        (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
+        (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY),
+    )
+
     order_id = serializers.IntegerField()
-    type = serializers.CharField(max_length=64)
+    type = serializers.ChoiceField(choices=TYPE_CHOICES)
     order_detail_id = serializers.IntegerField(required=False)
 
 
