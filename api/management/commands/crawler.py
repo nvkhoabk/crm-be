@@ -9,6 +9,7 @@ from api.zalo.zutils import ZaloPage
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from pyfacebook import FacebookApi
+from django.utils import timezone
 import time
 
 
@@ -110,9 +111,7 @@ class FBCrawler(Daemon):
             for page in fbpages:
                 self.crawl_posts(page)
                 self.crawl_messages(page)
-            
-            user.need_crawl = False
-            user.save()
+
 
     def run(self):
         while True:
@@ -139,31 +138,48 @@ class ZaloCrawler(Daemon):
         zalo = ZaloPage(access_token=oa.access_token)
 
         followers = zalo.get_followers()
-        for user in followers:
-            messages = zalo.get_follower_message(user)
-            all_messages = '\n'.join(messages)
+        for zalo_user in followers:
+            zalo_user_in_db = CrawlData.objects.filter(
+                object_id=zalo_user,
+            ).first()
+            
+            if not zalo_user_in_db:    
+                new_check_time, messages = zalo.get_follower_message(zalo_user)
+                all_messages = '\n'.join(messages)
 
-            if not extract_phone(all_messages):
-                continue
-            CrawlData.objects.create(
-                    source='zalo',
-                    object_id=user,
-                    type=CrawlData.TYPE_MSG,
-                    uid=user,
-                    username=user,
-                    content=all_messages,
-                    phone=extract_phone(all_messages),
-                )
-
+                if not extract_phone(all_messages):
+                    continue
+                CrawlData.objects.create(
+                        source='zalo',
+                        user=oa.user,
+                        company=oa.company,
+                        object_id=zalo_user,
+                        type=CrawlData.TYPE_MSG,
+                        uid=zalo_user,
+                        username=zalo_user,
+                        content=all_messages,
+                        phone=extract_phone(all_messages),
+                        last_check_time_int=new_check_time,
+                    )
+            else:
+                new_check_time, messages = zalo.get_follower_message(zalo_user, zalo_user_in_db.last_check_time_int)
+                if len(messages) > 0:
+                    zalo_user_in_db.last_check_time_int = new_check_time
+                    zalo_user_in_db.content = zalo_user_in_db.content + '\n'.join(['\n'] + messages)
+                    zalo_user_in_db.save()
+        
     def do_crawl(self):
+        check_time = timezone.now() - timezone.timedelta(minutes=1)
+        
         oas = ZaloOA.objects.annotate(id_mod=F('id') % self.shard).filter(
             id_mod=self.id,
             need_crawl=True,
+            last_check_time__lte=check_time,
         )[:self.BULK_SIZE]
 
         for oa in oas:
             self.crawl_messages(oa)
-            os.need_crawl = False
+            oa.last_check_time = timezone.now()
             oa.save()
 
     def run(self):
@@ -178,13 +194,13 @@ class ZaloCrawler(Daemon):
 
 class Command(BaseCommand):
     help = 'Runs a process as a daemon'
-
+ 
     def add_arguments(self, parser):
         parser.add_argument('--action')
         parser.add_argument('--pid')
         parser.add_argument('--shard')
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):    
         action = options['action']
         pid_path = options['pid']
         shard = int(options['shard'])

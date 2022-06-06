@@ -79,6 +79,7 @@ class ZaloOA(BaseModel):
     oa_id = models.CharField(max_length=64, db_index=True)
     name = models.CharField(max_length=255, db_index=True)
     need_crawl = models.BooleanField(default=False)
+    last_check_time = models.DateTimeField(auto_now_add=True, blank=True)
 
     class Meta:
         db_table = 'zalo_oas'
@@ -123,6 +124,7 @@ class CrawlData(BaseModel):
     phone = models.CharField(max_length=64, default='')
     content = models.TextField()
     status = models.CharField(db_index=True, max_length=64, choices=STATUS_CHOICES, default='init')
+    last_check_time_int = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'crawl_data'
