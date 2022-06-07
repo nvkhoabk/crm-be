@@ -249,7 +249,7 @@ class Common:
         image_path_temp = file_name.replace(" ", "")
         image_path = path_root + image_path_temp
         default_storage.save(image_path, ContentFile(myfile.read()))
-        return name
+        return file_name
 
     def get_data_frame_from_excel_file(self, import_file, sheet_name, list_column):
         """

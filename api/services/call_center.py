@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.utils import timezone
 
 from api.common.common import Common
@@ -588,11 +588,9 @@ class CallAnsweredService(BaseService):
 
 class DownloadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        serializer_class = DownloadExtFileRequestSerializer(data=request.data)
-        ext_file = ExtFileHistory.objects.filter(company_id=serializer_class.data['company_id']).order_by('created_at').first()
+        ext_file = ExtFileHistory.objects.filter(company_id=kwargs['company_id']).order_by('created_at').first()
         csv_file = open(ext_file.file_name, 'r')
-        mime_type, _ = mimetypes.guess_type(csv_file)
-        response = HttpResponse(csv_file, content_type=mime_type)
+        response = HttpResponse(csv_file, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s"' % csv_file.name
         return response
 
@@ -615,14 +613,15 @@ class UploadExtFileService(BaseService):
                 error_call_agents = []
                 existed_call_agents = CallAgent.objects.filter(company_id=serializer_class.data['company_id'])
                 for row in csv_reader:
-                    call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
-                              agent_register_id=serializer_class.data['agent_register_id'],
-                              status=CALL_AGENT_STATUS.ACTIVE)
-                    if not self.exists_call_agent(existed_call_agents=existed_call_agents, ext_name=row[1]):
-                        call_agents.append(call_agent)
-                    else:
-                        error_call_agents.append(row[1])
-                self.validate(csv_reader, serializer_class.data['agent_register_id'])
+                    if len(row) == 3:
+                        call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
+                                  agent_register_id=serializer_class.data['agent_register_id'],
+                                  status=CALL_AGENT_STATUS.ACTIVE)
+                        if not self.exists_call_agent(existed_call_agents=existed_call_agents, ext_name=row[1]):
+                            call_agents.append(call_agent)
+                        else:
+                            error_call_agents.append(row[1])
+                self.validate(len(call_agents) + len(error_call_agents), serializer_class.data['agent_register_id'])
                 CallAgent.objects.bulk_create(call_agents)
             return {
                 'error_call_agents': error_call_agents
@@ -640,9 +639,8 @@ class UploadExtFileService(BaseService):
                 return True
         return False
 
-    def validate(self, csv_reader, agent_register_id):
+    def validate(self, total_ext, agent_register_id):
         try:
-            total_ext = csv_reader.line_num
             if total_ext != AgentRegister.objects.get(pk=agent_register_id).number:
                 raise NumberAgentRegisterNotMatch()
         except AgentRegister.DoesNotExist:
