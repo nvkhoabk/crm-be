@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.utils import timezone
 
 from api.common.common import Common
@@ -581,11 +581,9 @@ class CallAnsweredService(BaseService):
 
 class DownloadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        serializer_class = DownloadExtFileRequestSerializer(data=request.data)
-        ext_file = ExtFileHistory.objects.filter(company_id=serializer_class.data['company_id']).order_by('created_at').first()
+        ext_file = ExtFileHistory.objects.filter(company_id=kwargs['company_id']).order_by('created_at').first()
         csv_file = open(ext_file.file_name, 'r')
-        mime_type, _ = mimetypes.guess_type(csv_file)
-        response = HttpResponse(csv_file, content_type=mime_type)
+        response = HttpResponse(csv_file, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s"' % csv_file.name
         return response
 
