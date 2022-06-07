@@ -581,8 +581,8 @@ class CallAnsweredService(BaseService):
 
 class DownloadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        ext_file = ExtFileHistory.objects.filter(company_id=kwargs['company_id']).order_by('created_at').first()
-        csv_file = open(ext_file.file_name, 'r')
+        ext_file = ExtFileHistory.objects.filter(company_id=kwargs['company_id']).order_by('-created_at').first()
+        csv_file = default_storage.open(ext_file.file_name, 'r')
         response = HttpResponse(csv_file, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s"' % csv_file.name
         return response
