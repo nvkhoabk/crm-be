@@ -32,6 +32,29 @@ class ZaloPage:
             raise
         return r['data']
 
+    def get_recent_messages(self):
+        offset = 0
+        count = 50
+        followers = []
+        
+        while True:
+            url = 'https://openapi.zalo.me/v2.0/oa/listrecentchat?data={"offset":%d,"count":%d}' % (offset, count)
+            
+            r = requests.get(url, headers={'access_token': self.access_token})
+            r = r.json()
+            if r['error'] != 0:
+                raise
+        
+            if r['data']['total'] == 0:
+                break
+            
+            for user in r['data']['followers']:
+                followers.append(user['user_id'])
+
+            offset = offset + count
+        
+        return followers
+    
     def get_followers(self):
         offset = 0
         count = 50
@@ -56,10 +79,11 @@ class ZaloPage:
         return followers
 
 
-    def get_follower_message(self, uid):
+    def get_follower_message(self, uid, last_check_time=0):
         offset = 0
         count = 10
         messages = []
+        new_check_time = last_check_time
         
         while True:
             url = 'https://openapi.zalo.me/v2.0/oa/conversation?data={"offset":%d,"user_id":%s,"count":%d}' % (offset, uid, count)
@@ -73,8 +97,11 @@ class ZaloPage:
                 break
             
             for msg in r['data']:
+                new_check_time = max(new_check_time, int(msg['time'] / 1000))
+                if int(msg['time'] / 1000) <= last_check_time:
+                    return new_check_time , messages
                 messages.append(msg['message'])
 
             offset = offset + count
         
-        return messages
+        return new_check_time, messages

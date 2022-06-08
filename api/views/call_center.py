@@ -149,6 +149,7 @@ class DisableCallCenterView(BaseAPIView):
         return self.get_response(results=call_center, request=request,
                                  serializer=call_center_serializer.DisableCallCenterResponseSerializer)
 
+
 class CalculatePayemntCallCenterView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, SuperAdminPermission]
@@ -527,6 +528,7 @@ class UploadExtFile(BaseAPIView):
         results = service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=call_center_serializer.UploadExtFileResponseSerializer)
+
 
 class DownloadExtFile(BaseAPIView):
     authentication_classes = []
