@@ -62,6 +62,7 @@ class CreateOrderRequestSerializer(serializers.Serializer):
         (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
     )
 
+    company_id = serializers.IntegerField()
     created_date = serializers.DateField(required=False, allow_null=True)
     product_id = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)

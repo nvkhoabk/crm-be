@@ -278,9 +278,25 @@ class GetCompanyCallHistoryService(BaseService):
             to_date = (kwargs['filter']['to_date'] + relativedelta(days=1)).strftime('%Y-%m-%d')
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
-            call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                               calldate__gte=from_date, calldate__lt=to_date).order_by(
-                '-created_at')
+            call_logs = CallLog.objects.filter(calldate__gte=from_date, calldate__lt=to_date).order_by('-created_at')
+
+            filters = ['number', 'user_id']
+            params = dict(kwargs.get('filter', []))
+            for key, value in params.items():
+                if key not in filters:
+                    continue
+
+                if key == 'number' and value is not None:
+                    call_logs = call_logs.filter(
+                        phone__icontains=value
+                    )
+
+                if key == 'user_id' and value is not None:
+                    call_agents = call_agents.filter(
+                        user_id=value,
+                    )
+
+            call_logs = call_logs.filter(extension__in=call_agents.values_list('name', flat=True))
 
             call_history_list = []
             for call_log in call_logs:
@@ -556,7 +572,7 @@ class CallAnsweredService(BaseService):
         return call_log
 
     def calculate_chargeable_time(self, call_log):
-        if not call_log.is_telco or call_log.duration == 0:
+        if call_log.duration == 0:
             return 0
         try:
             filter = {

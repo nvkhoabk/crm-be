@@ -143,6 +143,7 @@ class Customer(models.Model):
 
 
 class Order(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     created_date = models.DateField(db_index=True, null=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     price = models.IntegerField(default=0)
@@ -225,3 +226,11 @@ class OrderDetailHistory(BaseModel):
 
     class Meta:
         db_table = 'order_detail_histories'
+
+
+class AnnualOrder(BaseModel):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'annual_orders'

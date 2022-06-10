@@ -590,10 +590,12 @@ class UpdateCustomerRequestSerializer(serializers.Serializer):
 class UpdateCustomerResponseSerializer(BaseResponseSerializer):
     data = CustomerSerializer()
 
+
 class FilterCustomerRequestCustomerSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     address = serializers.CharField(required=False, allow_blank=True)
+
 
 class FilterCustomerRequestSerializer(BasePagingSerializer):
     filter = FilterCustomerRequestCustomerSerializer()

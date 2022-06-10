@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from pytz import timezone
 
 from api.services.call_center import DisableCallCenterService
+from crm.settings import TIME_ZONE
 
 
 class Command(BaseCommand):
@@ -28,9 +29,7 @@ class Command(BaseCommand):
             status=CALL_AGENT_STATUS.INACTIVE)
 
     def handle(self, *args, **options):
-        print("Now:" , datetime.now(timezone('Asia/Ho_Chi_Minh')))
-        tomorrow = datetime.now(timezone('Asia/Ho_Chi_Minh')).date() - relativedelta(days=1)
-        print("tomorrow:", tomorrow)
+        tomorrow = datetime.now(timezone(TIME_ZONE)).date() - relativedelta(days=1)
         self.disable_call_center(tomorrow)
         self.disable_call_center(tomorrow)
 
