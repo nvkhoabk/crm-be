@@ -147,7 +147,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     data_source = serializers.ListField(child=DataSourceFilterParamSerializer(), required=False, allow_null=True)
     phone = serializers.CharField(required=False, allow_null=True)
     customer_name = serializers.CharField(required=False, allow_null=True)
-    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

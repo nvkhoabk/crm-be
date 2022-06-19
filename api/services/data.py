@@ -189,7 +189,7 @@ class FilterOrderService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            query_set = Order.objects.get(
+            query_set = Order.objects.filter(
                 company_id=user_roles.first().company_id,
                 deleted_at__isnull=True
             )
@@ -210,19 +210,19 @@ class FilterOrderService(BaseService):
                     created_date__lte=value,
                 )
 
-            if key == 'pics' and value is not None:
+            if key == 'pics' and value is not None and value:
                 query_set = query_set.filter(
                     pic__in=value,
                 )
 
-            if key == 'data_status' and value is not None:
+            if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
                     (Q(data_status_id=ds, data_sub_status_id=dss) for ds, dss in value)
                 )
                 query_set = query_set.filter(query)
 
-            if key == 'data_source' and value is not None:
+            if key == 'data_source' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
                     (Q(data_source_id=ds, data_channel_id=dc) for ds, dc in value)

@@ -63,11 +63,11 @@ urlpatterns = [
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
-    path('manage/create_order/', manage.CreateCompanyView.as_view(), name='manage.create_order'),
-    path('manage/get_order/', manage.GetCompanyView.as_view(), name='manage.get_order'),
-    path('manage/update_order/', manage.UpdateCompanyView.as_view(), name='manage.update_order'),
-    path('manage/filter_order/', manage.FilterCompanyView.as_view(), name='manage.filter_order'),
-    path('manage/delete_order/', manage.DeleteCompanyView.as_view(), name='manage.delete_order'),
+    path('manage/create_order/', manage.CreateOrderView.as_view(), name='manage.create_order'),
+    path('manage/get_order/', manage.GetOrderView.as_view(), name='manage.get_order'),
+    path('manage/update_order/', manage.UpdateOrderView.as_view(), name='manage.update_order'),
+    path('manage/filter_order/', manage.FilterOrderView.as_view(), name='manage.filter_order'),
+    path('manage/delete_order/', manage.DeleteOrderView.as_view(), name='manage.delete_order'),
 
     # Call center
     path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(),

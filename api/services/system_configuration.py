@@ -203,7 +203,7 @@ class FilterDataStatusService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
@@ -311,7 +311,7 @@ class FilterDataSubStatusService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
@@ -421,7 +421,7 @@ class FilterDataSourceService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
@@ -529,7 +529,7 @@ class FilterDataChannelService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )

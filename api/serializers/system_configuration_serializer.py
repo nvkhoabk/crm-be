@@ -66,7 +66,7 @@ class DeleteCompanyEmailResponseSerializer(BaseResponseSerializer):
 class DataStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataStatus
-        fields = ['name', 'company']
+        fields = ['id', 'name', 'company']
 
 
 class CreateDataStatusRequestSerializer(serializers.Serializer):
@@ -96,7 +96,7 @@ class UpdateDataStatusResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataStatusRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataStatusRequestSerializer(BasePagingSerializer):
@@ -118,7 +118,7 @@ class DeleteDataStatusResponseSerializer(BaseResponseSerializer):
 class DataSubStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataSubStatus
-        fields = ['name', 'data_status', 'company']
+        fields = ['id', 'name', 'data_status', 'company']
 
 
 class CreateDataSubStatusRequestSerializer(serializers.Serializer):
@@ -149,7 +149,7 @@ class UpdateDataSubStatusResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataSubStatusRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataSubStatusRequestSerializer(BasePagingSerializer):
@@ -171,7 +171,7 @@ class DeleteDataSubStatusResponseSerializer(BaseResponseSerializer):
 class DataSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataSource
-        fields = ['name', 'company']
+        fields = ['id', 'name', 'company']
 
 
 class CreateDataSourceRequestSerializer(serializers.Serializer):
@@ -201,7 +201,7 @@ class UpdateDataSourceResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataSourceRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataSourceRequestSerializer(BasePagingSerializer):
@@ -223,7 +223,7 @@ class DeleteDataSourceResponseSerializer(BaseResponseSerializer):
 class DataChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataChannel
-        fields = ['name', 'data_source', 'company']
+        fields = ['id', 'name', 'data_source', 'company']
 
 
 class CreateDataChannelRequestSerializer(serializers.Serializer):
@@ -254,7 +254,7 @@ class UpdateDataChannelResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataChannelRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataChannelRequestSerializer(BasePagingSerializer):
