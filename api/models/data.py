@@ -151,7 +151,7 @@ class Order(BaseModel):
     due_date = models.DateField(db_index=True, null=True)
     annual_debt = models.IntegerField(default=0)
     annual_due_date = models.DateField(db_index=True, null=True)
-    pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_column='pic_id')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     shipping_code = models.CharField(max_length=1024, default='', null=True)
     shipping_fee = models.BigIntegerField(default=0)

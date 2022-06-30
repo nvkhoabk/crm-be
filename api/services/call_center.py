@@ -320,6 +320,7 @@ class GetUserCallHistoryService(BaseService):
             'user': request.user,
             'deleted_at__isnull': True
         }
+        phone_number = kwargs['phone_number']
         user_roles = UserRole.objects.filter(**filter)
 
         call_agent = CallAgent.objects.filter(user_id=user_roles.first().user_id, deleted_at__isnull=True)
@@ -328,7 +329,11 @@ class GetUserCallHistoryService(BaseService):
 
         call_agent = call_agent.first()
 
-        call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
+        call_logs = []
+        if phone_number is not None and phone_number != "":
+            call_logs = CallLog.objects.filter(extension=call_agent.name, phone__icontains=phone_number).order_by('-created_at')
+        else:
+            call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
 
         call_history_list = []
         for call_log in call_logs:

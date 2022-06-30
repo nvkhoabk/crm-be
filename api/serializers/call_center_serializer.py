@@ -231,7 +231,7 @@ class GetCompanyCallHistoryResponseSerializer(BaseResponseSerializer):
 
 
 class GetUserCallHistoryRequestSerializer(BasePagingSerializer):
-    pass
+    phone_number = serializers.CharField(allow_blank=True, allow_null=True, required=False)
 
 
 class GetUserCallHistoryResponseSerializer(BaseResponseSerializer):

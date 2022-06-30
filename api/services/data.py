@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
-from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder
+from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, User
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated
@@ -63,7 +63,6 @@ class CreateOrderService(BaseService):
 
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
-
             order = Order.objects.create(
                 **kwargs
             )
