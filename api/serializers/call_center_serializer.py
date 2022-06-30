@@ -208,6 +208,7 @@ class UpdateAgentsResponseSerializer(BaseResponseSerializer):
 
 
 class CallHistorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     dest_number = serializers.CharField()
     calldate = serializers.DateTimeField()
     record_url = serializers.CharField()

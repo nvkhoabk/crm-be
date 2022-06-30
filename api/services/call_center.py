@@ -338,6 +338,7 @@ class GetUserCallHistoryService(BaseService):
         call_history_list = []
         for call_log in call_logs:
             call_history_list.append({
+                'id': call_log.id,
                 'dest_number': call_log.phone,
                 'calldate': call_log.calldate,
                 'record_url': call_log.recording,
