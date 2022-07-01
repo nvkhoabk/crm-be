@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
-from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder
+from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, User
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated
@@ -63,7 +63,6 @@ class CreateOrderService(BaseService):
 
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
-
             order = Order.objects.create(
                 **kwargs
             )
@@ -189,7 +188,7 @@ class FilterOrderService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            query_set = Order.objects.get(
+            query_set = Order.objects.filter(
                 company_id=user_roles.first().company_id,
                 deleted_at__isnull=True
             )
@@ -210,19 +209,19 @@ class FilterOrderService(BaseService):
                     created_date__lte=value,
                 )
 
-            if key == 'pics' and value is not None:
+            if key == 'pics' and value is not None and value:
                 query_set = query_set.filter(
                     pic__in=value,
                 )
 
-            if key == 'data_status' and value is not None:
+            if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
                     (Q(data_status_id=ds, data_sub_status_id=dss) for ds, dss in value)
                 )
                 query_set = query_set.filter(query)
 
-            if key == 'data_source' and value is not None:
+            if key == 'data_source' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
                     (Q(data_source_id=ds, data_channel_id=dc) for ds, dc in value)

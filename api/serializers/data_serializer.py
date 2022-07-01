@@ -4,6 +4,7 @@ from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, OrderDetail, Customer
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
+from api.serializers.product_serializer import ProductSerializer
 from api.utils import validate
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -46,11 +47,12 @@ class OrderSerializer(serializers.ModelSerializer):
         return User.object.get(pk=order.pic).name
 
     customer = CustomerSerializer()
+    product = ProductSerializer()
     pic_name = serializers.SerializerMethodField(source='get_pic')
 
     class Meta:
         model = Order
-        fields = ['created_date', 'product', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
+        fields = ['id', 'created_date', 'product', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name']
 
@@ -147,7 +149,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     data_source = serializers.ListField(child=DataSourceFilterParamSerializer(), required=False, allow_null=True)
     phone = serializers.CharField(required=False, allow_null=True)
     customer_name = serializers.CharField(required=False, allow_null=True)
-    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

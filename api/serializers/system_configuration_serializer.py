@@ -99,7 +99,7 @@ class UpdateDataStatusResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataStatusRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataStatusRequestSerializer(BasePagingSerializer):
@@ -155,7 +155,7 @@ class UpdateDataSubStatusResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataSubStatusRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataSubStatusRequestSerializer(BasePagingSerializer):
@@ -207,7 +207,7 @@ class UpdateDataSourceResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataSourceRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataSourceRequestSerializer(BasePagingSerializer):
@@ -260,7 +260,7 @@ class UpdateDataChannelResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataChannelRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=1024, required=False)
+    name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterDataChannelRequestSerializer(BasePagingSerializer):
