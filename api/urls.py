@@ -63,12 +63,6 @@ urlpatterns = [
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
-    path('manage/create_order/', manage.CreateCompanyView.as_view(), name='manage.create_order'),
-    path('manage/get_order/', manage.GetCompanyView.as_view(), name='manage.get_order'),
-    path('manage/update_order/', manage.UpdateCompanyView.as_view(), name='manage.update_order'),
-    path('manage/filter_order/', manage.FilterCompanyView.as_view(), name='manage.filter_order'),
-    path('manage/delete_order/', manage.DeleteCompanyView.as_view(), name='manage.delete_order'),
-
     # Call center
     path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(),
          name='callcenter.create_callcenter'),
@@ -125,7 +119,7 @@ urlpatterns = [
     # Sysconfig
     path('sysconfig/create_company_email/', system_configuration.CreateCompanyEmailView.as_view(),
          name='sysconfig.create_company_email'),
-    path('sysconfig/filter_company_emailt/', system_configuration.FilterCompanyEmailView.as_view(),
+    path('sysconfig/filter_company_email/', system_configuration.FilterCompanyEmailView.as_view(),
          name='sysconfig.filter_company_email'),
     path('sysconfig/get_company_email/', system_configuration.GetCompanyEmailView.as_view(),
          name='sysconfig.get_company_email'),

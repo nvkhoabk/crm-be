@@ -133,6 +133,29 @@ class CrawlData(BaseModel):
         db_table = 'crawl_data'
 
 
+class CrawlObject(BaseModel):
+    SOURCE_CHOICES = (
+        ('fb', 'fb'),
+        ('zalo', 'zalo'),
+    )
+    TYPE_POST = 'post'
+    TYPE_MSG = 'msg'
+
+    TYPE_CHOICES = (
+        (TYPE_POST, TYPE_POST),
+        (TYPE_MSG, TYPE_MSG),
+    )
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    object_id = models.CharField(db_index=True, max_length=64)
+    source = models.CharField(db_index=True, max_length=64, choices=SOURCE_CHOICES, default='fb')
+    type = models.CharField(db_index=True, max_length=64, choices=TYPE_CHOICES, default=TYPE_POST)
+    last_check_time_int = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'crawl_objects'
+
+
 class Customer(models.Model):
     name = models.CharField(db_index=True, max_length=255)
     phone = models.CharField(db_index=True, max_length=64)
@@ -152,7 +175,7 @@ class Order(BaseModel):
     annual_debt = models.IntegerField(default=0)
     annual_due_date = models.DateField(db_index=True, null=True)
     pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
     shipping_code = models.CharField(max_length=1024, default='', null=True)
     shipping_fee = models.BigIntegerField(default=0)
     data_status = models.ForeignKey(DataStatus, null=True, on_delete=models.SET_NULL)

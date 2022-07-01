@@ -576,7 +576,8 @@ class CallAnsweredService(BaseService):
             return 0
         try:
             filter = {
-                'user': CallAgent.objects.get(name=call_log.extension).user_id,
+                'user': CallAgent.objects.get(name=call_log.extension, deleted_at__isnull=True,
+                                              status=CALL_AGENT_STATUS.ACTIVE).user_id,
                 'deleted_at__isnull': True
             }
             user_roles = UserRole.objects.filter(**filter)

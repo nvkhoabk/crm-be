@@ -19,6 +19,9 @@ class CompanyEmail(BaseModel):
 class DataStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=128, unique=True)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_status'
@@ -28,6 +31,9 @@ class DataSubStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
     name = models.CharField(max_length=128)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_substatus'
@@ -37,6 +43,9 @@ class DataSubStatus(BaseModel):
 class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=128, unique=True)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_sources'
@@ -46,6 +55,9 @@ class DataChannel(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     name = models.CharField(max_length=128)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_channels'
