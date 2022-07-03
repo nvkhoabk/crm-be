@@ -73,7 +73,8 @@ class CreateOrderService(BaseService):
                                         pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
-                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id)
+                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
+                                        company_id=order.company_id)
 
             if order.product is not None and order.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
                 create_annual_order(order)
@@ -162,7 +163,8 @@ class UpdateOrderService(BaseService):
                                         pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
-                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id)
+                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
+                                        company_id=order.company_id)
 
             return order
         except Order.DoesNotExist:
@@ -272,7 +274,7 @@ class CreateOrderDetailService(BaseService):
                 **kwargs
             )
 
-            order_detail = self.update_order(request, cookies, *args, order_detail)
+            order_detail = self.update_order(request, cookies, order_detail, *args)
 
             OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
@@ -287,7 +289,7 @@ class CreateOrderDetailService(BaseService):
         except IntegrityError as e:
             raise OrderDetailDuplicated()
 
-    def update_order(self, request, cookies: Cookies, *args, order_detail):
+    def update_order(self, request, cookies: Cookies, order_detail, *args):
         order = Order.objects.get(pk=order_detail.order_id)
 
         if order_detail.product is not None and order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
@@ -300,7 +302,7 @@ class CreateOrderDetailService(BaseService):
             order.due_date = order_detail.due_date
 
         order_service = UpdateOrderService()
-        order_service.serve(request, cookies, *args, **order)
+        order_service.serve(request, cookies, *args, **order.__dict__)
 
         return order_detail
 
@@ -522,7 +524,8 @@ class BulkUpdateOrderStatusService(BaseService):
                                                 data_sub_status_id=order.data_sub_status_id,
                                                 debt_status=order.debt_status,
                                                 data_source_id=order.data_source_id,
-                                                data_channel_id=order.data_channel_id)
+                                                data_channel_id=order.data_channel_id,
+                                                company_id=order.company_id)
 
                     order.data_status_id = kwargs.get('data_status_id')
                     order.data_sub_status_id = kwargs.get('data_sub_status_id')
@@ -553,7 +556,8 @@ class BulkUpdateOrderPicService(BaseService):
                                                 data_sub_status_id=order.data_sub_status_id,
                                                 debt_status=order.debt_status,
                                                 data_source_id=order.data_source_id,
-                                                data_channel_id=order.data_channel_id)
+                                                data_channel_id=order.data_channel_id,
+                                                company_id=order.company_id)
 
                     order.pic = pic_list[pic_index]
                     order.save()

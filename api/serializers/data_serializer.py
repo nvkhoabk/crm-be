@@ -2,9 +2,12 @@ import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, OrderDetail, Customer
+from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
 from api.serializers.product_serializer import ProductSerializer
+from api.serializers.system_configuration_serializer import DataStatusSerializer, DataSubStatusSerializer, \
+    DataSourceSerializer, DataChannelSerializer
 from api.utils import validate
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -47,6 +50,10 @@ class OrderSerializer(serializers.ModelSerializer):
         return User.object.get(pk=order.pic).name
 
     customer = CustomerSerializer()
+    data_status = DataStatusSerializer()
+    data_sub_status = DataSubStatusSerializer()
+    data_source = DataSourceSerializer()
+    data_channel = DataChannelSerializer()
     product = ProductSerializer()
     pic_name = serializers.SerializerMethodField(source='get_pic')
 
@@ -169,6 +176,7 @@ class DeleteOrderResponseSerializer(BaseResponseSerializer):
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
     class Meta:
         model = OrderDetail
         fields = ['order', 'type', 'product', 'quantity', 'price', 'discount', 'remaining_payment_amount',
