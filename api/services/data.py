@@ -380,40 +380,40 @@ class UpdateOrderDetailService(BaseService):
                 user_roles = UserRole.objects.filter(**filter)
 
                 order_detail = OrderDetail.objects.get(
-                    pk=kwargs.get('id'),
+                    pk=kwargs.get('order_detail_id'),
                     company_id=user_roles.first().company_id
                 )
 
 
             if kwargs.get('product_id'):
-                order_detail.order_id = kwargs['product_id']
+                order_detail.product_id = kwargs['product_id']
 
             if kwargs.get('quantity'):
-                order_detail.order_id = kwargs['quantity']
+                order_detail.quantity = kwargs['quantity']
 
             if kwargs.get('price'):
-                order_detail.order_id = kwargs['price']
+                order_detail.price = kwargs['price']
 
             if kwargs.get('discount'):
-                order_detail.order_id = kwargs['discount']
+                order_detail.discount = kwargs['discount']
 
             if kwargs.get('remaining_payment_amount'):
-                order_detail.order_id = kwargs['remaining_payment_amount']
+                order_detail.remaining_payment_amount = kwargs['remaining_payment_amount']
 
             if kwargs.get('paid_payment_amount'):
-                order_detail.order_id = kwargs['paid_payment_amount']
+                order_detail.paid_payment_amount = kwargs['paid_payment_amount']
 
             if kwargs.get('debt'):
-                order_detail.order_id = kwargs['debt']
+                order_detail.debt = kwargs['debt']
 
             if kwargs.get('due_date'):
-                order_detail.order_id = kwargs['due_date']
+                order_detail.due_date = kwargs['due_date']
 
             if kwargs.get('file_attach'):
-                order_detail.order_id = kwargs['file_attach']
+                order_detail.file_attach = kwargs['file_attach']
 
             if kwargs.get('invoice'):
-                order_detail.order_id = kwargs['invoice']
+                order_detail.invoice = kwargs['invoice']
 
 
             order_detail.save()

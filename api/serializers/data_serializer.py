@@ -177,6 +177,7 @@ class DeleteOrderResponseSerializer(BaseResponseSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
+    order = OrderSerializer()
     class Meta:
         model = OrderDetail
         fields = ['id', 'order', 'type', 'product', 'quantity', 'price', 'discount', 'remaining_payment_amount',
@@ -190,6 +191,7 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     )
 
     order_id = serializers.IntegerField()
+    company_id = serializers.IntegerField(required=False, allow_null=True)
     type = serializers.ChoiceField(choices=TYPE_CHOICES)
     product_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(required=False, allow_null=True)
