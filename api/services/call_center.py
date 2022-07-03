@@ -62,6 +62,13 @@ class EnableCallCenterService(BaseService):
             call_center.is_enable = True
             call_center.save()
 
+            call_agents = CallAgent.objects.filter(company_id=kwargs['company_id'])
+
+            for agent in call_agents:
+                agent.status = CALL_AGENT_STATUS.ACTIVE
+
+            call_agents.bulk_update(call_agents, fields=['status'])
+
             return call_center
         except CallCenter.DoesNotExist as e:
             raise CallCenterNotFound()
@@ -80,9 +87,9 @@ class DisableCallCenterService(BaseService):
             call_agents = CallAgent.objects.filter(company_id=kwargs['company_id'])
 
             for agent in call_agents:
-                agent.deleted_at = timezone.now()
+                agent.status = CALL_AGENT_STATUS.INACTIVE
 
-            call_agents.bulk_update(call_agents, fields=['deleted_at'])
+            call_agents.bulk_update(call_agents, fields=['status'])
             return call_center
         except CallCenter.DoesNotExist as e:
             raise CallCenterNotFound()
@@ -271,9 +278,25 @@ class GetCompanyCallHistoryService(BaseService):
             to_date = (kwargs['filter']['to_date'] + relativedelta(days=1)).strftime('%Y-%m-%d')
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
-            call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                               calldate__gte=from_date, calldate__lt=to_date).order_by(
-                '-created_at')
+            call_logs = CallLog.objects.filter(calldate__gte=from_date, calldate__lt=to_date).order_by('-created_at')
+
+            filters = ['number', 'user_id']
+            params = dict(kwargs.get('filter', []))
+            for key, value in params.items():
+                if key not in filters:
+                    continue
+
+                if key == 'number' and value is not None:
+                    call_logs = call_logs.filter(
+                        phone__icontains=value
+                    )
+
+                if key == 'user_id' and value is not None:
+                    call_agents = call_agents.filter(
+                        user_id=value,
+                    )
+
+            call_logs = call_logs.filter(extension__in=call_agents.values_list('name', flat=True))
 
             call_history_list = []
             for call_log in call_logs:
@@ -297,6 +320,7 @@ class GetUserCallHistoryService(BaseService):
             'user': request.user,
             'deleted_at__isnull': True
         }
+        phone_number = kwargs['phone_number']
         user_roles = UserRole.objects.filter(**filter)
 
         call_agent = CallAgent.objects.filter(user_id=user_roles.first().user_id, deleted_at__isnull=True)
@@ -305,11 +329,16 @@ class GetUserCallHistoryService(BaseService):
 
         call_agent = call_agent.first()
 
-        call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
+        call_logs = []
+        if phone_number is not None and phone_number != "":
+            call_logs = CallLog.objects.filter(extension=call_agent.name, phone__icontains=phone_number).order_by('-created_at')
+        else:
+            call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
 
         call_history_list = []
         for call_log in call_logs:
             call_history_list.append({
+                'id': call_log.id,
                 'dest_number': call_log.phone,
                 'calldate': call_log.calldate,
                 'record_url': call_log.recording,
@@ -331,13 +360,13 @@ class GetCallReportService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
         from_date = kwargs['filter']['from_date'].strftime('%Y-%m-%d')
-        to_date = kwargs['filter']['to_date'].strftime('%Y-%m-%d')
+        to_date = (kwargs['filter']['to_date'] + relativedelta(days=1)).strftime('%Y-%m-%d')
 
         call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
         self.init_call_report(call_agents)
 
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           created_at__gte=from_date, created_at__lte=to_date, status__isnull=False)
+                                           created_at__gte=from_date, created_at__lt=to_date, status__isnull=False)
 
         call_history_list = []
         for call_log in call_logs:
@@ -549,11 +578,12 @@ class CallAnsweredService(BaseService):
         return call_log
 
     def calculate_chargeable_time(self, call_log):
-        if not call_log.is_telco or call_log.duration == 0:
+        if call_log.duration == 0:
             return 0
         try:
             filter = {
-                'user': CallAgent.objects.get(name=call_log.extension).user_id,
+                'user': CallAgent.objects.get(name=call_log.extension, deleted_at__isnull=True,
+                                              status=CALL_AGENT_STATUS.ACTIVE).user_id,
                 'deleted_at__isnull': True
             }
             user_roles = UserRole.objects.filter(**filter)

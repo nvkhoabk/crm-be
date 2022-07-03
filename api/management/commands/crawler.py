@@ -4,7 +4,7 @@ import time
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
-from api.models.data import CrawlData, ZaloOA
+from api.models.data import CrawlData, ZaloOA, FBUser, FBPage, CrawlObject
 from api.zalo.zutils import ZaloPage
 from django.core.management.base import BaseCommand
 from django.db.models import F
@@ -41,16 +41,29 @@ class FBCrawler(Daemon):
             for post in posts:
                 c_offset = 0
                 c_limit = 10
+                post_in_db = CrawlObject.objects.filter(
+                    object_id=post['id']
+                ).first()
+
+                last_check_time_int = None
                 while True:     
                     comments = fb.get_page_comments(post['id'], c_offset, c_limit)
                     if len(comments) == 0:
                         break
-            
+
+                    if post_in_db:
+                        if comments.first()['created_time'] <= post_in_db.first().last_check_time_int:
+                            break
+                    else:
+                        post_in_db = CrawlObject.objects.create(company_id=1, object_id=post['id'], source='fb', type='post')
+
+                    if last_check_time_int is not None:
+                        last_check_time_int = comments.first()['created_time']
                     c_offset = c_offset + c_limit
 
-                    for comment in comments: 
-                        if CrawlData.objects.filter(object_id=comment['id']).first():
-                            continue
+                    for comment in comments:
+                        if comment ['created_time'] < post_in_db.first().last_check_time_int:
+                            break
                 
                         if not extract_phone(comment['message']):
                             continue
@@ -65,6 +78,11 @@ class FBCrawler(Daemon):
                             content=comment['message'],
                             phone=extract_phone(comment['message']),
                         )
+
+                if post_in_db is not None and last_check_time_int is not None:
+                    post_in_db.last_check_time_int = last_check_time_int
+                    post_in_db.save()
+
         
     def crawl_messages(self, page):
         api = FacebookApi(access_token=page.access_token)
@@ -80,6 +98,19 @@ class FBCrawler(Daemon):
             offset = offset + limit
             
             for message in messages:
+                conversation_in_db = CrawlObject.objects.filter(
+                    object_id=message['id'], source='fb', type='msg'
+                ).first()
+
+                if conversation_in_db is None:
+                    conversation_in_db = CrawlObject.objects.create(object_id=message['id'], source='fb', type='msg')
+
+                if message['updated_time'] <= conversation_in_db.last_check_time_int:
+                    continue
+
+                conversation_in_db.last_check_time_int = message['updated_time']
+                conversation_in_db.save()
+
                 all_messages = ' '.join(message['messages'])
                 
                 if CrawlData.objects.filter(object_id=message['id']).first():

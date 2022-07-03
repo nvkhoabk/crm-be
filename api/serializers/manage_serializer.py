@@ -1,6 +1,6 @@
 import json
 
-from api.models import Customer
+from api.models.data import Customer
 from api.models.call_center import CallCenter
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
@@ -590,10 +590,12 @@ class UpdateCustomerRequestSerializer(serializers.Serializer):
 class UpdateCustomerResponseSerializer(BaseResponseSerializer):
     data = CustomerSerializer()
 
+
 class FilterCustomerRequestCustomerSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     address = serializers.CharField(required=False, allow_blank=True)
+
 
 class FilterCustomerRequestSerializer(BasePagingSerializer):
     filter = FilterCustomerRequestCustomerSerializer()

@@ -180,6 +180,12 @@ class UpdateDataStatusService(BaseService):
             if kwargs.get('name'):
                 result.name = kwargs['name']
 
+            if kwargs.get('color'):
+                result.color = kwargs['color']
+
+            if kwargs.get('index'):
+                result.index = kwargs['index']
+
             result.save()
 
             return result
@@ -195,7 +201,7 @@ class FilterDataStatusService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = DataStatus.objects.filter(company_id=user_roles.first().company_id)
+        query_set = DataStatus.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
         filters = ['name']
         params = dict(kwargs.get('filter', []))
@@ -203,12 +209,12 @@ class FilterDataStatusService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
 
-        return query_set
+        return query_set.order_by('index')
 
 
 class DeleteDataStatusService(BaseService):
@@ -288,6 +294,12 @@ class UpdateDataSubStatusService(BaseService):
             if kwargs.get('name'):
                 result.name = kwargs['name']
 
+            if kwargs.get('color'):
+                result.color = kwargs['color']
+
+            if kwargs.get('index'):
+                result.index = kwargs['index']
+
             result.save()
 
             return result
@@ -303,7 +315,7 @@ class FilterDataSubStatusService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = DataSubStatus.objects.filter(company_id=user_roles.first().company_id)
+        query_set = DataSubStatus.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
         filters = ['name', 'data_status_id']
         params = dict(kwargs.get('filter', []))
@@ -311,7 +323,7 @@ class FilterDataSubStatusService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
@@ -321,7 +333,7 @@ class FilterDataSubStatusService(BaseService):
                     data_status_id=value,
                 )
 
-        return query_set
+        return query_set.order_by('index')
 
 
 class DeleteDataSubStatusService(BaseService):
@@ -421,7 +433,7 @@ class FilterDataSourceService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )
@@ -529,7 +541,7 @@ class FilterDataChannelService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'name' and value != '' and value is not None:
                 query_set = query_set.filter(
                     name__icontains=value,
                 )

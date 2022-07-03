@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from api.models.call_center import CallAgent, CallCenter
 from api.services import exceptions
 from api.models.organization import UserRole, Permission
-from api.const import MODULES, Const
+from api.const import MODULES, Const, CALL_AGENT_STATUS
 
 
 class AuthLoginService(BaseService):
@@ -92,8 +92,10 @@ class AuthGetUserInfoService(BaseService):
         elif len(response['roles']) == 1 and response['roles'][0]['role'] is None \
                 and response['roles'][0]['department'] is None:
             response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK]
-            call_center = CallCenter.objects.filter(company_id=company_id)
-            if len(call_center) > 0 and call_center[0].is_enable:
+            call_center = CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True).order_by(
+                '-id').first()
+
+            if call_center is not None and call_center.is_enable:
                 response['menu'].append(MODULES.CALL_CENTER_MANAGEMENT)
             else:
                 response['menu'].append(MODULES.CALL_CENTER_ABOUT)
@@ -113,12 +115,14 @@ class AuthGetUserInfoService(BaseService):
         }
 
         try:
-            call_agents = CallAgent.objects.filter(user_id=user, deleted_at__isnull=True)
-            if len(call_agents) > 0:
-                call_agent = call_agents[0]
-                response['call_center']['ext'] = call_agent.name
-                response['call_center']['secret'] = call_agent.secret
-                response['call_center']['sip_server'] = Const.SIP_SERVER
+            if CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True, is_enable=True):
+                call_agents = CallAgent.objects.filter(user_id=user, deleted_at__isnull=True,
+                                                       status=CALL_AGENT_STATUS.ACTIVE)
+                if len(call_agents) > 0:
+                    call_agent = call_agents[0]
+                    response['call_center']['ext'] = call_agent.name
+                    response['call_center']['secret'] = call_agent.secret
+                    response['call_center']['sip_server'] = Const.SIP_SERVER
         except CallAgent.DoesNotExist:
             pass
 

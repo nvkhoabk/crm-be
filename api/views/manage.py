@@ -809,7 +809,7 @@ class DeleteUserView(BaseAPIView):
 
 class CreateCustomerView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [SuperAdminPermission, ]
+    permission_classes = []
     serializer_class = manage_serializer.CreateCustomerRequestSerializer
 
     @swagger_auto_schema(

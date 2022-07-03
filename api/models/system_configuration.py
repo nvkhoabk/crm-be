@@ -1,6 +1,6 @@
 from django.db import models
 
-from api.models import BaseModel
+from api.models.base import BaseModel
 from api.models.organization import Company
 from django.contrib.auth import get_user_model
 
@@ -18,7 +18,10 @@ class CompanyEmail(BaseModel):
 
 class DataStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024, unique=True)
+    name = models.CharField(max_length=128, unique=True)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_status'
@@ -27,7 +30,10 @@ class DataStatus(BaseModel):
 class DataSubStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=128)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_substatus'
@@ -36,7 +42,10 @@ class DataSubStatus(BaseModel):
 
 class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024, unique=True)
+    name = models.CharField(max_length=128, unique=True)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_sources'
@@ -45,7 +54,10 @@ class DataSource(BaseModel):
 class DataChannel(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=128)
+    index = models.IntegerField(default=0)
+    color = models.CharField(max_length=32)
+    choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_channels'
@@ -54,7 +66,7 @@ class DataChannel(BaseModel):
 
 class EmailSyntax(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.CharField(max_length=256)
+    code = models.CharField(max_length=64)
     column_name = models.CharField(max_length=256)
 
     class Meta:
@@ -64,7 +76,7 @@ class EmailSyntax(BaseModel):
 
 class EmailTemplate(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.CharField(max_length=256)
+    code = models.CharField(max_length=128)
     email_name = models.TextField()
     content = models.TextField()
 

@@ -1,5 +1,6 @@
 import json
 
+from api.const import PRODUCT_PAYMENT_METHOD
 from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
@@ -20,8 +21,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class CreateProductRequestSerializer(serializers.Serializer):
     PAYMENT_METHOD_CHOICES = (
-        ('CREDIT', 'CREDIT'),
-        ('DEBIT', 'DEBIT')
+        (PRODUCT_PAYMENT_METHOD.CREDIT, PRODUCT_PAYMENT_METHOD.CREDIT),
+        (PRODUCT_PAYMENT_METHOD.DEBIT, PRODUCT_PAYMENT_METHOD.DEBIT)
     )
 
     name = serializers.CharField(max_length=255, required=True)

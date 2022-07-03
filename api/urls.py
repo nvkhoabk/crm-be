@@ -63,12 +63,6 @@ urlpatterns = [
     path('manage/update_user/', manage.UpdateUserView.as_view(), name='manage.update_user'),
     path('manage/delete_user/', manage.DeleteUserView.as_view(), name='manage.delete_user'),
 
-    path('manage/create_order/', manage.CreateCompanyView.as_view(), name='manage.create_order'),
-    path('manage/get_order/', manage.GetCompanyView.as_view(), name='manage.get_order'),
-    path('manage/update_order/', manage.UpdateCompanyView.as_view(), name='manage.update_order'),
-    path('manage/filter_order/', manage.FilterCompanyView.as_view(), name='manage.filter_order'),
-    path('manage/delete_order/', manage.DeleteCompanyView.as_view(), name='manage.delete_order'),
-
     # Call center
     path('callcenter/create_callcenter/', call_center.CreateCallCenterView.as_view(),
          name='callcenter.create_callcenter'),
@@ -125,7 +119,7 @@ urlpatterns = [
     # Sysconfig
     path('sysconfig/create_company_email/', system_configuration.CreateCompanyEmailView.as_view(),
          name='sysconfig.create_company_email'),
-    path('sysconfig/filter_company_emailt/', system_configuration.FilterCompanyEmailView.as_view(),
+    path('sysconfig/filter_company_email/', system_configuration.FilterCompanyEmailView.as_view(),
          name='sysconfig.filter_company_email'),
     path('sysconfig/get_company_email/', system_configuration.GetCompanyEmailView.as_view(),
          name='sysconfig.get_company_email'),
@@ -221,4 +215,16 @@ urlpatterns = [
     path('zalo/login/', crawl.ZaloLoginView.as_view(), name='data.zalo_login'),
     path('zalo/login/callback', crawl.ZaloLoginCallBackView.as_view(), name='data.zalo_login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
+    path('data/create_order/', data.CreateOrderView.as_view(), name='data.create_order'),
+    path('data/filter_order/', data.FilterOrderView.as_view(), name='data.filter_order'),
+    path('data/get_order/', data.GetOrderView.as_view(), name='data.get_order'),
+    path('data/update_order/', data.UpdateOrderView.as_view(), name='data.update_order'),
+    path('data/delete_order/', data.DeleteOrderView.as_view(), name='data.delete_order'),
+    path('data/create_order_detail/', data.CreateOrderDetailView.as_view(), name='data.create_order_detail'),
+    path('data/filter_order_detail/', data.FilterOrderDetailView.as_view(), name='data.filter_order_detail'),
+    path('data/get_order_detail/', data.GetOrderDetailView.as_view(), name='data.get_order_detail'),
+    path('data/update_order_detail/', data.UpdateOrderDetailView.as_view(), name='data.update_order_detail'),
+    path('data/delete_order_detail/', data.DeleteOrderDetailView.as_view(), name='data.delete_order_detail'),
+    path('data/filter_order_history/', data.FilterOrderHistoryView.as_view(), name='data.filter_order_history'),
+    path('data/filter_order_detail_history/', data.FilterOrderDetailHistoryView.as_view(), name='data.filter_order_detail_history'),
 ] + static('files/', document_root=Const.FILE_ROOT)

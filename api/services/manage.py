@@ -2,7 +2,7 @@ import json
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.models import Customer
+from api.models.data import Customer
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
