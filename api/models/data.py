@@ -128,6 +128,8 @@ class CrawlData(BaseModel):
     content = models.TextField()
     status = models.CharField(db_index=True, max_length=64, choices=STATUS_CHOICES, default='init')
     last_check_time_int = models.IntegerField(default=0)
+    post_message = models.TextField(default='')
+    post_picture = models.TextField(default='')
 
     class Meta:
         db_table = 'crawl_data'

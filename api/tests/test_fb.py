@@ -3,6 +3,7 @@ import facebook
 import json
 import re
 from api.fb.page import FBPageUtil
+from api.management.commands.crawler import FBCrawler
 from api.utils.phone import extract_phone
 from api.services.crawl import CrawlService
 from api.models.data import FBPage
@@ -40,4 +41,17 @@ class TestCrawl(TestCase):
         
         c = CrawlService()
         c.crawl_messages('112992571381772')
+
+    def test_crawl_page(self):
+        crawl = FBCrawler('/tmp/test.pid')
+        page = FBPage()
+        page.company_id = 7
+        page.user_id = 1
+        page.page_id = '106599918774845'
+        page.page_name = 'CRM test'
+        page.access_token = 'EAAEhtTd5YR4BAKtvvacgRxwY3K8v7IvaFfsLdpapcZCTVVCIdJauYwZBDhoU63PTFNvmZBwq2TNnrXScYwY26yt171WuA74ZCtCfZCZClnxkHeoB74ZCBIUxU3t1MHcHdUk77ZBxzpjCl7GaELwNOXJeotQ2ellH7yDTneu0IKW53SNzd3ZCy00xXMjkPgt8hRcEZD'
+        page.expire_time = 0
+        page.last_check_time = 0
+
+        crawl.crawl_messages(page)
      

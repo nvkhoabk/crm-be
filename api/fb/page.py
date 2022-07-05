@@ -21,17 +21,35 @@ class FBPageUtil:
         return profile
 
     def get_page_posts(self, page_id, offset, limit):
-        posts = self.graph.request('/{}/posts?offset={}&limit={}&fields=permalink_url,message,created_time'.format(page_id, offset, limit))
+        posts = self.graph.request(
+            '/{}/posts?offset={}&limit={}&fields=permalink_url,message,full_picture,created_time'.format(page_id,
+                                                                                                         offset, limit))
         return posts['data']
 
     def get_page_comments(self, post_id, offset, limit):
-        comments = self.graph.request('{}/comments?offset={}&limit={}'.format(post_id, offset, limit))
+        comments = self.graph.request('{}/comments?summary=1&order=reverse_chronological&filter=stream&offset={}&limit={}'.format(post_id, offset, limit))
         return comments['data']
+
+    def dump_comment_hierarchy_to_json(self, comment_id):
+        top_level = self._get_top_level(comment_id)
+        comments = self.graph.request('{}/comments?fields=parent{id},message,from,created_time'.format(top_level['id']))
+        comment_map = dict()
+        top_level['children'] = []
+        comment_map[top_level['id']] = top_level
+
+        for comment in range(comments):
+            comment['children'] = []
+            comment_map[comment['id']] = comment
+
+        for comment in range(comments):
+            comment_map[comment['parent']['id']]['children'].append(comment)
+
+        return json.dump(top_level)
 
     def get_page_messages(self, page_id, offset, limit):
         total_messages = []
         
-        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,messages{message},senders')
+        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,updated_time,messages{message},senders')
 
         for message in messages['data']:
             message['messages'] = self._get_all_message(message)
@@ -56,4 +74,13 @@ class FBPageUtil:
                 break
         
         return result
+
+    def _get_top_level(self, comment_id):
+        comment = self.graph.request(
+            '{}?fields=parent,message,from,created_time'.format(comment_id))
+        while 'parent' in comment:
+            comment = self.graph.request(
+                '{}?fields=parent,message,from,created_time'.format(comment['id']))
+
+        return comment
     

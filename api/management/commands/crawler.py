@@ -1,6 +1,11 @@
 import os
 import sys
 import time
+from datetime import datetime
+
+import json
+
+from api.const import Const
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
@@ -45,25 +50,29 @@ class FBCrawler(Daemon):
                     object_id=post['id']
                 ).first()
 
-                last_check_time_int = None
+                last_check_time_int = 0
                 while True:     
                     comments = fb.get_page_comments(post['id'], c_offset, c_limit)
                     if len(comments) == 0:
                         break
 
+                    created_timestamp = int(
+                        datetime.strptime(comments[0]['created_time'], Const.FB_TIME_FORMAT).timestamp())
                     if post_in_db:
-                        if comments.first()['created_time'] <= post_in_db.first().last_check_time_int:
+                        if created_timestamp <= post_in_db.last_check_time_int:
                             break
                     else:
-                        post_in_db = CrawlObject.objects.create(company_id=1, object_id=post['id'], source='fb', type='post')
-
-                    if last_check_time_int is not None:
-                        last_check_time_int = comments.first()['created_time']
+                        post_in_db = CrawlObject.objects.create(company_id=page.company_id, object_id=post['id'],
+                                                                source='fb', type='post')
                     c_offset = c_offset + c_limit
 
                     for comment in comments:
-                        if comment ['created_time'] < post_in_db.first().last_check_time_int:
+                        created_timestamp = int(
+                            datetime.strptime(comment['created_time'], Const.FB_TIME_FORMAT).timestamp())
+                        if created_timestamp < post_in_db.last_check_time_int:
                             break
+
+                        last_check_time_int = max(last_check_time_int, created_timestamp)
                 
                         if not extract_phone(comment['message']):
                             continue
@@ -73,13 +82,15 @@ class FBCrawler(Daemon):
                             object_id=comment['id'],
                             type=CrawlData.TYPE_POST,
                             ref_link=post['permalink_url'],
+                            post_message=post['message'],
+                            post_picture=post['full_picture'],
                             uid=comment['from']['id'],
                             username=comment['from']['name'],
-                            content=comment['message'],
+                            content=fb.dump_comment_hierarchy_to_json(comment['id']),
                             phone=extract_phone(comment['message']),
                         )
 
-                if post_in_db is not None and last_check_time_int is not None:
+                if post_in_db is not None and last_check_time_int != 0:
                     post_in_db.last_check_time_int = last_check_time_int
                     post_in_db.save()
 
@@ -105,29 +116,29 @@ class FBCrawler(Daemon):
                 if conversation_in_db is None:
                     conversation_in_db = CrawlObject.objects.create(object_id=message['id'], source='fb', type='msg')
 
-                if message['updated_time'] <= conversation_in_db.last_check_time_int:
-                    continue
+                updated_timestamp = int(
+                    datetime.strptime(message['updated_time'], Const.FB_TIME_FORMAT).timestamp())
 
-                conversation_in_db.last_check_time_int = message['updated_time']
-                conversation_in_db.save()
+                if updated_timestamp <= conversation_in_db.last_check_time_int:
+                    continue
 
                 all_messages = ' '.join(message['messages'])
                 
                 if CrawlData.objects.filter(object_id=message['id']).first():
-                    continue
-            
-                if not extract_phone(all_messages):
-                    continue
+                    CrawlData.objects.filter(object_id=message['id']).update(content=json.dumps(message['messages']))
+                else:
+                    if not extract_phone(all_messages):
+                        continue
 
-                CrawlData.objects.create(
-                    source='fb',
-                    object_id=message['id'],
-                    type=CrawlData.TYPE_MSG,
-                    uid=message['senders']['data'][0]['id'],
-                    username=message['senders']['data'][0]['id'],
-                    content=all_messages,
-                    phone=extract_phone(all_messages),
-                )
+                    CrawlData.objects.create(
+                        source='fb',
+                        object_id=message['id'],
+                        type=CrawlData.TYPE_MSG,
+                        uid=message['senders']['data'][0]['id'],
+                        username=message['senders']['data'][0]['id'],
+                        content=json.dumps(message['messages']),
+                        phone=extract_phone(all_messages),
+                    )
 
     def do_crawl(self):
         users = FBUser.objects.annotate(id_mod=F('id') % self.shard).filter(

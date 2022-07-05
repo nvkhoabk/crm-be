@@ -19,6 +19,8 @@ class Const:
     # Sip server
     SIP_SERVER = "wss://vnsale.siptrunk.vn:58089/ws"
 
+    FB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S+%f'
+
 
 class ASSET_STATUS:
     NEW = 'NEW'
