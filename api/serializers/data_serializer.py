@@ -47,7 +47,7 @@ class OrderSerializer(serializers.ModelSerializer):
     def get_pic_name(self, order):
         if order.pic is None:
             return None
-        return User.object.get(pk=order.pic).name
+        return User.objects.get(pk=order.pic_id).username
 
     customer = CustomerSerializer()
     data_status = DataStatusSerializer()

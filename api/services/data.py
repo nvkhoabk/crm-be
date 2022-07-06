@@ -559,7 +559,7 @@ class BulkUpdateOrderPicService(BaseService):
                                                 data_channel_id=order.data_channel_id,
                                                 company_id=order.company_id)
 
-                    order.pic = pic_list[pic_index]
+                    order.pic = User.objects.get(pk=pic_list[pic_index])
                     order.save()
 
         except Order.DoesNotExist:
