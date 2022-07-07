@@ -71,19 +71,37 @@ class ModulePermission(permissions.BasePermission):
 
 class ModuleReadPermission(ModulePermission):
     def has_module_permission(self, permission_obj):
-        if self.MODULE_NAME in json.loads(permission_obj.read_permissions):
-            return True
+        if isinstance(self.MODULE_NAME, list):
+            for module in self.MODULE_NAME:
+                if module in json.loads(permission_obj.read_permissions):
+                    return True
 
-        # Edit permission is treated as Read Permission
-        if self.MODULE_NAME in json.loads(permission_obj.edit_permissions):
-            return True
+                # Edit permission is treated as Read Permission
+                if module in json.loads(permission_obj.edit_permissions):
+                    return True
 
-        return False
+            return False
+        else:
+            if self.MODULE_NAME in json.loads(permission_obj.read_permissions):
+                return True
+
+            # Edit permission is treated as Read Permission
+            if self.MODULE_NAME in json.loads(permission_obj.edit_permissions):
+                return True
+
+            return False
 
 
 class ModuleEditPermission(ModulePermission):
     def has_module_permission(self, permission_obj):
-        return self.MODULE_NAME in json.loads(permission_obj.edit_permissions)
+        if isinstance(self.MODULE_NAME, list):
+            for module in self.MODULE_NAME:
+                if module in json.loads(permission_obj.edit_permissions):
+                    return True
+
+            return False
+        else:
+            return self.MODULE_NAME in json.loads(permission_obj.edit_permissions)
 
 
 class ProductReadPermission(ModuleReadPermission):
