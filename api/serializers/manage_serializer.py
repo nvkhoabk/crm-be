@@ -344,6 +344,7 @@ class CreatePermissionRequestSerializer(serializers.Serializer):
     CATEGORY_CHOICES = (
         ('MARKETING', 'MARKETING'),
         ('DATA_MANAGEMENT', 'DATA_MANAGEMENT'),
+        ('DATA_MANAGEMENT_FOR_SALE', 'DATA_MANAGEMENT_FOR_SALE'),
         ('USER_MANAGEMENT', 'USER_MANAGEMENT'),
         ('PRODUCT_AND_WAREHOUSE', 'PRODUCT_AND_WAREHOUSE'),
         ('ACCOUNTING', 'ACCOUNTING'),
@@ -399,6 +400,7 @@ class UpdatePermissionRequestSerializer(serializers.Serializer):
     CATEGORY_CHOICES = (
         ('MARKETING', 'MARKETING'),
         ('DATA_MANAGEMENT', 'DATA_MANAGEMENT'),
+        ('DATA_MANAGEMENT_FOR_SALE', 'DATA_MANAGEMENT_FOR_SALE'),
         ('USER_MANAGEMENT', 'USER_MANAGEMENT'),
         ('PRODUCT_AND_WAREHOUSE', 'PRODUCT_AND_WAREHOUSE'),
         ('ACCOUNTING', 'ACCOUNTING'),

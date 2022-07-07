@@ -128,8 +128,8 @@ class SystemConfigurationEditPermission(ModuleEditPermission):
 
 
 class DataReadPermission(ModuleReadPermission):
-    MODULE_NAME = MODULES.DATA_MANAGEMENT
+    MODULE_NAME = [MODULES.DATA_MANAGEMENT, MODULES.DATA_MANAGEMENT_FOR_SALE]
 
 
 class DataEditPermission(ModuleEditPermission):
-    MODULE_NAME = MODULES.DATA_MANAGEMENT
+    MODULE_NAME = [MODULES.DATA_MANAGEMENT, MODULES.DATA_MANAGEMENT_FOR_SALE]
