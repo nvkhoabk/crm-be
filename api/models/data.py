@@ -170,7 +170,6 @@ class Customer(models.Model):
 class Order(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     created_date = models.DateField(db_index=True, null=True)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     price = models.IntegerField(default=0)
     debt = models.IntegerField(default=0)
     due_date = models.DateField(db_index=True, null=True)
@@ -215,7 +214,6 @@ class OrderHistory(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, db_index=True)
     created_date = models.DateField(null=True)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     price = models.IntegerField(default=0)
     debt = models.IntegerField(default=0)
     due_date = models.DateField(null=True)

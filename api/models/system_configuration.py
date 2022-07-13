@@ -29,7 +29,7 @@ class DataStatus(BaseModel):
 
 class DataSubStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    data_status = models.ForeignKey(DataStatus, on_delete=models.CASCADE)
+    data_status = models.ForeignKey(DataStatus, related_name='data_sub_status', on_delete=models.CASCADE)
     name = models.CharField(max_length=128)
     index = models.IntegerField(default=0)
     color = models.CharField(max_length=32)
@@ -44,7 +44,6 @@ class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=128, unique=True)
     index = models.IntegerField(default=0)
-    color = models.CharField(max_length=32)
     choose_by_default = models.BooleanField(default=False)
 
     class Meta:
@@ -53,10 +52,9 @@ class DataSource(BaseModel):
 
 class DataChannel(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+    data_source = models.ForeignKey(DataSource, related_name='data_channels', on_delete=models.CASCADE)
     name = models.CharField(max_length=128)
     index = models.IntegerField(default=0)
-    color = models.CharField(max_length=32)
     choose_by_default = models.BooleanField(default=False)
 
     class Meta:

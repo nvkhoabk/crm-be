@@ -156,7 +156,7 @@ urlpatterns = [
          name='sysconfig.filter_data_source'),
     path('sysconfig/get_data_source/', system_configuration.GetDataSourceView.as_view(),
          name='sysconfig.get_data_source'),
-    path('sysconfig/update_data_source/', system_configuration.UpdateDataStatusView.as_view(),
+    path('sysconfig/update_data_source/', system_configuration.UpdateDataSourceView.as_view(),
          name='sysconfig.update_data_source'),
     path('sysconfig/delete_data_source/', system_configuration.DeleteDataSourceView.as_view(),
          name='sysconfig.delete_data_source'),

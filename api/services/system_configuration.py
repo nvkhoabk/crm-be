@@ -186,6 +186,9 @@ class UpdateDataStatusService(BaseService):
             if kwargs.get('index'):
                 result.index = kwargs['index']
 
+            if 'choose_by_default' in kwargs:
+                result.choose_by_default = kwargs['choose_by_default']
+
             result.save()
 
             return result
@@ -300,6 +303,9 @@ class UpdateDataSubStatusService(BaseService):
             if kwargs.get('index'):
                 result.index = kwargs['index']
 
+            if 'choose_by_default' in kwargs:
+                result.choose_by_default = kwargs['choose_by_default']
+
             result.save()
 
             return result
@@ -409,6 +415,9 @@ class UpdateDataSourceService(BaseService):
 
             if kwargs.get('name'):
                 result.name = kwargs['name']
+
+            if 'choose_by_default' in kwargs:
+                result.choose_by_default = kwargs['choose_by_default']
 
             result.save()
 
@@ -535,7 +544,7 @@ class FilterDataChannelService(BaseService):
 
         query_set = DataChannel.objects.filter(company_id=user_roles.first().company_id)
 
-        filters = ['name', 'data_status_id']
+        filters = ['name', 'data_source_id']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -546,9 +555,9 @@ class FilterDataChannelService(BaseService):
                     name__icontains=value,
                 )
 
-            if key == 'data_status_id':
+            if key == 'data_source_id':
                 query_set = query_set.filter(
-                    data_status_id=value,
+                    data_source_id=value,
                 )
 
         return query_set

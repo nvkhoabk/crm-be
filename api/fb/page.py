@@ -39,6 +39,11 @@ class FBPageUtil:
 
         for comment in range(comments):
             comment['children'] = []
+            if 'from' not in comment:
+                comment['from'] = {
+                    "name": "Người dùng facebook",
+                    "id": "0"
+                }
             comment_map[comment['id']] = comment
 
         for comment in range(comments):
@@ -49,10 +54,9 @@ class FBPageUtil:
     def get_page_messages(self, page_id, offset, limit):
         total_messages = []
         
-        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,updated_time,messages{message},senders')
+        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,updated_time,messages{message,from,created_time,attachments}')
 
         for message in messages['data']:
-            message['messages'] = self._get_all_message(message)
             total_messages.append(message)
 
         return total_messages

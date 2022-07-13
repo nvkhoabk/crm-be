@@ -35,14 +35,14 @@ class FBCrawler(Daemon):
 
         offset = 0
         limit = 10
-    
+
         while True:
             posts = fb.get_page_posts(page.page_id, offset, limit)
             offset = offset + limit
 
             if len(posts) == 0:
                 break
-    
+
             for post in posts:
                 c_offset = 0
                 c_limit = 10
@@ -51,7 +51,7 @@ class FBCrawler(Daemon):
                 ).first()
 
                 last_check_time_int = 0
-                while True:     
+                while True:
                     comments = fb.get_page_comments(post['id'], c_offset, c_limit)
                     if len(comments) == 0:
                         break
@@ -73,7 +73,7 @@ class FBCrawler(Daemon):
                             break
 
                         last_check_time_int = max(last_check_time_int, created_timestamp)
-                
+
                         if not extract_phone(comment['message']):
                             continue
 
@@ -84,8 +84,8 @@ class FBCrawler(Daemon):
                             ref_link=post['permalink_url'],
                             post_message=post['message'],
                             post_picture=post['full_picture'],
-                            uid=comment['from']['id'],
-                            username=comment['from']['name'],
+                            uid=comment['id'],  # Temporary use comment id for this until app is reviewed
+                            username=comment['id'],  # Temporary use comment id for this until app is reviewed
                             content=fb.dump_comment_hierarchy_to_json(comment['id']),
                             phone=extract_phone(comment['message']),
                         )
@@ -94,7 +94,6 @@ class FBCrawler(Daemon):
                     post_in_db.last_check_time_int = last_check_time_int
                     post_in_db.save()
 
-        
     def crawl_messages(self, page):
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
@@ -105,9 +104,9 @@ class FBCrawler(Daemon):
             messages = fb.get_page_messages(page.page_id, offset, limit)
             if len(messages) == 0:
                 break
-            
+
             offset = offset + limit
-            
+
             for message in messages:
                 conversation_in_db = CrawlObject.objects.filter(
                     object_id=message['id'], source='fb', type='msg'
@@ -123,7 +122,7 @@ class FBCrawler(Daemon):
                     continue
 
                 all_messages = ' '.join(message['messages'])
-                
+
                 if CrawlData.objects.filter(object_id=message['id']).first():
                     CrawlData.objects.filter(object_id=message['id']).update(content=json.dumps(message['messages']))
                 else:
@@ -154,11 +153,10 @@ class FBCrawler(Daemon):
                 self.crawl_posts(page)
                 self.crawl_messages(page)
 
-
     def run(self):
         while True:
             try:
-                self.do_crawl() 
+                self.do_crawl()
             except Exception as e:
                 pass
             finally:
@@ -175,7 +173,7 @@ class ZaloCrawler(Daemon):
         self.shard = shard
         self.id = id
         super().__init__(pidfile)
-      
+
     def crawl_messages(self, oa):
         zalo = ZaloPage(access_token=oa.access_token)
 
@@ -184,35 +182,35 @@ class ZaloCrawler(Daemon):
             zalo_user_in_db = CrawlData.objects.filter(
                 object_id=zalo_user,
             ).first()
-            
-            if not zalo_user_in_db:    
+
+            if not zalo_user_in_db:
                 new_check_time, messages = zalo.get_follower_message(zalo_user)
                 all_messages = '\n'.join(messages)
 
                 if not extract_phone(all_messages):
                     continue
                 CrawlData.objects.create(
-                        source='zalo',
-                        user=oa.user,
-                        company=oa.company,
-                        object_id=zalo_user,
-                        type=CrawlData.TYPE_MSG,
-                        uid=zalo_user,
-                        username=zalo_user,
-                        content=all_messages,
-                        phone=extract_phone(all_messages),
-                        last_check_time_int=new_check_time,
-                    )
+                    source='zalo',
+                    user=oa.user,
+                    company=oa.company,
+                    object_id=zalo_user,
+                    type=CrawlData.TYPE_MSG,
+                    uid=zalo_user,
+                    username=zalo_user,
+                    content=all_messages,
+                    phone=extract_phone(all_messages),
+                    last_check_time_int=new_check_time,
+                )
             else:
                 new_check_time, messages = zalo.get_follower_message(zalo_user, zalo_user_in_db.last_check_time_int)
                 if len(messages) > 0:
                     zalo_user_in_db.last_check_time_int = new_check_time
                     zalo_user_in_db.content = zalo_user_in_db.content + '\n'.join(['\n'] + messages)
                     zalo_user_in_db.save()
-        
+
     def do_crawl(self):
         check_time = timezone.now() - timezone.timedelta(minutes=1)
-        
+
         oas = ZaloOA.objects.annotate(id_mod=F('id') % self.shard).filter(
             id_mod=self.id,
             need_crawl=True,
@@ -227,7 +225,7 @@ class ZaloCrawler(Daemon):
     def run(self):
         while True:
             try:
-                self.do_crawl() 
+                self.do_crawl()
             except Exception as e:
                 pass
             finally:
@@ -236,19 +234,19 @@ class ZaloCrawler(Daemon):
 
 class Command(BaseCommand):
     help = 'Runs a process as a daemon'
- 
+
     def add_arguments(self, parser):
         parser.add_argument('--action')
         parser.add_argument('--pid')
         parser.add_argument('--shard')
 
-    def handle(self, *args, **options):    
+    def handle(self, *args, **options):
         action = options['action']
         pid_path = options['pid']
         shard = int(options['shard'])
 
         fb_path = pid_path + '.fb'
-         
+
         for id in range(shard):
             fb_crawler = FBCrawler(pidfile=fb_path, shard=shard, id=id)
             if action == 'start':
@@ -263,9 +261,9 @@ class Command(BaseCommand):
                     sys.exit(1)
             elif action == 'stop':
                 fb_crawler.stop()
-        
+
         zalo_path = pid_path + '.zalo'
-         
+
         for id in range(shard):
             zalo_crawler = ZaloCrawler(pidfile=zalo_path, shard=shard, id=id)
             if action == 'start':

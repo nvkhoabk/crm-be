@@ -67,7 +67,7 @@ class CreateOrderService(BaseService):
                 **kwargs
             )
 
-            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date, product_id=order.product_id,
+            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
                                         price=order.price, debt=order.debt, due_date=order.due_date,
                                         annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
                                         pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
@@ -124,10 +124,6 @@ class UpdateOrderService(BaseService):
             if kwargs.get('created_date'):
                 order.created_date = kwargs['created_date']
 
-            if kwargs.get('product_id'):
-                order.product_id = kwargs['product_id']
-                self.change_product(order)
-
             if kwargs.get('price'):
                 order.price = kwargs['price']
 
@@ -157,7 +153,7 @@ class UpdateOrderService(BaseService):
 
             order.save()
 
-            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date, product_id=order.product_id,
+            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
                                         price=order.price, debt=order.debt, due_date=order.due_date,
                                         annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
                                         pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
@@ -515,7 +511,6 @@ class BulkUpdateOrderStatusService(BaseService):
                 for order_id in order_id_list:
                     order = Order.objects.get(pk=order_id)
                     OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
-                                                product_id=order.product_id,
                                                 price=order.price, debt=order.debt, due_date=order.due_date,
                                                 annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
                                                 pic=order.pic, customer_id=order.customer_id,
@@ -547,7 +542,6 @@ class BulkUpdateOrderPicService(BaseService):
                     pic_index = math.floor(index / number_order_per_pic)
                     order = Order.objects.get(pk=order_id)
                     OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
-                                                product_id=order.product_id,
                                                 price=order.price, debt=order.debt, due_date=order.due_date,
                                                 annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
                                                 pic=order.pic, customer_id=order.customer_id,

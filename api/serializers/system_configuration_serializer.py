@@ -12,7 +12,7 @@ User = get_user_model()
 class CompanyEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyEmail
-        fields = ['id', 'email', 'company']
+        fields = ['id', 'email', 'company', 'created_at']
 
 
 class CreateCompanyEmailRequestSerializer(serializers.Serializer):
@@ -63,16 +63,25 @@ class DeleteCompanyEmailResponseSerializer(BaseResponseSerializer):
     pass
 
 
+class DataSubStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSubStatus
+        fields = ['id', 'name', 'data_status', 'company', 'index', 'color', 'created_at', 'choose_by_default']
+
+
 class DataStatusSerializer(serializers.ModelSerializer):
+    data_sub_status = DataSubStatusSerializer(many=True)
     class Meta:
         model = DataStatus
-        fields = ['id', 'name', 'company', 'index', 'color', 'created_at']
+        fields = ['id', 'name', 'company', 'index', 'color', 'created_at', 'choose_by_default', 'data_sub_status']
 
 
 class CreateDataStatusRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024, required=True)
     company_id = serializers.IntegerField(required=True)
     color = serializers.CharField(max_length=32, required=True)
+    index = serializers.IntegerField(required=True)
+    choose_by_default = serializers.BooleanField(required=True)
 
 
 class CreateDataStatusResponseSerializer(BaseResponseSerializer):
@@ -92,6 +101,7 @@ class UpdateDataStatusRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024, required=False)
     color = serializers.CharField(max_length=32, required=True)
     index = serializers.IntegerField(required=False)
+    choose_by_default = serializers.BooleanField(required=False)
 
 
 class UpdateDataStatusResponseSerializer(BaseResponseSerializer):
@@ -118,17 +128,13 @@ class DeleteDataStatusResponseSerializer(BaseResponseSerializer):
     pass
 
 
-class DataSubStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataSubStatus
-        fields = ['id', 'name', 'data_status', 'company', 'index', 'color', 'created_at']
-
-
 class CreateDataSubStatusRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024, required=True)
     data_status_id = serializers.IntegerField(required=True)
     company_id = serializers.IntegerField(required=True)
     color = serializers.CharField(max_length=32, required=False)
+    index = serializers.IntegerField(required=True)
+    choose_by_default = serializers.BooleanField(required=True)
 
 
 class CreateDataSubStatusResponseSerializer(BaseResponseSerializer):
@@ -148,6 +154,7 @@ class UpdateDataSubStatusRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024, required=False)
     color = serializers.CharField(max_length=32, required=False)
     index = serializers.IntegerField(required=False)
+    choose_by_default = serializers.BooleanField(required=False)
 
 
 class UpdateDataSubStatusResponseSerializer(BaseResponseSerializer):
@@ -155,6 +162,7 @@ class UpdateDataSubStatusResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataSubStatusRequestParamSerializer(serializers.Serializer):
+    data_status_id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
@@ -174,15 +182,23 @@ class DeleteDataSubStatusResponseSerializer(BaseResponseSerializer):
     pass
 
 
+class DataChannelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataChannel
+        fields = ['id', 'name', 'data_source', 'company', 'created_at', 'choose_by_default']
+
+
 class DataSourceSerializer(serializers.ModelSerializer):
+    data_channels = DataChannelSerializer(many=True)
     class Meta:
         model = DataSource
-        fields = ['id', 'name', 'company']
+        fields = ['id', 'name', 'company', 'created_at', 'choose_by_default', 'data_channels']
 
 
 class CreateDataSourceRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024, required=True)
     company_id = serializers.IntegerField(required=True)
+    choose_by_default = serializers.BooleanField(required=True)
 
 
 class CreateDataSourceResponseSerializer(BaseResponseSerializer):
@@ -200,6 +216,7 @@ class GetDataSourceResponseSerializer(BaseResponseSerializer):
 class UpdateDataSourceRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='DataSource id', required=True)
     name = serializers.CharField(max_length=1024, required=False)
+    choose_by_default = serializers.BooleanField(required=False)
 
 
 class UpdateDataSourceResponseSerializer(BaseResponseSerializer):
@@ -224,12 +241,6 @@ class DeleteDataSourceRequestSerializer(serializers.Serializer):
 
 class DeleteDataSourceResponseSerializer(BaseResponseSerializer):
     pass
-
-
-class DataChannelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataChannel
-        fields = ['id', 'name', 'data_source', 'company']
 
 
 class CreateDataChannelRequestSerializer(serializers.Serializer):
@@ -260,6 +271,7 @@ class UpdateDataChannelResponseSerializer(BaseResponseSerializer):
 
 
 class FilterDataChannelRequestParamSerializer(serializers.Serializer):
+    data_source_id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
@@ -282,7 +294,7 @@ class DeleteDataChannelResponseSerializer(BaseResponseSerializer):
 class EmailSyntaxSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailSyntax
-        fields = ['id', 'code', 'column_name', 'company']
+        fields = ['id', 'code', 'column_name', 'company', 'created_at']
 
 
 class CreateEmailSyntaxRequestSerializer(serializers.Serializer):
@@ -314,7 +326,7 @@ class UpdateEmailSyntaxResponseSerializer(BaseResponseSerializer):
 
 
 class FilterEmailSyntaxRequestParamSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=256, required=True)
+    code = serializers.CharField(max_length=256, required=False)
     column_name = serializers.CharField(max_length=256, required=False)
 
 
@@ -337,7 +349,7 @@ class DeleteEmailSyntaxResponseSerializer(BaseResponseSerializer):
 class EmailTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailTemplate
-        fields = ['id', 'code', 'email_name', 'content', 'company']
+        fields = ['id', 'code', 'email_name', 'content', 'company', 'created_at']
 
 
 class CreateEmailTemplateRequestSerializer(serializers.Serializer):
@@ -371,8 +383,8 @@ class UpdateEmailTemplateResponseSerializer(BaseResponseSerializer):
 
 
 class FilterEmailTemplateRequestParamSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=256, required=True)
-    column_name = serializers.CharField(max_length=256, required=False)
+    code = serializers.CharField(max_length=256, required=False)
+    email_name = serializers.CharField(max_length=256, required=False)
 
 
 class FilterEmailTemplateRequestSerializer(BasePagingSerializer):
@@ -394,7 +406,7 @@ class DeleteEmailTemplateResponseSerializer(BaseResponseSerializer):
 class CompanyLogoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyLogo
-        fields = ['id', 'logo', 'company']
+        fields = ['id', 'logo', 'company', 'created_at']
 
 
 class CreateCompanyLogoRequestSerializer(serializers.Serializer):

@@ -59,7 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'created_date', 'product', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
+        fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name']
 
@@ -73,7 +73,6 @@ class CreateOrderRequestSerializer(serializers.Serializer):
 
     company_id = serializers.IntegerField()
     created_date = serializers.DateField(required=False, allow_null=True)
-    product_id = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
     debt = serializers.IntegerField(required=False, allow_null=True)
     due_date = serializers.DateField(required=False, allow_null=True)
@@ -111,7 +110,6 @@ class UpdateOrderRequestSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(help_text='Order id', required=True)
     created_date = serializers.DateField(required=False, allow_null=True)
-    product_id = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
     debt = serializers.IntegerField(required=False, allow_null=True)
     due_date = serializers.DateField(required=False, allow_null=True)
