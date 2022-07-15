@@ -11,11 +11,11 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage
+    User, FBPage, FBUser
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound
+    FBPageNotFound, FBUserNotExisted
 import operator
 import functools
 import pytz
@@ -645,9 +645,12 @@ class GetSynchronizedFBAccountService(BaseService):
 
             user_roles = UserRole.objects.filter(**filter)
 
-            return OrderDetail.objects.get(
-                pk=kwargs['id'],
-                company_id=user_roles.first().company_id
-            )
-        except OrderDetail.DoesNotExist as e:
-            raise OrderDetailNotFound()
+            fb_user = FBUser.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).order_by(
+                '-id').first()
+
+            if fb_user is None:
+                raise FBUserNotExisted()
+            return fb_user
+
+        except FBUser.DoesNotExist as e:
+            raise FBUserNotExisted()
