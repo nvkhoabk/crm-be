@@ -254,3 +254,8 @@ class OrderDetailDuplicated(APIException):
 class OrderDetailNotFound(APIException):
     code = 5004
     msg = 'Order detail is not found'
+
+
+class FBPageNotFound(APIException):
+    code = 5005
+    msg = 'FBPage is not found'

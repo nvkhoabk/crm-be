@@ -54,7 +54,7 @@ class FBPageUtil:
     def get_page_messages(self, page_id, offset, limit):
         total_messages = []
         
-        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,updated_time,messages{message,from,created_time,attachments}')
+        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,senders,updated_time,messages{message,from,created_time,attachments}')
 
         for message in messages['data']:
             total_messages.append(message)

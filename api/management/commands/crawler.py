@@ -9,7 +9,7 @@ from api.const import Const
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
-from api.models.data import CrawlData, ZaloOA, FBUser, FBPage, CrawlObject
+from api.models.data import CrawlData, ZaloOA, FBUser, FBPage, CrawlObject, Order, Customer
 from api.zalo.zutils import ZaloPage
 from django.core.management.base import BaseCommand
 from django.db.models import F
@@ -74,10 +74,11 @@ class FBCrawler(Daemon):
 
                         last_check_time_int = max(last_check_time_int, created_timestamp)
 
-                        if not extract_phone(comment['message']):
+                        phone = extract_phone(comment['message'])
+                        if not phone:
                             continue
 
-                        CrawlData.objects.create(
+                        crawl_data = CrawlData.objects.create(
                             source='fb',
                             object_id=comment['id'],
                             type=CrawlData.TYPE_POST,
@@ -87,7 +88,19 @@ class FBCrawler(Daemon):
                             uid=comment['id'],  # Temporary use comment id for this until app is reviewed
                             username=comment['id'],  # Temporary use comment id for this until app is reviewed
                             content=fb.dump_comment_hierarchy_to_json(comment['id']),
-                            phone=extract_phone(comment['message']),
+                            phone=phone,
+                        )
+
+                        customer = Customer.objects.filter(phone=phone)
+                        if not customer:
+                            customer = Customer.objects.create(
+                                phone=phone
+                            )
+
+                        Order.objects.create(
+                            crawl_data=crawl_data,
+                            customer=customer,
+                            company=page.company
                         )
 
                 if post_in_db is not None and last_check_time_int != 0:
@@ -121,23 +134,38 @@ class FBCrawler(Daemon):
                 if updated_timestamp <= conversation_in_db.last_check_time_int:
                     continue
 
-                all_messages = ' '.join(message['messages'])
-
                 if CrawlData.objects.filter(object_id=message['id']).first():
                     CrawlData.objects.filter(object_id=message['id']).update(content=json.dumps(message['messages']))
                 else:
-                    if not extract_phone(all_messages):
+                    phone = self._extract_phone_number(message['messages'], conversation_in_db.last_check_time_int)
+                    if phone is None:
                         continue
 
-                    CrawlData.objects.create(
+                    crawl_data = CrawlData.objects.create(
                         source='fb',
                         object_id=message['id'],
                         type=CrawlData.TYPE_MSG,
                         uid=message['senders']['data'][0]['id'],
                         username=message['senders']['data'][0]['id'],
                         content=json.dumps(message['messages']),
-                        phone=extract_phone(all_messages),
+                        phone=phone,
                     )
+
+                    customer = Customer.objects.filter(phone=phone)
+                    if not customer:
+                        customer = Customer.objects.create(
+                            phone=phone,
+                            name=message['senders']['data'][0]['name']
+                        )
+
+                    Order.objects.create(
+                        crawl_data=crawl_data,
+                        customer=customer,
+                        company=page.company
+                    )
+
+                conversation_in_db.last_check_time_int = updated_timestamp
+                conversation_in_db.save()
 
     def do_crawl(self):
         users = FBUser.objects.annotate(id_mod=F('id') % self.shard).filter(
@@ -162,6 +190,12 @@ class FBCrawler(Daemon):
             finally:
                 time.sleep(self.TIME)
 
+    def _extract_phone_number(self, messages, last_check_time):
+        for message in messages['data']:
+            if extract_phone(message['message']) is not None:
+                return extract_phone(message['message'])
+
+        return None
 
 class ZaloCrawler(Daemon):
     BULK_SIZE = 10

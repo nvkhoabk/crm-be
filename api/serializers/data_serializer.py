@@ -1,7 +1,7 @@
 import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS
-from api.models.data import CrawlData, Order, OrderDetail, Customer
+from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
@@ -54,7 +54,6 @@ class OrderSerializer(serializers.ModelSerializer):
     data_sub_status = DataSubStatusSerializer()
     data_source = DataSourceSerializer()
     data_channel = DataChannelSerializer()
-    product = ProductSerializer()
     pic_name = serializers.SerializerMethodField(source='get_pic')
 
     class Meta:
@@ -307,3 +306,50 @@ class BulkUpdateOrderPicRequestSerializer(serializers.Serializer):
 
 class BulkUpdateOrderPicResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class FBPageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FBPage
+        fields = ['id', 'page_id', 'page_name', 'created_at', 'is_subscribed']
+
+
+class FilterFBPageRequestParamSerializer(serializers.Serializer):
+    page_id_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class FilterFBPageRequestSerializer(BasePagingSerializer):
+    filter = FilterFBPageRequestParamSerializer()
+
+
+class FilterFBPageResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=FBPageSerializer())
+
+
+class DeleteFBPageRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='FBPage id')
+
+
+class DeleteFBPageResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class UpdateFBPageRequestSerializer(serializers.Serializer):
+    is_subscribed = serializers.BooleanField(required=False, allow_null=True)
+
+
+class UpdateFBPageResponseSerializer(BaseResponseSerializer):
+    data = FBPageSerializer()
+
+
+class SynchronizedFBAccount(serializers.Serializer):
+    name = serializers.CharField()
+    picture = serializers.CharField()
+
+
+class GetSynchronizedFBAccountRequestSerializer(serializers.Serializer):
+    pass
+
+
+class GetSynchronizedFBAccountResponseSerializer(BaseResponseSerializer):
+    data = SynchronizedFBAccount()

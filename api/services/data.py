@@ -10,10 +10,12 @@ from django.utils import timezone
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
-from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, User
+from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
+    User, FBPage
 from api.models.organization import UserRole
 from api.services import utils
-from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated
+from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
+    FBPageNotFound
 import operator
 import functools
 import pytz
@@ -558,3 +560,94 @@ class BulkUpdateOrderPicService(BaseService):
 
         except Order.DoesNotExist:
             raise OrderNotFound()
+
+
+class FilterFBPageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if request.user.is_superuser:
+            query_set = FBPage.objects.filter(
+                deleted_at__isnull=True
+            )
+        else:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            query_set = FBPage.objects.filter(
+                company_id=user_roles.first().company_id,
+                deleted_at__isnull=True
+            )
+
+        filters = ['page_id_name']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'page_id_name' and value is not None:
+                query_set = query_set.filter(
+                    Q(page_id__icontains=value) | Q(page_name__icontains=value)
+                )
+
+        return query_set
+
+
+class UpdateFBPageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            fb_page = FBPage.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+
+            if kwargs.get('is_subscribed', None) is not None:
+                fb_page.is_subscribed = kwargs['is_subscribed']
+
+            fb_page.save()
+
+            return fb_page
+        except FBPage.DoesNotExist as e:
+            raise FBPageNotFound()
+
+
+class DeleteFBPageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            return FBPage.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            ).delete()
+        except FBPage.DoesNotExist as e:
+            raise FBPageNotFound()
+
+
+class GetSynchronizedFBAccountService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return OrderDetail.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+        except OrderDetail.DoesNotExist as e:
+            raise OrderDetailNotFound()

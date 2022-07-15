@@ -30,6 +30,7 @@ class FBPage(BaseModel):
     access_token = models.CharField(max_length=1024)
     expire_time = models.IntegerField(default=0)
     last_check_time = models.IntegerField(default=0)
+    is_subscribed = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'fb_pages'
@@ -176,7 +177,7 @@ class Order(BaseModel):
     annual_debt = models.IntegerField(default=0)
     annual_due_date = models.DateField(db_index=True, null=True)
     pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_column='pic_id')
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     shipping_code = models.CharField(max_length=1024, default='', null=True)
     shipping_fee = models.BigIntegerField(default=0)
     data_status = models.ForeignKey(DataStatus, null=True, on_delete=models.SET_NULL)
@@ -184,6 +185,7 @@ class Order(BaseModel):
     debt_status = models.CharField(max_length=128, null=True)
     data_source = models.ForeignKey(DataSource, null=True, on_delete=models.SET_NULL)
     data_channel = models.ForeignKey(DataChannel, null=True, on_delete=models.SET_NULL)
+    crawl_data = models.ForeignKey(CrawlData, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         db_table = 'orders'

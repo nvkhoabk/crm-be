@@ -229,4 +229,10 @@ urlpatterns = [
     path('data/filter_order_detail_history/', data.FilterOrderDetailHistoryView.as_view(), name='data.filter_order_detail_history'),
     path('data/bulk_update_order_status/', data.BulkUpdateOrderStatusView.as_view(), name='data.bulk_update_order_status'),
     path('data/bulk_update_order_pic/', data.BulkUpdateOrderPicView.as_view(), name='data.bulk_update_order_pic'),
+    path('data/filter_fbpage/', data.FilterFBPageView.as_view(), name='data.filter_fbpage'),
+    path('data/update_fbpage/', data.UpdateFBPageView.as_view(), name='data.update_fbpage'),
+    path('data/delete_fbpage/', data.DeleteFBPageView.as_view(), name='data.delete_fbpage'),
+    path('data/get_synchronized_fbaccount/', data.GetSynchronizedFBAccountView.as_view(), name='data.get_synchronized_fbaccount'),
+
+
 ] + static('files/', document_root=Const.FILE_ROOT)

@@ -366,3 +366,98 @@ class BulkUpdateOrderPicView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=data_serializer.BulkUpdateOrderPicResponseSerializer)
+
+
+class FilterFBPageView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.FilterFBPageRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['FBPage'],
+        operation_id='Filter FBPage',
+        operation_description='Filter FBPage api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.FilterFBPageResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_service = data_service.FilterFBPageService()
+        products = filter_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=products, request=serializer.validated_data,
+                                 serializer=data_serializer.FilterFBPageResponseSerializer)
+
+
+class DeleteFBPageView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.DeleteFBPageRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['FBPage'],
+        operation_id='Delete FBPage',
+        operation_description='Delete FBPage api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.DeleteFBPageResponseSerializer,
+            exceptions.FBPageNotFound.code: exceptions.FBPageNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_service = data_service.DeleteFBPageService()
+        product = delete_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.DeleteFBPageResponseSerializer)
+
+
+class UpdateFBPageView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.UpdateFBPageRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['FBPage'],
+        operation_id='Update FBPage',
+        operation_description='Update FBPage api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.UpdateFBPageResponseSerializer,
+            exceptions.FBPageNotFound.code: exceptions.FBPageNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_service = data_service.UpdateFBPageService()
+        product = update_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.UpdateFBPageResponseSerializer)
+
+
+class GetSynchronizedFBAccountView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.GetSynchronizedFBAccountRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['FBPage'],
+        operation_id='Get SynchronizedFBAccount',
+        operation_description='Get SynchronizedFBAccount api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.GetSynchronizedFBAccountResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = data_service.GetOrderDetailService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.GetSynchronizedFBAccountResponseSerializer)
