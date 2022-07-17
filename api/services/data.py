@@ -25,8 +25,7 @@ from crm.settings import TIME_ZONE
 
 
 def create_annual_order(order):
-    if order.product is not None and order.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-        AnnualOrder.objects.create(order_id=order.id)
+    AnnualOrder.objects.create(order_id=order.id)
 
 
 class FilterCrawlDataService(BaseService):
@@ -78,8 +77,7 @@ class CreateOrderService(BaseService):
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
                                         company_id=order.company_id)
 
-            if order.product is not None and order.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-                create_annual_order(order)
+            create_annual_order(order)
 
             return order
         except IntegrityError as e:
