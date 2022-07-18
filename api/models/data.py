@@ -186,6 +186,8 @@ class Order(BaseModel):
     data_source = models.ForeignKey(DataSource, null=True, on_delete=models.SET_NULL)
     data_channel = models.ForeignKey(DataChannel, null=True, on_delete=models.SET_NULL)
     crawl_data = models.ForeignKey(CrawlData, null=True, on_delete=models.SET_NULL)
+    discount_value = models.BigIntegerField(default=0)
+    discount_type = models.CharField(max_length=64, default='')
 
     class Meta:
         db_table = 'orders'
@@ -198,13 +200,14 @@ class OrderDetail(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.IntegerField(null=True)
     price = models.BigIntegerField(null=True)
-    discount = models.BigIntegerField(null=True)
     remaining_payment_amount = models.BigIntegerField(null=True)
     paid_payment_amount = models.BigIntegerField(null=True)
     debt = models.BigIntegerField(null=True)
     due_date = models.DateField(null=True)
     file_attach = models.FileField(null=True)
     invoice = models.TextField(null=True)
+    discount_value = models.BigIntegerField(default=0)
+    discount_type = models.CharField(max_length=64, default='')
 
 
     class Meta:
@@ -230,6 +233,9 @@ class OrderHistory(BaseModel):
     debt_status = models.CharField(max_length=128, null=True)
     data_source = models.ForeignKey(DataSource, null=True, on_delete=models.SET_NULL)
     data_channel = models.ForeignKey(DataChannel, null=True, on_delete=models.SET_NULL)
+    crawl_data = models.ForeignKey(CrawlData, null=True, on_delete=models.SET_NULL)
+    discount_value = models.BigIntegerField(default=0)
+    discount_type = models.CharField(max_length=64, default='')
 
     class Meta:
         db_table = 'order_histories'
@@ -242,14 +248,14 @@ class OrderDetailHistory(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.IntegerField(null=True)
     price = models.BigIntegerField(null=True)
-    discount = models.BigIntegerField(null=True)
     remaining_payment_amount = models.BigIntegerField(null=True)
     paid_payment_amount = models.BigIntegerField(null=True)
     debt = models.BigIntegerField(null=True)
     due_date = models.DateField(null=True)
     file_attach = models.FileField(null=True)
     invoice = models.TextField(null=True)
-
+    discount_value = models.BigIntegerField(default=0)
+    discount_type = models.CharField(max_length=64, default='')
 
     class Meta:
         db_table = 'order_detail_histories'
@@ -261,3 +267,19 @@ class AnnualOrder(BaseModel):
 
     class Meta:
         db_table = 'annual_orders'
+
+
+class Payment(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_payments', db_index=True)
+    type = models.CharField(max_length=64, db_index=True)
+    value = models.BigIntegerField()
+    status = models.CharField(max_length=64, db_index=True)
+
+    class Meta:
+        db_table = 'payments'
+        index_together = [
+            ['company', 'order', 'deleted_at'],
+            ['company', 'type', 'deleted_at'],
+            ['company', 'status', 'deleted_at'],
+        ]

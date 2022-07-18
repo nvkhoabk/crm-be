@@ -202,7 +202,7 @@ class UpdateDataStatusView(BaseAPIView):
 
 class FilterDataStatusView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = system_configuration_serializer.FilterDataStatusRequestSerializer
     pagination_class = True
 
@@ -322,7 +322,7 @@ class UpdateDataSubStatusView(BaseAPIView):
 
 class FilterDataSubStatusView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = system_configuration_serializer.FilterDataSubStatusRequestSerializer
     pagination_class = True
 
@@ -443,7 +443,7 @@ class UpdateDataSourceView(BaseAPIView):
 
 class FilterDataSourceView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = system_configuration_serializer.FilterDataSourceRequestSerializer
     pagination_class = True
 
@@ -563,7 +563,7 @@ class UpdateDataChannelView(BaseAPIView):
 
 class FilterDataChannelView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, SystemConfigurationReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = system_configuration_serializer.FilterDataChannelRequestSerializer
     pagination_class = True
 

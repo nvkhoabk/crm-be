@@ -11,7 +11,7 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage
+    User, FBPage, Payment
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
@@ -153,6 +153,15 @@ class UpdateOrderService(BaseService):
             if kwargs.get('shipping_fee'):
                 order.shipping_fee = kwargs['shipping_fee']
 
+            if kwargs.get('shipping_fee'):
+                order.shipping_fee = kwargs['shipping_fee']
+
+            if kwargs.get('discount_value'):
+                order.shipping_fee = kwargs['discount_value']
+
+            if kwargs.get('discount_type'):
+                order.shipping_fee = kwargs['discount_type']
+
             order.save()
 
             OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
@@ -162,7 +171,8 @@ class UpdateOrderService(BaseService):
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
-                                        company_id=order.company_id)
+                                        company_id=order.company_id, discount_value=order.discount_value,
+                                        discount_type=order.discount_type)
 
             return order
         except Order.DoesNotExist:
@@ -277,7 +287,8 @@ class CreateOrderDetailService(BaseService):
             OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
                                               quantity=order_detail.quantity, price=order_detail.price,
-                                              discount=order_detail.discount,
+                                              discount_type=order_detail.discount_type,
+                                              discount_value=order_detail.discount_value,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,
@@ -651,3 +662,110 @@ class GetSynchronizedFBAccountService(BaseService):
             )
         except OrderDetail.DoesNotExist as e:
             raise OrderDetailNotFound()
+
+
+class CreatePaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if not request.user.is_superuser:
+                user_roles = UserRole.objects.filter(user_id=request.user)
+
+                if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                    raise PermissionDenied()
+
+            return Payment.objects.create(
+                **kwargs
+            )
+        except IntegrityError as e:
+            raise PaymentDuplicated()
+
+
+class GetPaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return Payment.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+        except Payment.DoesNotExist as e:
+            raise PaymentNotFound()
+
+
+class UpdatePaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            if kwargs.get('value'):
+                payment.name = kwargs['name']
+
+            payment.save()
+
+            return payment
+        except Payment.DoesNotExist:
+            raise PaymentNotFound()
+
+
+class FilterPaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = Payment.objects.filter(company_id=user_roles.first().company_id)
+
+        filters = ['name', 'payment_method']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'name':
+                query_set = query_set.filter(
+                    name__icontains=value,
+                )
+
+            if key == 'payment_method' and value is not None:
+                query_set = query_set.filter(payment_method=value)
+
+        return query_set
+
+
+class DeletePaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            return Payment.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            ).delete()
+        except Payment.DoesNotExist as e:
+            raise PaymentNotFound()
