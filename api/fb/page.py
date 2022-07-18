@@ -15,7 +15,7 @@ class FBPageUtil:
         return response['data']
     
     def get_user_info(self):
-        profile = self.graph.get_object('me', fields='id,name')
+        profile = self.graph.get_object('me', fields='id,name,picture')
         self.uid = profile.get('id')
         self.name = profile.get('name')
         return profile

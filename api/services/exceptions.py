@@ -259,3 +259,8 @@ class OrderDetailNotFound(APIException):
 class FBPageNotFound(APIException):
     code = 5005
     msg = 'FBPage is not found'
+
+
+class FBUserNotExisted(APIException):
+    code = 5006
+    msg = 'FBUser is not existed'

@@ -1,7 +1,7 @@
 import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS
-from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage
+from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
@@ -335,6 +335,7 @@ class DeleteFBPageResponseSerializer(BaseResponseSerializer):
 
 
 class UpdateFBPageRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     is_subscribed = serializers.BooleanField(required=False, allow_null=True)
 
 
@@ -342,9 +343,10 @@ class UpdateFBPageResponseSerializer(BaseResponseSerializer):
     data = FBPageSerializer()
 
 
-class SynchronizedFBAccount(serializers.Serializer):
-    name = serializers.CharField()
-    picture = serializers.CharField()
+class SynchronizedFBAccount(serializers.ModelSerializer):
+    class Meta:
+        model = FBUser
+        fields = ['id', 'name', 'picture_url']
 
 
 class GetSynchronizedFBAccountRequestSerializer(serializers.Serializer):

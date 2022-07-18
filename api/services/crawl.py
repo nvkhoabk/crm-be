@@ -75,6 +75,7 @@ class FBLoginCallBackService(BaseService):
                 name=user_info['name'],
                 company=user_roles.company,
                 user=user,
+                picture_url=user_info['picture']['data']['url']
             )
         fb_user.access_token = api.access_token
         fb_user.need_crawl = True

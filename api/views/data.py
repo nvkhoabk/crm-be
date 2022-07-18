@@ -456,7 +456,7 @@ class GetSynchronizedFBAccountView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        get_service = data_service.GetOrderDetailService()
+        get_service = data_service.GetSynchronizedFBAccountService()
         product = get_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,

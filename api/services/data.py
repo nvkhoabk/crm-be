@@ -11,11 +11,11 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage, Payment
+    User, FBPage, FBUser, Payment
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound
+    FBPageNotFound, FBUserNotExisted
 import operator
 import functools
 import pytz
@@ -25,8 +25,7 @@ from crm.settings import TIME_ZONE
 
 
 def create_annual_order(order):
-    if order.product is not None and order.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-        AnnualOrder.objects.create(order_id=order.id)
+    AnnualOrder.objects.create(order_id=order.id)
 
 
 class FilterCrawlDataService(BaseService):
@@ -78,8 +77,7 @@ class CreateOrderService(BaseService):
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
                                         company_id=order.company_id)
 
-            if order.product is not None and order.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-                create_annual_order(order)
+            create_annual_order(order)
 
             return order
         except IntegrityError as e:
@@ -149,9 +147,6 @@ class UpdateOrderService(BaseService):
 
             if kwargs.get('shipping_code'):
                 order.shipping_code = kwargs['shipping_code']
-
-            if kwargs.get('shipping_fee'):
-                order.shipping_fee = kwargs['shipping_fee']
 
             if kwargs.get('shipping_fee'):
                 order.shipping_fee = kwargs['shipping_fee']
@@ -656,12 +651,15 @@ class GetSynchronizedFBAccountService(BaseService):
 
             user_roles = UserRole.objects.filter(**filter)
 
-            return OrderDetail.objects.get(
-                pk=kwargs['id'],
-                company_id=user_roles.first().company_id
-            )
-        except OrderDetail.DoesNotExist as e:
-            raise OrderDetailNotFound()
+            fb_user = FBUser.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).order_by(
+                '-id').first()
+
+            if fb_user is None:
+                raise FBUserNotExisted()
+            return fb_user
+
+        except FBUser.DoesNotExist as e:
+            raise FBUserNotExisted()
 
 
 class CreatePaymentService(BaseService):
