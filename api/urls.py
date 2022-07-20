@@ -233,6 +233,12 @@ urlpatterns = [
     path('data/update_fbpage/', data.UpdateFBPageView.as_view(), name='data.update_fbpage'),
     path('data/delete_fbpage/', data.DeleteFBPageView.as_view(), name='data.delete_fbpage'),
     path('data/get_synchronized_fbaccount/', data.GetSynchronizedFBAccountView.as_view(), name='data.get_synchronized_fbaccount'),
+    path('data/create_payment/', data.CreatePaymentView.as_view(), name='data.create_payment'),
+    path('data/filter_payment/', data.FilterPaymentView.as_view(), name='data.filter_payment'),
+    path('data/get_payment/', data.GetPaymentView.as_view(), name='data.get_payment'),
+    path('data/update_payment/', data.UpdatePaymentView.as_view(), name='data.update_payment'),
+    path('data/delete_payment/', data.DeletePaymentView.as_view(), name='data.delete_payment'),
+    path('data/approve_payment/', data.ApprovePaymentView.as_view(), name='data.approve_payment')
 
 
 ] + static('files/', document_root=Const.FILE_ROOT)

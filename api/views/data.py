@@ -535,6 +535,30 @@ class UpdatePaymentView(BaseAPIView):
                                  serializer=data_serializer.UpdatePaymentResponseSerializer)
 
 
+class ApprovePaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.ApprovePaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Approve Payment',
+        operation_description='Approve Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.ApprovePaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        approve_payment_service = data_service.ApprovePaymentService()
+        payment = approve_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.ApprovePaymentResponseSerializer)
+
+
 class FilterPaymentView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataReadPermission]

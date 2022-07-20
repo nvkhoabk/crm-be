@@ -397,6 +397,14 @@ class UpdatePaymentResponseSerializer(BaseResponseSerializer):
     data = PaymentSerializer()
 
 
+class ApprovePaymentRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Payment id', required=True)
+
+
+class ApprovePaymentResponseSerializer(BaseResponseSerializer):
+    data = PaymentSerializer()
+
+
 class FilterPaymentRequestParamSerializer(serializers.Serializer):
     TYPE_CHOICES = (
         (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
