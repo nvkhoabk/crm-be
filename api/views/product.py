@@ -34,7 +34,7 @@ class CreateProductView(BaseAPIView):
 
 class GetProductView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, ProductReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = product_serializer.GetProductRequestSerializer
 
     @swagger_auto_schema(
@@ -82,7 +82,7 @@ class UpdateProductView(BaseAPIView):
 
 class FilterProductView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, ProductReadPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = product_serializer.FilterProductRequestSerializer
     pagination_class = True
 

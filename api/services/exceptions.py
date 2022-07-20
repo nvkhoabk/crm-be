@@ -264,3 +264,8 @@ class FBPageNotFound(APIException):
 class FBUserNotExisted(APIException):
     code = 5006
     msg = 'FBUser is not existed'
+
+
+class PaymentNotFound(APIException):
+    code = 5007
+    msg = 'Payment is not found'

@@ -9,13 +9,13 @@ from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import PRODUCT_PAYMENT_METHOD
+from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound, FBUserNotExisted
+    FBPageNotFound, FBUserNotExisted, PaymentNotFound
 import operator
 import functools
 import pytz
@@ -664,18 +664,18 @@ class GetSynchronizedFBAccountService(BaseService):
 
 class CreatePaymentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        try:
-            if not request.user.is_superuser:
-                user_roles = UserRole.objects.filter(user_id=request.user)
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
 
-                if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
-                    raise PermissionDenied()
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
 
-            return Payment.objects.create(
-                **kwargs
-            )
-        except IntegrityError as e:
-            raise PaymentDuplicated()
+        payment = Payment(
+            **kwargs
+        )
+
+        payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
+        return Payment.objects.create(payment)
 
 
 class GetPaymentService(BaseService):
@@ -725,6 +725,34 @@ class UpdatePaymentService(BaseService):
             raise PaymentNotFound()
 
 
+class ApprovePaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            payment.status = ORDER_PAYMENT_STATUS.APPROVED
+
+            payment.save()
+
+            return payment
+        except Payment.DoesNotExist:
+            raise PaymentNotFound()
+
+
 class FilterPaymentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
@@ -735,19 +763,22 @@ class FilterPaymentService(BaseService):
 
         query_set = Payment.objects.filter(company_id=user_roles.first().company_id)
 
-        filters = ['name', 'payment_method']
+        filters = ['order_id', 'type', 'status']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'order_id':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    order_id=value,
                 )
 
-            if key == 'payment_method' and value is not None:
-                query_set = query_set.filter(payment_method=value)
+            if key == 'type' and value is not None:
+                query_set = query_set.filter(type=value)
+
+            if key == 'status' and value is not None:
+                query_set = query_set.filter(status=value)
 
         return query_set
 

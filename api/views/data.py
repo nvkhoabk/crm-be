@@ -461,3 +461,123 @@ class GetSynchronizedFBAccountView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=data_serializer.GetSynchronizedFBAccountResponseSerializer)
+
+
+class CreatePaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.CreatePaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Create Payment',
+        operation_description='Create Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.CreatePaymentResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        create_payment_service = data_service.CreatePaymentService()
+        payment = create_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.CreatePaymentResponseSerializer)
+
+
+class GetPaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.GetPaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Get Payment',
+        operation_description='Get Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.GetPaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_payment_service = data_service.GetPaymentService()
+        payment = get_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.GetPaymentResponseSerializer)
+
+
+class UpdatePaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.UpdatePaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Update Payment',
+        operation_description='Update Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.UpdatePaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        update_payment_service = data_service.UpdatePaymentService()
+        payment = update_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.UpdatePaymentResponseSerializer)
+
+
+class FilterPaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.FilterPaymentRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Filter Payment',
+        operation_description='Filter Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.FilterPaymentResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_payment_service = data_service.FilterPaymentService()
+        payments = filter_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payments, request=serializer.validated_data,
+                                 serializer=data_serializer.FilterPaymentResponseSerializer)
+
+
+class DeletePaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.DeletePaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Delete Payment',
+        operation_description='Delete Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.DeletePaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        delete_payment_service = data_service.DeletePaymentService()
+        payment = delete_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.DeletePaymentResponseSerializer)
