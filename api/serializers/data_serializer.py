@@ -411,7 +411,7 @@ class FilterPaymentRequestParamSerializer(serializers.Serializer):
         (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY)
     )
     order_id = serializers.IntegerField()
-    type = serializers.ChoiceField(choices=TYPE_CHOICES)
+    type = serializers.ChoiceField(choices=TYPE_CHOICES, required=False)
 
 
 class FilterPaymentRequestSerializer(BasePagingSerializer):

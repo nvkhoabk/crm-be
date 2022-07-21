@@ -675,7 +675,8 @@ class CreatePaymentService(BaseService):
         )
 
         payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
-        return Payment.objects.create(payment)
+        return Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
+                                      value=payment.value, status=payment.status)
 
 
 class GetPaymentService(BaseService):
@@ -715,7 +716,7 @@ class UpdatePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            if kwargs.get('value'):
+            if kwargs.get('name'):
                 payment.name = kwargs['name']
 
             payment.save()
