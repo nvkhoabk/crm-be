@@ -66,6 +66,7 @@ class EmailSyntax(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     code = models.CharField(max_length=64)
     column_name = models.CharField(max_length=256)
+    description = models.TextField(default='')
 
     class Meta:
         db_table = 'email_syntax'
