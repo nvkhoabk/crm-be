@@ -99,7 +99,7 @@ class FilterCompanyEmailService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'email':
+            if key == 'email' and key is not None:
                 query_set = query_set.filter(
                     email__icontains=value,
                 )

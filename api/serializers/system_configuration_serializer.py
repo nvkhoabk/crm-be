@@ -44,7 +44,7 @@ class UpdateCompanyEmailResponseSerializer(BaseResponseSerializer):
 
 
 class FilterCompanyEmailRequestParamSerializer(serializers.Serializer):
-    email = serializers.CharField(max_length=1024, required=False)
+    email = serializers.CharField(max_length=1024, allow_blank=True, allow_null=True, required=False)
 
 
 class FilterCompanyEmailRequestSerializer(BasePagingSerializer):

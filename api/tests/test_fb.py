@@ -1,4 +1,4 @@
-from django.test import Client, TestCase
+from django.test import Client, TestCase, SimpleTestCase
 import facebook
 import json
 import re
@@ -9,7 +9,8 @@ from api.services.crawl import CrawlService
 from api.models.data import FBPage
 
 
-class TestCrawl(TestCase):
+class TestCrawl(SimpleTestCase):
+    databases = ['default']
     def test_extract_phone(self):
         data = 'test 0363930208 0363930208 ne'
         r = extract_phone(data)
@@ -54,4 +55,11 @@ class TestCrawl(TestCase):
         page.last_check_time = 0
 
         crawl.crawl_messages(page)
+
+    def tearDown(self) -> None:
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
      
