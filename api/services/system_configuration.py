@@ -527,6 +527,9 @@ class UpdateDataChannelService(BaseService):
             if kwargs.get('name'):
                 result.name = kwargs['name']
 
+            if 'choose_by_default' in kwargs:
+                result.choose_by_default = kwargs['choose_by_default']
+
             result.save()
 
             return result

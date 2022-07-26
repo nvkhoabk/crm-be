@@ -189,6 +189,9 @@ class Order(BaseModel):
     crawl_data = models.ForeignKey(CrawlData, null=True, on_delete=models.SET_NULL)
     discount_value = models.BigIntegerField(default=0)
     discount_type = models.CharField(max_length=64, default='')
+    amount = models.IntegerField(default=0)
+    annual_amount = models.IntegerField(default=0)
+
 
     class Meta:
         db_table = 'orders'
@@ -237,6 +240,8 @@ class OrderHistory(BaseModel):
     crawl_data = models.ForeignKey(CrawlData, null=True, on_delete=models.SET_NULL)
     discount_value = models.BigIntegerField(default=0)
     discount_type = models.CharField(max_length=64, default='')
+    amount = models.IntegerField(default=0)
+    annual_amount = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'order_histories'
@@ -264,6 +269,7 @@ class OrderDetailHistory(BaseModel):
 
 class AnnualOrder(BaseModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 
     class Meta:

@@ -75,9 +75,10 @@ class CreateOrderService(BaseService):
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
-                                        company_id=order.company_id)
+                                        company_id=order.company_id, discount_type=order.discount_type,
+                                        discount_value=order.discount_value, amount=order.amount,
+                                        annual_amount=order.annual_amount)
 
-            create_annual_order(order)
 
             return order
         except IntegrityError as e:
@@ -301,9 +302,11 @@ class CreateOrderDetailService(BaseService):
 
             order.annual_debt += order_detail.debt
             order.annual_due_date = order_detail.due_date
+            order.annual_amount += order_detail.remaining_payment_amount
         else:
             order.debt += order_detail.debt
             order.due_date = order_detail.due_date
+            order.amount += order_detail.remaining_payment_amount
 
         order_service = UpdateOrderService()
         order_service.serve(request, cookies, *args, **order.__dict__)
@@ -387,7 +390,6 @@ class UpdateOrderDetailService(BaseService):
                     pk=kwargs.get('order_detail_id'),
                     company_id=user_roles.first().company_id
                 )
-
 
             if kwargs.get('product_id'):
                 order_detail.product_id = kwargs['product_id']

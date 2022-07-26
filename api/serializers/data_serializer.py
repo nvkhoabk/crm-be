@@ -60,7 +60,8 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
-                  'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type']
+                  'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
+                  'annual_amount']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
