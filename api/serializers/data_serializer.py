@@ -178,7 +178,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderDetail
         fields = ['id', 'type', 'product', 'quantity', 'price', 'discount_value', 'remaining_payment_amount',
-                  'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type']
+                  'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at']
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
