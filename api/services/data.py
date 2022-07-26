@@ -164,6 +164,18 @@ class UpdateOrderService(BaseService):
             if kwargs.get('annual_amount'):
                 order.annual_amount = kwargs['annual_amount']
 
+            if kwargs.get('data_status_id'):
+                order.data_status_id = kwargs['data_status_id']
+
+            if kwargs.get('data_sub_status_id'):
+                order.data_sub_status_id = kwargs['data_sub_status_id']
+
+            if kwargs.get('data_source_id'):
+                order.data_source_id = kwargs['data_source_id']
+
+            if kwargs.get('data_channel_id'):
+                order.data_channel_id = kwargs['data_channel_id']
+
             order.save()
 
             OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
@@ -251,7 +263,7 @@ class FilterOrderService(BaseService):
             if key == 'debt_status' and value is not None:
                 query_set = query_set.query.filter(debt_status=value)
 
-        return query_set
+        return query_set.order_by('-created_at')
 
 
 class DeleteOrderService(BaseService):
