@@ -25,7 +25,7 @@ from crm.settings import TIME_ZONE
 
 
 def create_annual_order(order):
-    AnnualOrder.objects.create(order_id=order.id)
+    AnnualOrder.objects.create(company_id=order.company_id, order_id=order.id)
 
 
 class FilterCrawlDataService(BaseService):
@@ -175,8 +175,8 @@ class UpdateOrderService(BaseService):
             raise OrderNotFound()
 
     def change_product(self, order):
-        AnnualOrder.objects.filter(order_id=order.id, deleted_at__isnull=True, is_active=True).update(
-            deleted_at=timezone.now())
+        AnnualOrder.objects.filter(company_id=order.company_id, order_id=order.id, deleted_at__isnull=True,
+                                   is_active=True).update(deleted_at=timezone.now())
 
         create_annual_order(order)
 
@@ -400,8 +400,11 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('price'):
                 order_detail.price = kwargs['price']
 
-            if kwargs.get('discount'):
-                order_detail.discount = kwargs['discount']
+            if kwargs.get('discount_value'):
+                order_detail.discount_value = kwargs['discount_value']
+
+            if kwargs.get('discount_type'):
+                order_detail.discount_type = kwargs['discount_type']
 
             if kwargs.get('remaining_payment_amount'):
                 order_detail.remaining_payment_amount = kwargs['remaining_payment_amount']
@@ -423,10 +426,12 @@ class UpdateOrderDetailService(BaseService):
 
 
             order_detail.save()
-            OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+            OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
+                                              order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
                                               quantity=order_detail.quantity, price=order_detail.price,
-                                              discount=order_detail.discount,
+                                              discount_value=order_detail.discount_value,
+                                              discount_type=order_detail.discount_type,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,

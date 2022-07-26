@@ -248,6 +248,7 @@ class OrderHistory(BaseModel):
 
 
 class OrderDetailHistory(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, db_index=True)
     order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE, db_index=True)
     type = models.CharField(max_length=64)
@@ -268,6 +269,7 @@ class OrderDetailHistory(BaseModel):
 
 
 class AnnualOrder(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)

@@ -78,7 +78,7 @@ class CreateOrderRequestSerializer(serializers.Serializer):
     due_date = serializers.DateField(required=False, allow_null=True)
     annual_debt = serializers.IntegerField(required=False, allow_null=True)
     annual_due_date = serializers.DateField(required=False, allow_null=True)
-    pic = serializers.IntegerField(required=False, allow_null=True)
+    pic_id = serializers.IntegerField(required=False, allow_null=True)
     customer_id = serializers.IntegerField()
     shipping_code = serializers.CharField(max_length=1024, required=False, allow_null=True)
     shipping_fee = serializers.IntegerField(required=False, allow_null=True)
@@ -175,10 +175,9 @@ class DeleteOrderResponseSerializer(BaseResponseSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
-    order = OrderSerializer()
     class Meta:
         model = OrderDetail
-        fields = ['id', 'order', 'type', 'product', 'quantity', 'price', 'discount_value', 'remaining_payment_amount',
+        fields = ['id', 'type', 'product', 'quantity', 'price', 'discount_value', 'remaining_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type']
 
 
@@ -220,7 +219,8 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
-    discount = serializers.IntegerField(required=False, allow_null=True)
+    discount_value = serializers.IntegerField(required=False, allow_null=True)
+    discount_type = serializers.CharField(required=False, allow_null=True)
     remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     debt = serializers.IntegerField(required=False, allow_null=True)

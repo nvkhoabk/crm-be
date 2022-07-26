@@ -313,7 +313,7 @@ class FilterOrderDetailHistoryView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        filter_service = data_service.FilterOrderDetailService()
+        filter_service = data_service.FilterOrderDetailHistoryService()
         products = filter_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=products, request=serializer.validated_data,
