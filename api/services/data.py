@@ -153,10 +153,16 @@ class UpdateOrderService(BaseService):
                 order.shipping_fee = kwargs['shipping_fee']
 
             if kwargs.get('discount_value'):
-                order.shipping_fee = kwargs['discount_value']
+                order.discount_value = kwargs['discount_value']
 
             if kwargs.get('discount_type'):
-                order.shipping_fee = kwargs['discount_type']
+                order.discount_type = kwargs['discount_type']
+
+            if kwargs.get('amount'):
+                order.amount = kwargs['amount']
+
+            if kwargs.get('annual_amount'):
+                order.annual_amount = kwargs['annual_amount']
 
             order.save()
 
@@ -288,7 +294,8 @@ class CreateOrderDetailService(BaseService):
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,
-                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice)
+                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice,
+                                              company_id=order_detail.company_id)
 
             return order_detail
         except IntegrityError as e:
@@ -300,11 +307,11 @@ class CreateOrderDetailService(BaseService):
         if order_detail.product is not None and order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
             order_detail = self.create_annual_buy(order_detail)
 
-            order.annual_debt += order_detail.debt
+            order.annual_debt += order_detail.remaining_payment_amount
             order.annual_due_date = order_detail.due_date
             order.annual_amount += order_detail.remaining_payment_amount
         else:
-            order.debt += order_detail.debt
+            order.debt += order_detail.remaining_payment_amount
             order.due_date = order_detail.due_date
             order.amount += order_detail.remaining_payment_amount
 

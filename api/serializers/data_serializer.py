@@ -199,7 +199,7 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     debt = serializers.IntegerField(required=False, allow_null=True)
     due_date = serializers.DateField(required=False, allow_null=True)
     file_attach = serializers.FileField(required=False, allow_null=True)
-    invoice = serializers.CharField(required=False, allow_null=True)
+    invoice = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
 class CreateOrderDetailResponseSerializer(BaseResponseSerializer):
