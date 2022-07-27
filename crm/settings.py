@@ -147,6 +147,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:8080',
     'http://localhost:8000',
     'http://115.146.123.8',
+    'http://115.146.123.8:8000',
     'http://crm.ity.vn',
     'https://crm.ity.vn',
 ]
@@ -155,6 +156,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8080',
     'http://115.146.123.8',
+    'http://115.146.123.8:8000',
     'http://crm.ity.vn',
     'https://crm.ity.vn',
 ]
@@ -267,3 +269,22 @@ ZALO_APP_ID = '2252452034861651725'
 ZALO_APP_SECRET = 'mNC5uCK6TN6kBgD5oqU6'
 ZALO_SECRET_KEY = 'c091a3a9b59e1475abc049f9b352cc72' 
 ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR + '/warning.log',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

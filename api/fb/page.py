@@ -32,12 +32,13 @@ class FBPageUtil:
 
     def dump_comment_hierarchy_to_json(self, comment_id):
         top_level = self._get_top_level(comment_id)
-        comments = self.graph.request('{}/comments?fields=parent{id},message,from,created_time'.format(top_level['id']))
+        comments = self.graph.request(
+            '{}/comments?fields=parent{{id}},message,from,created_time'.format(top_level['id']))
         comment_map = dict()
         top_level['children'] = []
         comment_map[top_level['id']] = top_level
 
-        for comment in range(comments):
+        for comment in comments['data']:
             comment['children'] = []
             if 'from' not in comment:
                 comment['from'] = {
@@ -46,10 +47,10 @@ class FBPageUtil:
                 }
             comment_map[comment['id']] = comment
 
-        for comment in range(comments):
+        for comment in comments['data']:
             comment_map[comment['parent']['id']]['children'].append(comment)
 
-        return json.dump(top_level)
+        return json.dumps(top_level)
 
     def get_page_messages(self, page_id, offset, limit):
         total_messages = []

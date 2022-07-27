@@ -16,6 +16,9 @@ from django.db.models import F
 from pyfacebook import FacebookApi
 from django.utils import timezone
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FBCrawler(Daemon):
@@ -30,6 +33,7 @@ class FBCrawler(Daemon):
         super().__init__(pidfile)
 
     def crawl_posts(self, page):
+        logger.info('Crawling page: ' + page.page_name)
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
 
@@ -84,14 +88,14 @@ class FBCrawler(Daemon):
                             type=CrawlData.TYPE_POST,
                             ref_link=post['permalink_url'],
                             post_message=post['message'],
-                            post_picture=post['full_picture'],
+                            post_picture=post['full_picture'] if 'full_picture' in post else '',
                             uid=comment['id'],  # Temporary use comment id for this until app is reviewed
                             username=comment['id'],  # Temporary use comment id for this until app is reviewed
                             content=fb.dump_comment_hierarchy_to_json(comment['id']),
                             phone=phone,
                         )
 
-                        customer = Customer.objects.filter(phone=phone)
+                        customer = Customer.objects.filter(phone=phone).first()
                         if not customer:
                             customer = Customer.objects.create(
                                 phone=phone
@@ -100,7 +104,8 @@ class FBCrawler(Daemon):
                         Order.objects.create(
                             crawl_data=crawl_data,
                             customer=customer,
-                            company=page.company
+                            company=page.company,
+                            created_date=datetime.today()
                         )
 
                 if post_in_db is not None and last_check_time_int != 0:
@@ -151,7 +156,7 @@ class FBCrawler(Daemon):
                         phone=phone,
                     )
 
-                    customer = Customer.objects.filter(phone=phone)
+                    customer = Customer.objects.filter(phone=phone).first()
                     if not customer:
                         customer = Customer.objects.create(
                             phone=phone,
@@ -161,7 +166,8 @@ class FBCrawler(Daemon):
                     Order.objects.create(
                         crawl_data=crawl_data,
                         customer=customer,
-                        company=page.company
+                        company=page.company,
+                        created_date=datetime.today()
                     )
 
                 conversation_in_db.last_check_time_int = updated_timestamp
@@ -173,6 +179,7 @@ class FBCrawler(Daemon):
             need_crawl=True,
         )[:self.BULK_SIZE]
 
+        logger.info('Starting crawl, number of users: ' + str(len(users)))
         for user in users:
             fbpages = FBPage.objects.filter(
                 user=user

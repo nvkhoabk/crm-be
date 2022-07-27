@@ -258,12 +258,12 @@ class FilterOrderService(BaseService):
 
             if key == 'from_date' and value is not None:
                 query_set = query_set.filter(
-                    created_date__gte=value,
+                    created_date__gte=value.strftime('%Y-%m-%d'),
                 )
 
             if key == 'to_date' and value is not None:
                 query_set = query_set.filter(
-                    created_date__lte=value,
+                    created_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
             if key == 'pics' and value is not None and value:
