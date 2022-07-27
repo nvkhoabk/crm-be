@@ -5,11 +5,12 @@ from datetime import datetime
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.db.models.aggregates import Sum
 from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS
+from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment
 from api.models.organization import UserRole
@@ -24,8 +25,46 @@ from api.utils.date import get_last_of_month
 from crm.settings import TIME_ZONE
 
 
-def create_annual_order(order):
+def create_annual_order(order_detail):
     AnnualOrder.objects.create(company_id=order.company_id, order_id=order.id)
+
+
+def recalculate_order(order):
+    annual_order_details = OrderDetail.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                      deleted_at__isnull=True).order_by('-id')
+    order_details = OrderDetail.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                                      deleted_at__isnull=True).order_by('-id')
+
+    order.annual_amount = 0
+    order.annual_debt = 0
+    order.amount = 0
+    order.debt = 0
+    for order_detail in annual_order_details:
+        order.annual_amount += order_detail.remaining_payment_amount
+        order.annual_debt += order_detail.debt
+
+    for order_detail in order_details:
+        order.amount += order_detail.remaining_payment_amount
+        order.debt += order_detail.debt
+
+    if annual_order_details:
+        order.annual_due_date = annual_order_details.first().due_date
+
+    if order_details:
+        order.due_date = order_details[0].due_date
+
+    if order.debt > 0 or order.annual_debt > 0:
+        waiting_approval_payment_value = Payment.objects.filter(order_id=order.id,
+                                                                status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                                deleted_at__isnull=True).aggregate(Sum('value'))
+        if waiting_approval_payment_value == (order.debt + order.annual_debt):
+            order.debt_status = DEBT_STATUS.UNAPPROVED
+        else:
+            order.debt_status = DEBT_STATUS.UNPAID
+    else:
+        order.debt_status = DEBT_STATUS.APPROVED
+
+    order.save()
 
 
 class FilterCrawlDataService(BaseService):
@@ -192,12 +231,6 @@ class UpdateOrderService(BaseService):
         except Order.DoesNotExist:
             raise OrderNotFound()
 
-    def change_product(self, order):
-        AnnualOrder.objects.filter(company_id=order.company_id, order_id=order.id, deleted_at__isnull=True,
-                                   is_active=True).update(deleted_at=timezone.now())
-
-        create_annual_order(order)
-
 
 class FilterOrderService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -296,7 +329,7 @@ class CreateOrderDetailService(BaseService):
                 **kwargs
             )
 
-            order_detail = self.update_order(request, cookies, order_detail, *args)
+            recalculate_order(order_detail.order)
 
             OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
@@ -312,25 +345,6 @@ class CreateOrderDetailService(BaseService):
             return order_detail
         except IntegrityError as e:
             raise OrderDetailDuplicated()
-
-    def update_order(self, request, cookies: Cookies, order_detail, *args):
-        order = Order.objects.get(pk=order_detail.order_id)
-
-        if order_detail.product is not None and order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-            order_detail = self.create_annual_buy(order_detail)
-
-            order.annual_debt += order_detail.remaining_payment_amount
-            order.annual_due_date = order_detail.due_date
-            order.annual_amount += order_detail.remaining_payment_amount
-        else:
-            order.debt += order_detail.remaining_payment_amount
-            order.due_date = order_detail.due_date
-            order.amount += order_detail.remaining_payment_amount
-
-        order_service = UpdateOrderService()
-        order_service.serve(request, cookies, *args, **order.__dict__)
-
-        return order_detail
 
     def create_annual_buy(self, order_detail):
         current_date = datetime.now(pytz.timezone(TIME_ZONE)).date()
@@ -388,7 +402,7 @@ class FilterOrderDetailService(BaseService):
                     type=value,
                 )
 
-        return query_set
+        return query_set.order_by('-id')
 
 
 class UpdateOrderDetailService(BaseService):
@@ -456,6 +470,8 @@ class UpdateOrderDetailService(BaseService):
                                               debt=order_detail.debt, due_date=order_detail.due_date,
                                               file_attach=order_detail.file_attach, invoice=order_detail.invoice)
 
+            recalculate_order(order_detail.order)
+
             return order_detail
         except OrderDetail.DoesNotExist:
             raise OrderDetailNotFound()
@@ -470,10 +486,15 @@ class DeleteOrderDetailService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            return OrderDetail.objects.get(
+            order_detail = OrderDetail.objects.get(
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
-            ).delete()
+            )
+            order_detail.delete()
+
+            recalculate_order(order_detail.order)
+
+            return order_detail
         except OrderDetail.DoesNotExist as e:
             raise OrderDetailNotFound()
 
