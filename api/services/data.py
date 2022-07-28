@@ -801,6 +801,34 @@ class ApprovePaymentService(BaseService):
             raise PaymentNotFound()
 
 
+class DisapprovePaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
+
+            payment.save()
+
+            return payment
+        except Payment.DoesNotExist:
+            raise PaymentNotFound()
+
+
 class FilterPaymentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
@@ -817,7 +845,7 @@ class FilterPaymentService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'order_id':
+            if key == 'order_id' and value is not None:
                 query_set = query_set.filter(
                     order_id=value,
                 )

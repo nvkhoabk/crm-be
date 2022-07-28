@@ -238,7 +238,8 @@ urlpatterns = [
     path('data/get_payment/', data.GetPaymentView.as_view(), name='data.get_payment'),
     path('data/update_payment/', data.UpdatePaymentView.as_view(), name='data.update_payment'),
     path('data/delete_payment/', data.DeletePaymentView.as_view(), name='data.delete_payment'),
-    path('data/approve_payment/', data.ApprovePaymentView.as_view(), name='data.approve_payment')
+    path('data/approve_payment/', data.ApprovePaymentView.as_view(), name='data.approve_payment'),
+    path('data/disapprove_payment/', data.DisapprovePaymentView.as_view(), name='data.disapprove_payment')
 
 
 ] + static('files/', document_root=Const.FILE_ROOT)

@@ -1,5 +1,5 @@
 from api.common.base_view import BaseAPIView
-from api.permissions import SuperAdminPermission, DataReadPermission, DataEditPermission
+from api.permissions import SuperAdminPermission, DataReadPermission, DataEditPermission, AccountReadPermission
 from api.serializers import data_serializer
 from api.services import exceptions
 from api.services import data as data_service
@@ -559,9 +559,33 @@ class ApprovePaymentView(BaseAPIView):
                                  serializer=data_serializer.ApprovePaymentResponseSerializer)
 
 
+class DisapprovePaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.DisapprovePaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Disapprove Payment',
+        operation_description='Disapprove Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.DisapprovePaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        approve_payment_service = data_service.DisapprovePaymentService()
+        payment = approve_payment_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.DisapprovePaymentResponseSerializer)
+
+
 class FilterPaymentView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataReadPermission]
+    permission_classes = [IsAuthenticated, DataReadPermission, AccountReadPermission]
     serializer_class = data_serializer.FilterPaymentRequestSerializer
     pagination_class = True
 
