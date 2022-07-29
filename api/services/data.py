@@ -116,7 +116,7 @@ class CreateOrderService(BaseService):
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
                                         company_id=order.company_id, discount_type=order.discount_type,
                                         discount_value=order.discount_value, amount=order.amount,
-                                        annual_amount=order.annual_amount)
+                                        annual_amount=order.annual_amount, care_notes=order.care_notes)
 
 
             return order
@@ -215,6 +215,9 @@ class UpdateOrderService(BaseService):
             if kwargs.get('data_channel_id'):
                 order.data_channel_id = kwargs['data_channel_id']
 
+            if kwargs.get('care_notes'):
+                order.care_notes = kwargs['care_notes']
+
             order.save()
 
             OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
@@ -224,8 +227,9 @@ class UpdateOrderService(BaseService):
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
-                                        company_id=order.company_id, discount_value=order.discount_value,
-                                        discount_type=order.discount_type)
+                                        company_id=order.company_id, discount_type=order.discount_type,
+                                        discount_value=order.discount_value, amount=order.amount,
+                                        annual_amount=order.annual_amount, care_notes=order.care_notes)
 
             return order
         except Order.DoesNotExist:

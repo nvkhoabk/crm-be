@@ -61,7 +61,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
-                  'annual_amount']
+                  'annual_amount', 'care_notes']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
@@ -124,6 +124,7 @@ class UpdateOrderRequestSerializer(serializers.Serializer):
     data_source_id = serializers.IntegerField(required=False, allow_null=True)
     data_channel_id = serializers.IntegerField(required=False, allow_null=True)
     debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
+    care_notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class UpdateOrderResponseSerializer(BaseResponseSerializer):

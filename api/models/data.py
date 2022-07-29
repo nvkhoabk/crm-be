@@ -191,6 +191,7 @@ class Order(BaseModel):
     discount_type = models.CharField(max_length=64, default='')
     amount = models.IntegerField(default=0)
     annual_amount = models.IntegerField(default=0)
+    care_notes = models.TextField(default='')
 
 
     class Meta:
@@ -242,6 +243,7 @@ class OrderHistory(BaseModel):
     discount_type = models.CharField(max_length=64, default='')
     amount = models.IntegerField(default=0)
     annual_amount = models.IntegerField(default=0)
+    care_notes = models.TextField(default='')
 
     class Meta:
         db_table = 'order_histories'
