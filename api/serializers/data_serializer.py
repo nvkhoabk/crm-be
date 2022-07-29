@@ -361,6 +361,9 @@ class GetSynchronizedFBAccountResponseSerializer(BaseResponseSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+
+    order = OrderSerializer()
+
     class Meta:
         model = Payment
         fields = ['id', 'company', 'order', 'type', 'value', 'status', 'created_at']
@@ -402,8 +405,14 @@ class UpdatePaymentResponseSerializer(BaseResponseSerializer):
 class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
 
+class DisapprovePaymentRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Payment id', required=True)
+
 
 class ApprovePaymentResponseSerializer(BaseResponseSerializer):
+    data = PaymentSerializer()
+
+class DisapprovePaymentResponseSerializer(BaseResponseSerializer):
     data = PaymentSerializer()
 
 
@@ -412,7 +421,7 @@ class FilterPaymentRequestParamSerializer(serializers.Serializer):
         (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
         (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY)
     )
-    order_id = serializers.IntegerField()
+    order_id = serializers.IntegerField(required=False)
     type = serializers.ChoiceField(choices=TYPE_CHOICES, required=False)
 
 
