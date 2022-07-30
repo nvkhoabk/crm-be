@@ -133,6 +133,9 @@ class DataReadPermission(ModuleReadPermission):
 class AccountReadPermission(ModuleReadPermission):
     MODULE_NAME = [MODULES.ACCOUNTING]
 
+class AccountEditPermission(ModuleReadPermission):
+    MODULE_NAME = [MODULES.ACCOUNTING]
+
 
 class DataEditPermission(ModuleEditPermission):
-    MODULE_NAME = [MODULES.DATA_MANAGEMENT, MODULES.DATA_MANAGEMENT_FOR_SALE, MODULES.ACCOUNTING]
+    MODULE_NAME = [MODULES.DATA_MANAGEMENT, MODULES.DATA_MANAGEMENT_FOR_SALE]

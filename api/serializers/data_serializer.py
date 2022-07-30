@@ -1,6 +1,6 @@
 import json
 
-from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS, ORDER_PAYMENT_STATUS
+from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD
 from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
@@ -178,7 +178,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     class Meta:
         model = OrderDetail
-        fields = ['id', 'type', 'product', 'quantity', 'price', 'discount_value', 'remaining_payment_amount',
+        fields = ['id', 'type', 'product', 'quantity', 'price', 'annual_price', 'discount_value', 'remaining_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at']
 
 
@@ -194,6 +194,7 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
+    annual_price = serializers.IntegerField(required=False, allow_null=True)
     discount = serializers.IntegerField(required=False, allow_null=True)
     remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
@@ -220,6 +221,7 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(required=False, allow_null=True)
     price = serializers.IntegerField(required=False, allow_null=True)
+    annual_price = serializers.IntegerField(required=False, allow_null=True)
     discount_value = serializers.IntegerField(required=False, allow_null=True)
     discount_type = serializers.CharField(required=False, allow_null=True)
     remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
@@ -366,7 +368,9 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ['id', 'company', 'order', 'type', 'value', 'status', 'created_at']
+        fields = ['id', 'company', 'order', 'type', 'value', 'status', 'sale_note',
+                  'invoice_no', 'accountant_note', 'approved_at', 'approver_id',
+                  'payment_method', 'order_detail_id', 'created_at']
 
 
 class CreatePaymentRequestSerializer(serializers.Serializer):
@@ -375,10 +379,22 @@ class CreatePaymentRequestSerializer(serializers.Serializer):
         (ORDER_DETAIL_TYPE.ANNUAL_BUY, ORDER_DETAIL_TYPE.ANNUAL_BUY)
     )
 
+    PAYMENT_METHOD_CHOICES = (
+        (PAYMENT_METHOD.CASH, PAYMENT_METHOD.CASH),
+        (PAYMENT_METHOD.CARD, PAYMENT_METHOD.CARD),
+        (PAYMENT_METHOD.TRANSFER, PAYMENT_METHOD.TRANSFER)
+    )
+
     company_id = serializers.IntegerField()
     order_id = serializers.IntegerField()
+    order_detail_id = serializers.IntegerField(required=False)
     type = serializers.ChoiceField(choices=TYPE_CHOICES)
     value = serializers.IntegerField()
+    sale_note = serializers.CharField(max_length=512, allow_null=True, allow_blank=True, required=False)
+    accountant_note = serializers.CharField(max_length=512, allow_null=True, allow_blank=True, required=False)
+    approver_id = serializers.IntegerField(allow_null=True, required=False)
+    payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=True, required=False)
+    invoice_no = serializers.CharField(max_length=128, allow_null=True, allow_blank=True, required=False)
 
 
 class CreatePaymentResponseSerializer(BaseResponseSerializer):
@@ -404,9 +420,11 @@ class UpdatePaymentResponseSerializer(BaseResponseSerializer):
 
 class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
+    accountant_note = serializers.CharField(max_length=128, allow_null=True)
 
 class DisapprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
+    accountant_note = serializers.CharField(max_length=128, allow_null=True)
 
 
 class ApprovePaymentResponseSerializer(BaseResponseSerializer):

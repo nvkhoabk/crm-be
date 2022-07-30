@@ -1,5 +1,6 @@
 from api.common.base_view import BaseAPIView
-from api.permissions import SuperAdminPermission, DataReadPermission, DataEditPermission, AccountReadPermission
+from api.permissions import SuperAdminPermission, DataReadPermission, DataEditPermission, AccountReadPermission, \
+    AccountEditPermission
 from api.serializers import data_serializer
 from api.services import exceptions
 from api.services import data as data_service
@@ -537,7 +538,7 @@ class UpdatePaymentView(BaseAPIView):
 
 class ApprovePaymentView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated, AccountEditPermission]
     serializer_class = data_serializer.ApprovePaymentRequestSerializer
 
     @swagger_auto_schema(
@@ -561,7 +562,7 @@ class ApprovePaymentView(BaseAPIView):
 
 class DisapprovePaymentView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated, AccountEditPermission]
     serializer_class = data_serializer.DisapprovePaymentRequestSerializer
 
     @swagger_auto_schema(
@@ -585,7 +586,7 @@ class DisapprovePaymentView(BaseAPIView):
 
 class FilterPaymentView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataReadPermission, AccountReadPermission]
+    permission_classes = [IsAuthenticated, DataReadPermission]
     serializer_class = data_serializer.FilterPaymentRequestSerializer
     pagination_class = True
 

@@ -205,6 +205,7 @@ class OrderDetail(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.IntegerField(null=True)
     price = models.BigIntegerField(null=True)
+    annual_price = models.BigIntegerField(null=True)
     remaining_payment_amount = models.BigIntegerField(null=True)
     paid_payment_amount = models.BigIntegerField(null=True)
     debt = models.BigIntegerField(null=True)
@@ -257,6 +258,7 @@ class OrderDetailHistory(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.IntegerField(null=True)
     price = models.BigIntegerField(null=True)
+    annual_price = models.BigIntegerField(null=True)
     remaining_payment_amount = models.BigIntegerField(null=True)
     paid_payment_amount = models.BigIntegerField(null=True)
     debt = models.BigIntegerField(null=True)
@@ -283,9 +285,16 @@ class AnnualOrder(BaseModel):
 class Payment(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_payments', db_index=True)
+    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE, null=True)
     type = models.CharField(max_length=64, db_index=True)
     value = models.BigIntegerField()
     status = models.CharField(max_length=64, db_index=True)
+    sale_note = models.CharField(max_length=512, null=True)
+    accountant_note = models.CharField(max_length=512, null=True)
+    approver = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_column='approver_id')
+    approved_at = models.DateTimeField(blank=True, null=True)
+    payment_method = models.CharField(max_length=128, null=True)
+    invoice_no = models.CharField(max_length=128, null=True)
 
     class Meta:
         db_table = 'payments'

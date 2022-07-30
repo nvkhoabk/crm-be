@@ -338,6 +338,7 @@ class CreateOrderDetailService(BaseService):
             OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
                                               quantity=order_detail.quantity, price=order_detail.price,
+                                              annual_price=order_detail.annual_price,
                                               discount_type=order_detail.discount_type,
                                               discount_value=order_detail.discount_value,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
@@ -437,6 +438,9 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('price'):
                 order_detail.price = kwargs['price']
 
+            if kwargs.get('annual_price'):
+                order_detail.price = kwargs['annual_price']
+
             if kwargs.get('discount_value'):
                 order_detail.discount_value = kwargs['discount_value']
 
@@ -467,6 +471,7 @@ class UpdateOrderDetailService(BaseService):
                                               order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
                                               quantity=order_detail.quantity, price=order_detail.price,
+                                              annual_price=order_detail.annual_price,
                                               discount_value=order_detail.discount_value,
                                               discount_type=order_detail.discount_type,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
@@ -727,7 +732,9 @@ class CreatePaymentService(BaseService):
 
         payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
         return Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
-                                      value=payment.value, status=payment.status)
+                                      value=payment.value, status=payment.status, sale_note=payment.sale_note,
+                                      invoice_no=payment.invoice_no, order_detail=payment.order_detail,
+                                      payment_method=payment.payment_method)
 
 
 class GetPaymentService(BaseService):
@@ -797,7 +804,7 @@ class ApprovePaymentService(BaseService):
                 )
 
             payment.status = ORDER_PAYMENT_STATUS.APPROVED
-
+            payment.accountant_note = kwargs.get('accountant_note')
             payment.save()
 
             return payment
@@ -825,7 +832,7 @@ class DisapprovePaymentService(BaseService):
                 )
 
             payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
-
+            payment.accountant_note = kwargs.get('accountant_note')
             payment.save()
 
             return payment
