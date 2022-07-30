@@ -342,6 +342,7 @@ class CreateOrderDetailService(BaseService):
                                               discount_type=order_detail.discount_type,
                                               discount_value=order_detail.discount_value,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
+                                              total_payment_amount=order_detail.total_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,
                                               file_attach=order_detail.file_attach, invoice=order_detail.invoice,
@@ -802,7 +803,25 @@ class ApprovePaymentService(BaseService):
                     pk=kwargs.get('id'),
                     company_id=user_roles.first().company_id
                 )
+            if payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+                orderDetail = OrderDetail.objects.get(
+                    pk=payment.order_detail.id,
+                    company_id=user_roles.first().company_id
+                )
+                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount + payment.value
+                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
+                orderDetail.debt = orderDetail.annual_price - orderDetail.discount_value - orderDetail.paid_payment_amount
+                orderDetail.save()
 
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                orderDetail = OrderDetail.objects.get(
+                    pk=payment.order_detail.id,
+                    company_id=user_roles.first().company_id
+                )
+                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount + payment.value
+                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
+                orderDetail.debt = orderDetail.remaining_payment_amount - orderDetail.discount_value - orderDetail.paid_payment_amount
+                orderDetail.save()
             payment.status = ORDER_PAYMENT_STATUS.APPROVED
             payment.accountant_note = kwargs.get('accountant_note')
             payment.save()
@@ -830,6 +849,25 @@ class DisapprovePaymentService(BaseService):
                     pk=kwargs.get('id'),
                     company_id=user_roles.first().company_id
                 )
+            if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+                orderDetail = OrderDetail.objects.get(
+                    pk=payment.order_detail.id,
+                    company_id=user_roles.first().company_id
+                )
+                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount - payment.value
+                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
+                orderDetail.debt = orderDetail.annual_price - orderDetail.discount_value - orderDetail.paid_payment_amount
+                orderDetail.save()
+
+            if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                orderDetail = OrderDetail.objects.get(
+                    pk=payment.order_detail.id,
+                    company_id=user_roles.first().company_id
+                )
+                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount - payment.value
+                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
+                orderDetail.debt = orderDetail.remaining_payment_amount - orderDetail.discount_value - orderDetail.paid_payment_amount
+                orderDetail.save()
 
             payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
             payment.accountant_note = kwargs.get('accountant_note')
