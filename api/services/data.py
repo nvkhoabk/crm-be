@@ -278,14 +278,16 @@ class FilterOrderService(BaseService):
             if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
-                    (Q(data_status_id=ds, data_sub_status_id=dss) for ds, dss in value)
+                    (Q(data_status_id=ds, data_sub_status_id=dss) if dss is not None else Q(data_status_id=ds) for
+                     ds, dss in value)
                 )
                 query_set = query_set.filter(query)
 
             if key == 'data_source' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
-                    (Q(data_source_id=ds, data_channel_id=dc) for ds, dc in value)
+                    (Q(data_source_id=ds, data_channel_id=dc) if dc is not None else Q(data_source_id=ds) for ds, dc in
+                     value)
                 )
                 query_set = query_set.filter(query)
 
@@ -850,11 +852,18 @@ class FilterPaymentService(BaseService):
 
         query_set = Payment.objects.filter(company_id=user_roles.first().company_id)
 
-        filters = ['order_id', 'type', 'status']
+        filters = ['order_id', 'type', 'status', 'order']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
+
+            if key == 'order' and value is not None:
+                order_service = FilterOrderService()
+                orders = order_service.serve(request, cookies, *args, **value)
+                query_set = query_set.filter(
+                    order_id__in=orders.values_list('id', flat=True),
+                )
 
             if key == 'order_id' and value is not None:
                 query_set = query_set.filter(

@@ -133,12 +133,12 @@ class UpdateOrderResponseSerializer(BaseResponseSerializer):
 
 class DataStatusFilterParamSerializer(serializers.Serializer):
     data_status_id = serializers.IntegerField()
-    data_sub_status_id = serializers.IntegerField()
+    data_sub_status_id = serializers.IntegerField(required=False)
 
 
 class DataSourceFilterParamSerializer(serializers.Serializer):
     data_source_id = serializers.IntegerField()
-    data_channel_id = serializers.IntegerField()
+    data_channel_id = serializers.IntegerField(required=False)
 
 
 class FilterOrderRequestParamSerializer(serializers.Serializer):
@@ -441,6 +441,7 @@ class FilterPaymentRequestParamSerializer(serializers.Serializer):
     )
     order_id = serializers.IntegerField(required=False)
     type = serializers.ChoiceField(choices=TYPE_CHOICES, required=False)
+    order = FilterOrderRequestParamSerializer(required=False)
 
 
 class FilterPaymentRequestSerializer(BasePagingSerializer):
