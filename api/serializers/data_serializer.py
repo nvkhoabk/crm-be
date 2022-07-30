@@ -179,6 +179,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderDetail
         fields = ['id', 'type', 'product', 'quantity', 'price', 'annual_price', 'discount_value', 'remaining_payment_amount',
+                  'total_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at']
 
 
@@ -197,6 +198,7 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     annual_price = serializers.IntegerField(required=False, allow_null=True)
     discount = serializers.IntegerField(required=False, allow_null=True)
     remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    total_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     debt = serializers.IntegerField(required=False, allow_null=True)
     due_date = serializers.DateField(required=False, allow_null=True)
@@ -225,6 +227,7 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     discount_value = serializers.IntegerField(required=False, allow_null=True)
     discount_type = serializers.CharField(required=False, allow_null=True)
     remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    total_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     debt = serializers.IntegerField(required=False, allow_null=True)
     due_date = serializers.DateField(required=False, allow_null=True)
