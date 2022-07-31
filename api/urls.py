@@ -7,6 +7,7 @@ from api.views import product
 from api.views import call_center
 from api.views import crawl
 from api.views import data
+from api.views import report
 from api.views import system_configuration
 from django.conf.urls.static import static
 
@@ -240,7 +241,12 @@ urlpatterns = [
     path('data/update_payment/', data.UpdatePaymentView.as_view(), name='data.update_payment'),
     path('data/delete_payment/', data.DeletePaymentView.as_view(), name='data.delete_payment'),
     path('data/approve_payment/', data.ApprovePaymentView.as_view(), name='data.approve_payment'),
-    path('data/disapprove_payment/', data.DisapprovePaymentView.as_view(), name='data.disapprove_payment')
+    path('data/disapprove_payment/', data.DisapprovePaymentView.as_view(), name='data.disapprove_payment'),
+
+
+    path('report/filter_report/', report.FilterReportView.as_view(), name='report.filter_report'),
+    path('report/filter_annual_order_report/', report.FilterAnnualOrderReportView.as_view(), name='report.filter_annual_order_report'),
+    path('report/filter_bad_debt_report/', report.FilterBadDebtReportView.as_view(), name='report.filter_bad_debt_report')
 
 
 ] + static('files/', document_root=Const.FILE_ROOT)

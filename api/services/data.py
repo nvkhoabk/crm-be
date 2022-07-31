@@ -270,6 +270,26 @@ class FilterOrderService(BaseService):
                     created_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
+            if key == 'confirmed_from_date' and value is not None:
+                query_set = query_set.filter(
+                    confirmed_date__gte=value.strftime('%Y-%m-%d'),
+                )
+
+            if key == 'confirmed_to_date' and value is not None:
+                query_set = query_set.filter(
+                    created_date__lte=value.strftime('%Y-%m-%d'),
+                )
+
+            if key == 'annual_due_date_from_date' and value is not None:
+                query_set = query_set.filter(
+                    annual_due_date__gte=value.strftime('%Y-%m-%d'),
+                )
+
+            if key == 'annual_due_date_to_date' and value is not None:
+                query_set = query_set.filter(
+                    annual_due_date__lte=value.strftime('%Y-%m-%d'),
+                )
+
             if key == 'pics' and value is not None and value:
                 query_set = query_set.filter(
                     pic__in=value,

@@ -192,6 +192,8 @@ class Order(BaseModel):
     amount = models.IntegerField(default=0)
     annual_amount = models.IntegerField(default=0)
     care_notes = models.TextField(default='')
+    duplicated_with = models.IntegerField(null=True)
+    confirmed_date = models.DateField(null=True)
 
 
     class Meta:
@@ -246,6 +248,7 @@ class OrderHistory(BaseModel):
     amount = models.IntegerField(default=0)
     annual_amount = models.IntegerField(default=0)
     care_notes = models.TextField(default='')
+    duplicated_with = models.IntegerField(null=True)
 
     class Meta:
         db_table = 'order_histories'

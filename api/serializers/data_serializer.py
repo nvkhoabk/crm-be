@@ -61,7 +61,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
-                  'annual_amount', 'care_notes']
+                  'annual_amount', 'care_notes', 'duplicated_with']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
@@ -156,6 +156,10 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     phone = serializers.CharField(required=False, allow_null=True)
     customer_name = serializers.CharField(required=False, allow_null=True)
     debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False)
+    confirmed_from_date = serializers.DateField(required=False, allow_null=True)
+    confirmed_to_date = serializers.DateField(required=False, allow_null=True)
+    annual_due_date_from_date = serializers.DateField(required=False, allow_null=True)
+    annual_due_date_to_date = serializers.DateField(required=False, allow_null=True)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

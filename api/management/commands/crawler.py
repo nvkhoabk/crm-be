@@ -148,13 +148,38 @@ class FBCrawler(Daemon):
                 if updated_timestamp <= conversation_in_db.last_check_time_int:
                     continue
 
-                if CrawlData.objects.filter(object_id=message['id']).first():
-                    CrawlData.objects.filter(object_id=message['id']).update(content=json.dumps(message['messages']))
-                else:
-                    phone = self._extract_phone_number(message['messages'], conversation_in_db.last_check_time_int)
-                    if phone is None:
-                        continue
+                phone = self._extract_phone_number(message['messages'], conversation_in_db.last_check_time_int)
+                conversation_in_db.last_check_time_int = updated_timestamp
+                conversation_in_db.save()
 
+                if phone is None:
+                    continue
+
+                crawl_data = CrawlData.objects.filter(object_id=message['id']).first()
+                if crawl_data:
+                    logger.debug('Use existing CrawlData for mess with phone: ', phone)
+                    crawl_data.content = json.dumps(message['messages'])
+                    crawl_data.save()
+
+                    customer = Customer.objects.filter(phone=phone).first()
+                    if not customer:
+                        logger.debug('Create new customer for mess with phone: ' + phone)
+                        customer = Customer.objects.create(
+                            phone=phone,
+                            name=message['senders']['data'][0]['name']
+                        )
+
+                    duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id,
+                                                           deleted_at__isnull=True).order_by('-id').first()
+
+                    Order.objects.create(
+                        crawl_data=crawl_data,
+                        customer=customer,
+                        company=page.company,
+                        created_date=datetime.today(),
+                        duplicated_with=duplicated_with.id
+                    )
+                else:
                     logger.debug('Create new CrawlData for mess with phone: ', phone)
                     crawl_data = CrawlData.objects.create(
                         source='fb',
@@ -180,9 +205,6 @@ class FBCrawler(Daemon):
                         company=page.company,
                         created_date=datetime.today()
                     )
-
-                conversation_in_db.last_check_time_int = updated_timestamp
-                conversation_in_db.save()
 
     def do_crawl(self):
         users = FBUser.objects.annotate(id_mod=F('id') % self.shard).filter(
