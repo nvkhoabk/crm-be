@@ -364,6 +364,13 @@ class GetSynchronizedFBAccountResponseSerializer(BaseResponseSerializer):
     data = SynchronizedFBAccount()
 
 
+class DeleteSynchronizedFBAccountRequestSerializer(serializers.Serializer):
+    pass
+
+
+class DeleteSynchronizedFBAccountResponseSerializer(BaseResponseSerializer):
+    pass
+
 
 class PaymentSerializer(serializers.ModelSerializer):
 

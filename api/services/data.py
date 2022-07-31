@@ -670,7 +670,8 @@ class UpdateFBPageService(BaseService):
 
             fb_page = FBPage.objects.get(
                 pk=kwargs['id'],
-                company_id=user_roles.first().company_id
+                company_id=user_roles.first().company_id,
+                deleted_at__isnull=True
             )
 
             if kwargs.get('is_subscribed', None) is not None:
@@ -694,8 +695,10 @@ class DeleteFBPageService(BaseService):
 
             return FBPage.objects.get(
                 pk=kwargs['id'],
-                company_id=user_roles.first().company_id
-            ).delete()
+                company_id=user_roles.first().company_id,
+                deleted_at__isnull=True
+            ).update(deleted_at=timezone.now())
+
         except FBPage.DoesNotExist as e:
             raise FBPageNotFound()
 
@@ -719,6 +722,21 @@ class GetSynchronizedFBAccountService(BaseService):
 
         except FBUser.DoesNotExist as e:
             raise FBUserNotExisted()
+
+
+class DeleteSynchronizedFBAccountService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+
+        user_roles = UserRole.objects.filter(**filter)
+
+        FBPage.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).update(
+            deleted_at=timezone.now())
+        FBUser.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).update(
+            deleted_at=timezone.now())
 
 
 class CreatePaymentService(BaseService):

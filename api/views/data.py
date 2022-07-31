@@ -464,6 +464,29 @@ class GetSynchronizedFBAccountView(BaseAPIView):
                                  serializer=data_serializer.GetSynchronizedFBAccountResponseSerializer)
 
 
+class DeleteSynchronizedFBAccountView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.DeleteSynchronizedFBAccountRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['FBPage'],
+        operation_id='Get SynchronizedFBAccount',
+        operation_description='Get SynchronizedFBAccount api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.DeleteSynchronizedFBAccountResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = data_service.DeleteSynchronizedFBAccountService()
+        product = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=data_serializer.DeleteSynchronizedFBAccountResponseSerializer)
+
+
 class CreatePaymentView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataEditPermission]
