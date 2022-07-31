@@ -233,6 +233,7 @@ urlpatterns = [
     path('data/update_fbpage/', data.UpdateFBPageView.as_view(), name='data.update_fbpage'),
     path('data/delete_fbpage/', data.DeleteFBPageView.as_view(), name='data.delete_fbpage'),
     path('data/get_synchronized_fbaccount/', data.GetSynchronizedFBAccountView.as_view(), name='data.get_synchronized_fbaccount'),
+    path('data/delete_synchronized_fbaccount/', data.DeleteSynchronizedFBAccountView.as_view(), name='data.delete_synchronized_fbaccount'),
     path('data/create_payment/', data.CreatePaymentView.as_view(), name='data.create_payment'),
     path('data/filter_payment/', data.FilterPaymentView.as_view(), name='data.filter_payment'),
     path('data/get_payment/', data.GetPaymentView.as_view(), name='data.get_payment'),
