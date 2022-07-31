@@ -133,12 +133,12 @@ class UpdateOrderResponseSerializer(BaseResponseSerializer):
 
 class DataStatusFilterParamSerializer(serializers.Serializer):
     data_status_id = serializers.IntegerField()
-    data_sub_status_id = serializers.IntegerField(required=False)
+    data_sub_status_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class DataSourceFilterParamSerializer(serializers.Serializer):
     data_source_id = serializers.IntegerField()
-    data_channel_id = serializers.IntegerField(required=False)
+    data_channel_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class FilterOrderRequestParamSerializer(serializers.Serializer):
