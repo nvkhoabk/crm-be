@@ -116,7 +116,8 @@ class CreateOrderService(BaseService):
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
                                         company_id=order.company_id, discount_type=order.discount_type,
                                         discount_value=order.discount_value, amount=order.amount,
-                                        annual_amount=order.annual_amount, care_notes=order.care_notes)
+                                        annual_amount=order.annual_amount, care_notes=order.care_notes,
+                                        duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date)
 
 
             return order
@@ -229,7 +230,8 @@ class UpdateOrderService(BaseService):
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
                                         company_id=order.company_id, discount_type=order.discount_type,
                                         discount_value=order.discount_value, amount=order.amount,
-                                        annual_amount=order.annual_amount, care_notes=order.care_notes)
+                                        annual_amount=order.annual_amount, care_notes=order.care_notes,
+                                        duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date)
 
             return order
         except Order.DoesNotExist:
