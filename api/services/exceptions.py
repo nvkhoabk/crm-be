@@ -269,3 +269,8 @@ class FBUserNotExisted(APIException):
 class PaymentNotFound(APIException):
     code = 5007
     msg = 'Payment is not found'
+
+
+class CrawlDataNotFound(APIException):
+    code = 5002
+    msg = 'CrawlData is not found'

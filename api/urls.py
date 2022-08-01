@@ -216,6 +216,7 @@ urlpatterns = [
     path('zalo/login/', crawl.ZaloLoginView.as_view(), name='data.zalo_login'),
     path('zalo/login/callback', crawl.ZaloLoginCallBackView.as_view(), name='data.zalo_login_callback'),
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
+    path('data/get_crawl_data/', data.GetCrawlDataView.as_view(), name='data.get_crawl_data'),
     path('data/create_order/', data.CreateOrderView.as_view(), name='data.create_order'),
     path('data/filter_order/', data.FilterOrderView.as_view(), name='data.filter_order'),
     path('data/get_order/', data.GetOrderView.as_view(), name='data.get_order'),

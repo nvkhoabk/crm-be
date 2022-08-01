@@ -43,6 +43,14 @@ class FilterCrawlDataResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=CrawlDataSerializer())
 
 
+class GetCrawlDataRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
+class GetCrawlDataResponseSerializer(BaseResponseSerializer):
+    data = CrawlDataSerializer()
+
+
 class OrderSerializer(serializers.ModelSerializer):
     def get_pic_name(self, order):
         if order.pic is None:

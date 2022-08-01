@@ -33,6 +33,30 @@ class FilterCrawlDataView(BaseAPIView):
         return self.get_response(results=data, request=serializer.validated_data, serializer=data_serializer.FilterCrawlDataResponseSerializer)
 
 
+class GetCrawlDataView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.GetCrawlDataRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['CrawlData'],
+        operation_id='Get CrawlData',
+        operation_description='Get CrawlData api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.GetCrawlDataResponseSerializer,
+            exceptions.CrawlDataNotFound.code: exceptions.CrawlDataNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        get_service = data_service.GetCrawlDataService()
+        crawl_data = get_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=crawl_data, request=request,
+                                 serializer=data_serializer.GetCrawlDataResponseSerializer)
+
+
 class CreateOrderView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataEditPermission]

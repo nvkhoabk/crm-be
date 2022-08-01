@@ -95,6 +95,24 @@ class FilterCrawlDataService(BaseService):
         return query_set
 
 
+class GetCrawlDataService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
+            return CrawlData.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+        except CrawlData.DoesNotExist as e:
+            raise OrderNotFound()
+
+
 class CreateOrderService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
