@@ -18,7 +18,7 @@ User = get_user_model()
 class CrawlDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = CrawlData
-        fields = ['id', 'source', 'ref_link', 'uid', 'username', 'phone', 'content', 'status', ]
+        fields = ['id', 'source', 'ref_link', 'uid', 'username', 'phone', 'content', 'status', 'type']
 
 
 class FilterCrawlDataParamRequestSerializer(BasePagingSerializer):
@@ -69,7 +69,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
-                  'annual_amount', 'care_notes', 'duplicated_with']
+                  'annual_amount', 'care_notes', 'duplicated_with', 'crawl_data']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
