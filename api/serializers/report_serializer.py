@@ -25,9 +25,10 @@ class ReportSerializer(serializers.Serializer):
     debt = serializers.FloatField()
     waiting_approved_debt = serializers.FloatField()
     average_confirmed_time = serializers.IntegerField()
+    top = serializers.IntegerField
 
 
-class FilterReportParamRequestSerializer(BasePagingSerializer):
+class FilterReportParamRequestSerializer(serializers.Serializer):
     ORDER_BY_CHOICES = (
         ('desc', 'desc'),
         ('asc', 'asc'),
@@ -51,9 +52,10 @@ class AnnualOrderReportSerializer(serializers.Serializer):
     paid_amount = serializers.FloatField()
     remaining_debt = serializers.FloatField()
     waiting_approved_remaining_debt = serializers.FloatField()
+    top = serializers.IntegerField
 
 
-class FilterAnnualOrderReportParamRequestSerializer(BasePagingSerializer):
+class FilterAnnualOrderReportParamRequestSerializer(serializers.Serializer):
     ORDER_BY_CHOICES = (
         ('desc', 'desc'),
         ('asc', 'asc'),
@@ -63,7 +65,7 @@ class FilterAnnualOrderReportParamRequestSerializer(BasePagingSerializer):
 
 
 class FilterAnnualOrderReportRequestSerializer(BasePagingSerializer):
-    filter = FilterReportParamRequestSerializer()
+    filter = FilterAnnualOrderReportParamRequestSerializer()
 
 
 class FilterAnnualOrderReportResponseSerializer(BaseResponseSerializer):
@@ -77,9 +79,10 @@ class BadDebtReportSerializer(serializers.Serializer):
     paid_amount = serializers.FloatField()
     remaining_debt = serializers.FloatField()
     waiting_approved_remaining_debt = serializers.FloatField()
+    top = serializers.IntegerField
 
 
-class FilterBadDebtReportParamRequestSerializer(BasePagingSerializer):
+class FilterBadDebtReportParamRequestSerializer(serializers.Serializer):
     ORDER_BY_CHOICES = (
         ('desc', 'desc'),
         ('asc', 'asc'),
@@ -89,7 +92,7 @@ class FilterBadDebtReportParamRequestSerializer(BasePagingSerializer):
 
 
 class FilterBadDebtReportRequestSerializer(BasePagingSerializer):
-    filter = FilterReportParamRequestSerializer()
+    filter = FilterBadDebtReportParamRequestSerializer()
 
 
 class FilterBadDebtReportResponseSerializer(BaseResponseSerializer):

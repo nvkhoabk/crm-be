@@ -15,6 +15,7 @@ from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistor
     User, FBPage, FBUser, Payment
 from api.models.organization import UserRole
 from api.services import utils
+from api.services.data import FilterOrderService
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
     FBPageNotFound, FBUserNotExisted, PaymentNotFound
 import operator
@@ -43,55 +44,44 @@ class FilterReportService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
+
+
+        filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'from_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__gte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order' and value is not None:
+                order_service = FilterOrderService()
+                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
 
-            if key == 'to_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__lte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order_by' and value is not None:
+                query_set = query_set.order_by()
 
-            if key == 'pics' and value is not None and value:
-                query_set = query_set.filter(
-                    pic__in=value,
-                )
-
-            if key == 'data_status' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_status_id=ds, data_sub_status_id=dss) if dss is not None else Q(data_status_id=ds) for
-                     ds, dss in value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'data_source' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_source_id=ds, data_channel_id=dc) if dc is not None else Q(data_source_id=ds) for ds, dc in
-                     value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'phone' and value is not None:
-                customers = Customer.objects.filter(phone__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'customer_name' and value is not None:
-                customers = Customer.objects.filter(name__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'debt_status' and value is not None:
-                query_set = query_set.query.filter(debt_status=value)
-
-        return query_set.order_by('-created_at')
+        return [
+            {'pic': 'Nhân viên A',
+             'total_order': 1000,
+             'total_confirmed_order': 800,
+             'conversion_rate': 80,
+             'turnover': 20000000,
+             'debt': 0,
+             'waiting_approved_debt': 10000000,
+             'average_confirmed_time': 100000,
+             'top': 1
+             },
+            {
+                'pic': 'Nhân viên B',
+                'total_order': 1000,
+                'total_confirmed_order': 800,
+                'conversion_rate': 80,
+                'turnover': 20000000,
+                'debt': 0,
+                'waiting_approved_debt': 10000000,
+                'average_confirmed_time': 100000,
+                'top': 2
+            }
+        ]
 
 
 class FilterAnnualOrderReportService(BaseService):
@@ -112,55 +102,40 @@ class FilterAnnualOrderReportService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
+
+
+        filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'from_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__gte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order' and value is not None:
+                order_service = FilterOrderService()
+                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
 
-            if key == 'to_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__lte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order_by' and value is not None:
+                query_set = query_set.order_by()
 
-            if key == 'pics' and value is not None and value:
-                query_set = query_set.filter(
-                    pic__in=value,
-                )
-
-            if key == 'data_status' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_status_id=ds, data_sub_status_id=dss) if dss is not None else Q(data_status_id=ds) for
-                     ds, dss in value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'data_source' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_source_id=ds, data_channel_id=dc) if dc is not None else Q(data_source_id=ds) for ds, dc in
-                     value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'phone' and value is not None:
-                customers = Customer.objects.filter(phone__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'customer_name' and value is not None:
-                customers = Customer.objects.filter(name__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'debt_status' and value is not None:
-                query_set = query_set.query.filter(debt_status=value)
-
-        return query_set.order_by('-created_at')
+        return [
+            {"pic": "Nhân viên A",
+             "total_order": 100,
+             "total_debt": 10000000,
+             "paid_amount": 500000,
+             "remaining_debt": 10000000 - 500000,
+             "waiting_approved_remaining_debt": 10000000,
+             'top': 1
+             },
+            {
+                "pic": "Nhân viên B",
+                "total_order": 200,
+                "total_debt": 20000000,
+                "paid_amount": 1000000,
+                "remaining_debt": 20000000 - 1000000,
+                "waiting_approved_remaining_debt": 20000000,
+                'top': 2
+            }
+        ]
 
 
 class FilterBadDebtReportService(BaseService):
@@ -181,52 +156,35 @@ class FilterBadDebtReportService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
+
+
+        filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'from_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__gte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order' and value is not None:
+                order_service = FilterOrderService()
+                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
 
-            if key == 'to_date' and value is not None:
-                query_set = query_set.filter(
-                    created_date__lte=value.strftime('%Y-%m-%d'),
-                )
+            if key == 'order_by' and value is not None:
+                query_set = query_set.order_by()
 
-            if key == 'pics' and value is not None and value:
-                query_set = query_set.filter(
-                    pic__in=value,
-                )
-
-            if key == 'data_status' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_status_id=ds, data_sub_status_id=dss) if dss is not None else Q(data_status_id=ds) for
-                     ds, dss in value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'data_source' and value is not None and value:
-                query = functools.reduce(
-                    operator.or_,
-                    (Q(data_source_id=ds, data_channel_id=dc) if dc is not None else Q(data_source_id=ds) for ds, dc in
-                     value)
-                )
-                query_set = query_set.filter(query)
-
-            if key == 'phone' and value is not None:
-                customers = Customer.objects.filter(phone__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'customer_name' and value is not None:
-                customers = Customer.objects.filter(name__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
-
-            if key == 'debt_status' and value is not None:
-                query_set = query_set.query.filter(debt_status=value)
-
-        return query_set.order_by('-created_at')
+        return [{"pic": "Nhân viên A",
+                 "total_order": 100,
+                 "total_debt": 10000000,
+                 "paid_amount": 500000,
+                 "remaining_debt": 10000000 - 500000,
+                 "waiting_approved_remaining_debt": 10000000,
+                 'top': 1
+                 },
+                {
+                    "pic": "Nhân viên B",
+                    "total_order": 200,
+                    "total_debt": 20000000,
+                    "paid_amount": 1000000,
+                    "remaining_debt": 20000000 - 1000000,
+                    "waiting_approved_remaining_debt": 20000000,
+                    'top': 1
+                }]
