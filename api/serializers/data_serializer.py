@@ -156,6 +156,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
         (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
     )
 
+    id = serializers.IntegerField(required=False, allow_null=True)
     from_date = serializers.DateField(required=False, allow_null=True)
     to_date = serializers.DateField(required=False, allow_null=True)
     pics = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)

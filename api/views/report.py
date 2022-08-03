@@ -27,7 +27,7 @@ class FilterReportView(BaseAPIView):
         }
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-        filter_report_service = report_service.FilterCrawlDataService()
+        filter_report_service = report_service.FilterReportService()
         report = filter_report_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=report, request=serializer.validated_data, serializer=report_serializer.FilterReportResponseSerializer)

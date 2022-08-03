@@ -280,6 +280,11 @@ class FilterOrderService(BaseService):
             if key not in filters:
                 continue
 
+            if key == 'id' and value is not None:
+                query_set = query_set.filter(
+                    id=value,
+                )
+
             if key == 'from_date' and value is not None:
                 query_set = query_set.filter(
                     created_date__gte=value.strftime('%Y-%m-%d'),

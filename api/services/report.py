@@ -54,7 +54,7 @@ class FilterReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
+                orders = order_service.serve(request, cookies, *args, **value)
 
             if key == 'order_by' and value is not None:
                 query_set = query_set.order_by()
@@ -112,7 +112,7 @@ class FilterAnnualOrderReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
+                orders = order_service.serve(request, cookies, *args, **value)
 
             if key == 'order_by' and value is not None:
                 query_set = query_set.order_by()
@@ -166,7 +166,7 @@ class FilterBadDebtReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **kwargs['order'])
+                orders = order_service.serve(request, cookies, *args, **value)
 
             if key == 'order_by' and value is not None:
                 query_set = query_set.order_by()
