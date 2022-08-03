@@ -274,7 +274,7 @@ class FilterOrderService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
+        filters = ['id', 'from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
