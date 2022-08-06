@@ -6,6 +6,7 @@ from api.models.data import Customer
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
+from api.models.system_configuration import DataStatus, DataSource
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ManageCompanyNotFound,
@@ -163,6 +164,46 @@ class CreateCompanyService(BaseService):
             try:
                 company = Company.objects.create(
                     **kwargs
+                )
+
+                DataStatus.objects.create(
+                    company_id=company.id,
+                    name='Đã xác nhận',
+                    color='#3A08F3',
+                    index=0,
+                    choose_by_default=False
+                )
+                DataStatus.objects.create(
+                    company_id=company.id,
+                    name='Chưa xác nhận',
+                    color='#a3ce71',
+                    index=1,
+                    choose_by_default=True
+                )
+                DataStatus.objects.create(
+                    company_id=company.id,
+                    name='Đã hủy',
+                    color='#EF1A1A',
+                    index=3,
+                    choose_by_default=False
+                )
+                DataSource.objects.create(
+                    company_id=company.id,
+                    name='Facebook',
+                    index=0,
+                    choose_by_default=False
+                )
+                DataStatus.objects.create(
+                    company_id=company.id,
+                    name='Zalo',
+                    index=1,
+                    choose_by_default=False
+                )
+                DataStatus.objects.create(
+                    company_id=company.id,
+                    name='Web',
+                    index=3,
+                    choose_by_default=True
                 )
                 # Create group permission
                 company_group = Group.objects.create(

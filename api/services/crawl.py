@@ -79,6 +79,8 @@ class FBLoginCallBackService(BaseService):
             )
         fb_user.access_token = api.access_token
         fb_user.need_crawl = True
+        if fb_user.deleted_at is not None:
+            fb_user.deleted_at = None
         fb_user.save()
 
         pages = fb.get_pages()
@@ -88,6 +90,8 @@ class FBLoginCallBackService(BaseService):
                     user__uid=fb_user.uid, page_id=page_info['id'])
                 page.access_token = page_info['access_token']
                 page.name = page_info['name']
+                if page.deleted_at is not None:
+                    page.deleted_at = None
                 page.save()
             except FBPage.DoesNotExist:
                 page = FBPage.objects.create(

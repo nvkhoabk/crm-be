@@ -977,7 +977,7 @@ class FilterPaymentService(BaseService):
             if key == 'status' and value is not None:
                 query_set = query_set.filter(status=value)
 
-        return query_set
+        return query_set.order_by('-id')
 
 
 class DeletePaymentService(BaseService):
