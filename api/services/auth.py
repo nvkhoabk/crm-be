@@ -92,7 +92,8 @@ class AuthGetUserInfoService(BaseService):
                                 MODULES.CALL_CENTER_LIST_MANAGEMENT, MODULES.PARAM_CONFIG]
         elif len(response['roles']) == 1 and response['roles'][0]['role'] is None \
                 and response['roles'][0]['department'] is None:
-            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK,
+            response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.DATA_MANAGEMENT, MODULES.ACCOUNTING,
+                                MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK,
                                 MODULES.SYSTEM_CONFIGURATION]
             call_center = CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True).order_by(
                 '-id').first()
