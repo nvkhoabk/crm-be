@@ -433,8 +433,17 @@ class GetPaymentResponseSerializer(BaseResponseSerializer):
 
 
 class UpdatePaymentRequestSerializer(serializers.Serializer):
+    PAYMENT_METHOD_CHOICES = (
+        (PAYMENT_METHOD.CASH, PAYMENT_METHOD.CASH),
+        (PAYMENT_METHOD.CARD, PAYMENT_METHOD.CARD),
+        (PAYMENT_METHOD.TRANSFER, PAYMENT_METHOD.TRANSFER)
+    )
+
     id = serializers.IntegerField(help_text='Payment id', required=True)
-    value = serializers.IntegerField()
+    value = serializers.IntegerField(required=False, allow_null=True)
+    invoice_no = serializers.CharField(max_length=128, allow_null=True, allow_blank=True, required=False)
+    payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=True, required=False)
+    sale_note = serializers.CharField(max_length=512, allow_null=True, allow_blank=True, required=False)
 
 
 class UpdatePaymentResponseSerializer(BaseResponseSerializer):

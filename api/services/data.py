@@ -839,8 +839,17 @@ class UpdatePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            if kwargs.get('name'):
-                payment.name = kwargs['name']
+            if kwargs.get('value'):
+                payment.value = kwargs['value']
+
+            if kwargs.get('invoice_no'):
+                payment.invoice_no = kwargs['invoice_no']
+
+            if kwargs.get('payment_method'):
+                payment.payment_method = kwargs['payment_method']
+
+            if kwargs.get('sale_note'):
+                payment.sale_note = kwargs['sale_note']
 
             payment.save()
 
