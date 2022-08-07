@@ -125,7 +125,7 @@ class UpdateOrderRequestSerializer(serializers.Serializer):
     annual_due_date = serializers.DateField(required=False, allow_null=True)
     pic = serializers.IntegerField(required=False, allow_null=True)
     customer_id = serializers.IntegerField(required=False, allow_null=True)
-    shipping_code = serializers.CharField(max_length=1024, required=False, allow_null=True)
+    shipping_code = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
     shipping_fee = serializers.IntegerField(required=False, allow_null=True)
     data_status_id = serializers.IntegerField(required=False, allow_null=True)
     data_sub_status_id = serializers.IntegerField(required=False, allow_null=True)
@@ -443,7 +443,7 @@ class UpdatePaymentResponseSerializer(BaseResponseSerializer):
 
 class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
-    accountant_note = serializers.CharField(max_length=128, allow_null=True)
+    accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
 
 class DisapprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)

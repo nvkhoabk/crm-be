@@ -33,7 +33,7 @@ def recalculate_order(order):
     annual_order_details = OrderDetail.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                       deleted_at__isnull=True).order_by('-id')
     order_details = OrderDetail.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.NEW_BUY,
-                                                      deleted_at__isnull=True).order_by('-id')
+                                               deleted_at__isnull=True).order_by('-id')
 
     order.annual_amount = 0
     order.annual_debt = 0
@@ -136,7 +136,6 @@ class CreateOrderService(BaseService):
                                         discount_value=order.discount_value, amount=order.amount,
                                         annual_amount=order.annual_amount, care_notes=order.care_notes,
                                         duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date)
-
 
             return order
         except IntegrityError as e:
@@ -274,7 +273,8 @@ class FilterOrderService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['id', 'from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone', 'customer_name']
+        filters = ['id', 'from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone',
+                   'customer_name']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -512,7 +512,6 @@ class UpdateOrderDetailService(BaseService):
 
             if kwargs.get('invoice'):
                 order_detail.invoice = kwargs['invoice']
-
 
             order_detail.save()
             OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
@@ -868,28 +867,40 @@ class ApprovePaymentService(BaseService):
                     pk=kwargs.get('id'),
                     company_id=user_roles.first().company_id
                 )
+
             if payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                orderDetail = OrderDetail.objects.get(
+                order_detail = OrderDetail.objects.get(
                     pk=payment.order_detail.id,
-                    company_id=user_roles.first().company_id
                 )
-                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount + payment.value
-                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
-                orderDetail.debt = orderDetail.annual_price - orderDetail.discount_value - orderDetail.paid_payment_amount
-                orderDetail.save()
+                order_detail.paid_payment_amount = order_detail.paid_payment_amount + payment.value
+                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
+                order_detail.debt = order_detail.annual_price - \
+                                    order_detail.discount_value - order_detail.paid_payment_amount
+                order_detail.save()
 
             if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                orderDetail = OrderDetail.objects.get(
-                    pk=payment.order_detail.id,
-                    company_id=user_roles.first().company_id
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order_id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
                 )
-                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount + payment.value
-                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
-                orderDetail.debt = orderDetail.remaining_payment_amount - orderDetail.discount_value - orderDetail.paid_payment_amount
-                orderDetail.save()
+                payment_value = payment.value
+                for order_detail in order_details:
+                    if payment_value == 0:
+                        break
+                    paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+                    payment_value -= paid_amount
+                    order_detail.paid_payment_amount = order_detail.paid_payment_amount + paid_amount
+                    order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - paid_amount
+                    order_detail.debt = order_detail.total_payment_amount - \
+                                        order_detail.discount_value - order_detail.paid_payment_amount
+                    order_detail.save()
+
             payment.status = ORDER_PAYMENT_STATUS.APPROVED
             payment.accountant_note = kwargs.get('accountant_note')
             payment.save()
+
+            recalculate_order(Order.objects.get(pk=payment.order_id))
 
             return payment
         except Payment.DoesNotExist:
@@ -915,24 +926,24 @@ class DisapprovePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
             if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                orderDetail = OrderDetail.objects.get(
+                order_detail = OrderDetail.objects.get(
                     pk=payment.order_detail.id,
-                    company_id=user_roles.first().company_id
                 )
-                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount - payment.value
-                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
-                orderDetail.debt = orderDetail.annual_price - orderDetail.discount_value - orderDetail.paid_payment_amount
-                orderDetail.save()
+                order_detail.paid_payment_amount = order_detail.paid_payment_amount - payment.value
+                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
+                order_detail.debt = order_detail.annual_price - \
+                                    order_detail.discount_value - order_detail.paid_payment_amount
+                order_detail.save()
 
             if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                orderDetail = OrderDetail.objects.get(
+                order_detail = OrderDetail.objects.get(
                     pk=payment.order_detail.id,
-                    company_id=user_roles.first().company_id
                 )
-                orderDetail.paid_payment_amount = orderDetail.paid_payment_amount - payment.value
-                orderDetail.remaining_payment_amount = orderDetail.remaining_payment_amount - payment.value
-                orderDetail.debt = orderDetail.remaining_payment_amount - orderDetail.discount_value - orderDetail.paid_payment_amount
-                orderDetail.save()
+                order_detail.paid_payment_amount = order_detail.paid_payment_amount - payment.value
+                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
+                order_detail.debt = order_detail.remaining_payment_amount - \
+                                    order_detail.discount_value - order_detail.paid_payment_amount
+                order_detail.save()
 
             payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
             payment.accountant_note = kwargs.get('accountant_note')

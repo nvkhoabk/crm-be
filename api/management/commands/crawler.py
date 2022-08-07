@@ -102,7 +102,7 @@ class FBCrawler(Daemon):
 
                         customer = Customer.objects.filter(phone=phone).first()
                         if not customer:
-                            logger.debug('Creating new customer with phone number: ', phone)
+                            logger.debug('Creating new customer with phone number: ' + phone)
                             customer = Customer.objects.create(
                                 phone=phone
                             )
