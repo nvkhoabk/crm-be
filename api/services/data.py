@@ -197,8 +197,8 @@ class UpdateOrderService(BaseService):
             if kwargs.get('annual_due_date'):
                 order.annual_due_date = kwargs['annual_due_date']
 
-            if kwargs.get('pic'):
-                order.pic = kwargs['pic']
+            if kwargs.get('pic_id'):
+                order.pic_id = kwargs['pic_id']
 
             if kwargs.get('customer_id'):
                 order.customer_id = kwargs['customer_id']
@@ -241,7 +241,8 @@ class UpdateOrderService(BaseService):
             OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
                                         price=order.price, debt=order.debt, due_date=order.due_date,
                                         annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
-                                        pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
+                                        pic_id=order.pic_id, customer_id=order.customer_id,
+                                        shipping_code=order.shipping_code,
                                         shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
                                         data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
                                         data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
@@ -273,10 +274,11 @@ class FilterOrderService(BaseService):
                 deleted_at__isnull=True
             )
 
-        filters = ['id', 'from_date', 'to_date', 'pics', 'data_status' 'debt_status', 'data_source', 'phone',
+        filters = ['id', 'from_date', 'to_date', 'pics', 'data_status', 'debt_status', 'data_source', 'phone',
                    'customer_name']
         params = dict(kwargs.get('filter', []))
-        for key, value in params.items():
+        items = params.items()
+        for key, value in items:
             if key not in filters:
                 continue
 
@@ -323,16 +325,22 @@ class FilterOrderService(BaseService):
             if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
-                    (Q(data_status_id=ds, data_sub_status_id=dss) if dss is not None else Q(data_status_id=ds) for
-                     ds, dss in value)
+                    (Q(data_status_id=data_status['data_status_id'],
+                       data_sub_status_id=data_status['data_sub_status_id']) if 'data_sub_status_id' in data_status and
+                                                                                data_status[
+                                                                                    'data_sub_status_id'] is not None else Q(
+                        data_status_id=data_status['data_status_id']) for data_status in value)
                 )
                 query_set = query_set.filter(query)
 
             if key == 'data_source' and value is not None and value:
                 query = functools.reduce(
                     operator.or_,
-                    (Q(data_source_id=ds, data_channel_id=dc) if dc is not None else Q(data_source_id=ds) for ds, dc in
-                     value)
+                    (Q(data_source_id=data_source['data_source_id'],
+                       data_channel_id=data_source['data_channel_id']) if 'data_channel_id' in data_source and
+                                                                          data_source[
+                                                                              'data_channel_id'] is not None else Q(
+                        data_source_id=data_source['data_source_id']) for data_source in value)
                 )
                 query_set = query_set.filter(query)
 
