@@ -29,10 +29,10 @@ class FilterCrawlDataParamRequestSerializer(BasePagingSerializer):
     STATUS_CHOICES = (
         ('init', 'init'),
     )
-    
+
     source = serializers.ChoiceField(choices=SOURCE_CHOICES, required=False)
     status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False)
-    phone = serializers.CharField(required=False) 
+    phone = serializers.CharField(required=False)
 
 
 class FilterCrawlDataRequestSerializer(BasePagingSerializer):
@@ -189,9 +189,11 @@ class DeleteOrderResponseSerializer(BaseResponseSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
+
     class Meta:
         model = OrderDetail
-        fields = ['id', 'type', 'product', 'quantity', 'price', 'annual_price', 'discount_value', 'remaining_payment_amount',
+        fields = ['id', 'type', 'product', 'quantity', 'price', 'annual_price', 'discount_value',
+                  'remaining_payment_amount',
                   'total_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at']
 
@@ -454,6 +456,7 @@ class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
     accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
 
+
 class DisapprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
     accountant_note = serializers.CharField(max_length=128, allow_null=True)
@@ -461,6 +464,7 @@ class DisapprovePaymentRequestSerializer(serializers.Serializer):
 
 class ApprovePaymentResponseSerializer(BaseResponseSerializer):
     data = PaymentSerializer()
+
 
 class DisapprovePaymentResponseSerializer(BaseResponseSerializer):
     data = PaymentSerializer()
@@ -490,3 +494,24 @@ class DeletePaymentRequestSerializer(serializers.Serializer):
 
 class DeletePaymentResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class ImportOrderRequestSerializer(serializers.Serializer):
+    file = serializers.FileField(max_length=None, allow_empty_file=False)
+
+
+class OrderFileErrorSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    error_type = serializers.CharField(required=False)
+    error_message = serializers.CharField(required=False)
+
+
+class OrderFileSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    phone = serializers.CharField(required=False)
+    full_name = serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
+    data_source = serializers.CharField(required=False)
+
+class ImportOrderResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=OrderFileSerializer())

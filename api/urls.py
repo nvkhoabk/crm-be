@@ -218,6 +218,7 @@ urlpatterns = [
     path('data/filter_crawl_data/', data.FilterCrawlDataView.as_view(), name='data.filter_crawl_data'),
     path('data/get_crawl_data/', data.GetCrawlDataView.as_view(), name='data.get_crawl_data'),
     path('data/create_order/', data.CreateOrderView.as_view(), name='data.create_order'),
+    path('data/import_order/', data.ImportOrder.as_view(), name='data.import_order'),
     path('data/filter_order/', data.FilterOrderView.as_view(), name='data.filter_order'),
     path('data/get_order/', data.GetOrderView.as_view(), name='data.get_order'),
     path('data/update_order/', data.UpdateOrderView.as_view(), name='data.update_order'),

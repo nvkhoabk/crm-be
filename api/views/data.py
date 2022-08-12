@@ -1,14 +1,12 @@
-from api.common.base_view import BaseAPIView
-from api.permissions import SuperAdminPermission, DataReadPermission, DataEditPermission, AccountReadPermission, \
-    AccountEditPermission
-from api.serializers import data_serializer
-from api.services import exceptions
-from api.services import data as data_service
-from django.shortcuts import render
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
+
+from api.common.base_view import BaseAPIView
+from api.permissions import DataReadPermission, DataEditPermission, AccountEditPermission
+from api.serializers import data_serializer
+from api.services import data as data_service
+from api.services import exceptions
 
 
 class FilterCrawlDataView(BaseAPIView):
@@ -677,3 +675,24 @@ class DeletePaymentView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=payment, request=request,
                                  serializer=data_serializer.DeletePaymentResponseSerializer)
+
+
+class ImportOrder(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = data_serializer.ImportOrderRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Manage Call Center Report'],
+        operation_id='Upload extension file',
+        operation_description='Upload extension file',
+        request_body=serializer_class,
+        responses={
+            0: data_serializer.ImportOrderResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.ImportOrderService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=data_serializer.ImportOrderResponseSerializer)

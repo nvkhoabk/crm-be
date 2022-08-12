@@ -3,18 +3,23 @@ import math
 from datetime import datetime
 from pytz import timezone
 
+import pandas as pd
+import xlrd
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.aggregates import Sum
 from django.utils import timezone
 
 from api.common.base_service import BaseService
+from api.common.common import Common
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment, AnnualOrderHistory
 from api.models.organization import UserRole
+from api.serializers.data_serializer import ImportOrderRequestSerializer
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
     FBPageNotFound, FBUserNotExisted, PaymentNotFound
@@ -1051,3 +1056,38 @@ class DeletePaymentService(BaseService):
 
         except Payment.DoesNotExist as e:
             raise PaymentNotFound()
+
+
+class ImportOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        serializer_class = ImportOrderRequestSerializer(data=request.data)
+        if 'file' not in request.FILES or not serializer_class.is_valid():
+            return 'failed'
+        else:
+            common = Common()
+            file = request.FILES['file']
+            file_name = common.upload_ext_file(file, 'files/import_orders/')
+            with default_storage.open('files/import_orders/' + file_name, 'r') as excel_file:
+                workbook = xlrd.open_workbook(excel_file.name, encoding_override='utf-8')
+                worksheet = workbook.sheet_by_index(0)
+                num_rows = worksheet.nrows - 1
+                curr_row = 0
+                rows = []
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    rows.append(self.rowParser(row))
+
+            return rows
+    def rowParser(self, rows):
+        return {
+            'id': rows[0].value,
+            'phone': rows[1].value,
+            'full_name': rows[2].value,
+            'address': rows[3].value,
+            'data_source': rows[4].value,
+            'ship_code': rows[5].value,
+            'ship_fee': rows[6].value,
+            'product_code': rows[7].value,
+            'product_quantity': rows[8].value,
+        }
