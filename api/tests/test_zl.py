@@ -14,7 +14,7 @@ class TestCrawlZalo(SimpleTestCase):
     databases = ['default']
 
     def test_crawl_page(self):
-        code = 'HEVqheLeoXnWsP30e4I8KdFqkTB4MfmiCl3Ac_vov10BmSchorEWTGt5WV7aIx1pKjw7ifzsrdDsmVFuW7dSU5BBdvkbPO09VTEqYjrwad0oqisonMJlDu7Eu9ii9laUjkI9WrXokHB-lSUmMqlNDAA2bQPIEAKdYP_css07mrARn_NNF7-ZQusAeSinR_mGXChNabDZXqY5vTso2a2GJwZuw-e21AnQlk3HXrPAZ5x4eeBN7JsZKUYrZTL6KPCtl_dKamSOerElKelW2h6FhECOhom1au6fk0gsxNcZaSAe5xD8NAoQoemOkJTwWeYGe3gC0ItYbytaM_Sv5EuJwVLY3LWP9QeSxukxhXLY-qYulyZMN7BnUAEWpODAPVfY-wBEhKWeZJh7pjIja9LqHvbkuXm'
+        code = 'Gxq2WDkKinTdWsRk_hZnMNIkJ_oQfkKdDQeyjQ2FdHi0bJZlhBpa5Z2CJxM3eyrXTfPZljwOlrblYnxsmf2lRNgnJOJMj-SXUfXPWuEN-LyrcIMwC9YjCENRHiqmbiihgh1bd03vWsQpg6py2zdG3hh8PwaPnDOjlzCEtp2ZfdoRdMYOFC-L9i6IDfqrd9evcfuucmENdnhuW4p1LhwlFEhb5v8NkPGllhXEq5JxiY72wsxSGzFUVl3yMzW9-l8HmgHyeZ3i9GEgXT3mixix22wAbh6OenW5nvsmh9wgQqecliFgZQ9XFYM3kTUVYYT4FPVetEgXK39nTdKJatVgX0iOnPi9EIbIfX3cXNCjB3NsDk22DozTUlucYyGsMre7h3-Id2PZKb8coJFxOiUIcnS'
         zalo = ZaloPage(code)
 
         oa_info = zalo.get_info()

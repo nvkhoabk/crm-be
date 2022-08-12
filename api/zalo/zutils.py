@@ -1,6 +1,8 @@
 import requests
 from django.conf import settings
 
+from api.services.exceptions import ZaloOAAPIHasNoPermission
+
 
 class ZaloPage:
     def __init__(self, code='', access_token=''):
@@ -20,7 +22,7 @@ class ZaloPage:
         })
         r = r.json()
         if r.get('error', 0) != 0:
-            raise
+            raise Exception(str(r))
 
         return r['access_token']
 
@@ -28,8 +30,11 @@ class ZaloPage:
         url = 'https://openapi.zalo.me/v2.0/oa/getoa'
         r = requests.get(url,  headers={'access_token': self.access_token})
         r = r.json()
+        if r['error'] == -224:
+            raise Exception('The OA needs to upgrade OA Tier Package to use this feature. See more on https://oa.zalo.me/home/pricing')
+
         if r['error'] != 0:
-            raise
+            raise Exception(str(r))
         return r['data']
 
     def get_recent_messages(self):

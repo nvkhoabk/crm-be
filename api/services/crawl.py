@@ -209,7 +209,7 @@ class ZaloLoginCallBackService(BaseService):
         try:
             zalo = ZaloPage(code)
         except Exception as e:
-            raise Exception('code: ' + code)
+            raise Exception('code: ' + str(e))
         
         oa_info = zalo.get_info()
         

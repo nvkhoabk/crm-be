@@ -58,7 +58,7 @@ class FBComment(BaseModel):
     username = models.CharField(max_length=1024)
     user_id = models.CharField(max_length=64)
     message = models.TextField()
-    phone = models.CharField(max_length=64, default='', null=True) 
+    phone = models.CharField(max_length=64, default='', null=True)
     last_check_time = models.IntegerField(default=True)
 
     class Meta:
@@ -71,7 +71,7 @@ class FBMessage(BaseModel):
     username = models.CharField(max_length=1024)
     user_id = models.CharField(max_length=64)
     message = models.TextField()
-    phone = models.CharField(max_length=64, default='', null=True) 
+    phone = models.CharField(max_length=64, default='', null=True)
 
     class Meta:
         db_table = 'fb_messages'
@@ -88,14 +88,14 @@ class ZaloOA(BaseModel):
 
     class Meta:
         db_table = 'zalo_oas'
-     
+
 
 class ZaloMessage(BaseModel):
     oa = models.ForeignKey(ZaloOA, on_delete=models.CASCADE)
     message_id = models.CharField(max_length=64, db_index=True)
     user_id = models.CharField(max_length=64)
     message = models.TextField()
-    phone = models.CharField(max_length=64, default='', null=True) 
+    phone = models.CharField(max_length=64, default='', null=True)
 
     class Meta:
         db_table = 'zalo_messages'
@@ -112,12 +112,12 @@ class CrawlData(BaseModel):
 
     TYPE_POST = 'post'
     TYPE_MSG = 'msg'
-    
+
     TYPE_CHOICES = (
         (TYPE_POST, TYPE_POST),
         (TYPE_MSG, TYPE_MSG),
     )
-    
+
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     source = models.CharField(db_index=True, max_length=64, choices=SOURCE_CHOICES, default='fb')
@@ -164,7 +164,7 @@ class Customer(models.Model):
     name = models.CharField(db_index=True, max_length=255)
     phone = models.CharField(db_index=True, max_length=64)
     address = models.CharField(max_length=2048, null=True)
-   
+
     class Meta:
         db_table = 'customers'
 
@@ -194,7 +194,8 @@ class Order(BaseModel):
     care_notes = models.TextField(default='')
     duplicated_with = models.IntegerField(null=True)
     confirmed_date = models.DateField(null=True)
-
+    waiting_approval_debt = models.BigIntegerField(default=0)
+    waiting_approval_annual_debt = models.BigIntegerField(default=0)
 
     class Meta:
         db_table = 'orders'
@@ -217,7 +218,6 @@ class OrderDetail(BaseModel):
     invoice = models.TextField(null=True)
     discount_value = models.BigIntegerField(default=0)
     discount_type = models.CharField(max_length=64, default='')
-
 
     class Meta:
         db_table = 'order_details'
@@ -280,7 +280,7 @@ class OrderDetailHistory(BaseModel):
 
 class AnnualOrder(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 
@@ -309,3 +309,11 @@ class Payment(BaseModel):
             ['company', 'type', 'deleted_at'],
             ['company', 'status', 'deleted_at'],
         ]
+
+
+class AnnualOrderHistory(BaseModel):
+    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE)
+    annual_order = models.ForeignKey(AnnualOrder, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'annual_order_histories'

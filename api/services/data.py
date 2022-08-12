@@ -1,6 +1,7 @@
 import json
 import math
 from datetime import datetime
+from pytz import timezone
 
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
@@ -12,7 +13,7 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage, FBUser, Payment
+    User, FBPage, FBUser, Payment, AnnualOrderHistory
 from api.models.organization import UserRole
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
@@ -25,8 +26,33 @@ from api.utils.date import get_last_of_month
 from crm.settings import TIME_ZONE
 
 
-def create_annual_order(order_detail):
-    AnnualOrder.objects.create(company_id=order.company_id, order_id=order.id)
+def create_order_detail_history(order_detail):
+    OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+                                      type=order_detail.type, product_id=order_detail.product_id,
+                                      quantity=order_detail.quantity, price=order_detail.price,
+                                      annual_price=order_detail.annual_price,
+                                      discount_type=order_detail.discount_type,
+                                      discount_value=order_detail.discount_value,
+                                      remaining_payment_amount=order_detail.remaining_payment_amount,
+                                      total_payment_amount=order_detail.total_payment_amount,
+                                      paid_payment_amount=order_detail.paid_payment_amount,
+                                      debt=order_detail.debt, due_date=order_detail.due_date,
+                                      file_attach=order_detail.file_attach, invoice=order_detail.invoice,
+                                      company_id=order_detail.company_id)
+
+
+def calculate_debt_status(order, today):
+    if order.debt > 0 or order.annual_debt > 0:
+        return DEBT_STATUS.UNPAID
+
+    if order.waiting_approval_debt > 0 or order.waiting_approval_annual_debt:
+        return DEBT_STATUS.UNAPPROVED
+
+    if OrderDetail.objects.filter(order_id=order.id, due_date__lt=today,
+                                  deleted_at__isnull=True):
+        return DEBT_STATUS.NOTIFIED
+
+    return DEBT_STATUS.APPROVED
 
 
 def recalculate_order(order):
@@ -39,32 +65,67 @@ def recalculate_order(order):
     order.annual_debt = 0
     order.amount = 0
     order.debt = 0
+    today = datetime.now(timezone(TIME_ZONE)).date()
     for order_detail in annual_order_details:
-        order.annual_amount += order_detail.remaining_payment_amount
-        order.annual_debt += order_detail.debt
+        if order_detail.due_date >= today:
+            order.annual_amount += order_detail.total_payment_amount
+            order.annual_debt += order_detail.debt
 
     for order_detail in order_details:
-        order.amount += order_detail.remaining_payment_amount
-        order.debt += order_detail.debt
+        if order_detail.due_date >= today:
+            order.amount += order_detail.total_payment_amount
+            order.debt += order_detail.debt
 
     if annual_order_details:
         order.annual_due_date = annual_order_details.first().due_date
 
     if order_details:
-        order.due_date = order_details[0].due_date
+        order.due_date = order_details.first().due_date
 
-    if order.debt > 0 or order.annual_debt > 0:
-        waiting_approval_payment_value = Payment.objects.filter(order_id=order.id,
+    order.waiting_approval_debt = Payment.objects.filter(order_id=order.id,
+                                                         status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                         type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                                         deleted_at__isnull=True).aggregate(Sum('value'))
+    order.waiting_approval_annual_debt = Payment.objects.filter(order_id=order.id,
                                                                 status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                                 deleted_at__isnull=True).aggregate(Sum('value'))
-        if waiting_approval_payment_value == (order.debt + order.annual_debt):
-            order.debt_status = DEBT_STATUS.UNAPPROVED
-        else:
-            order.debt_status = DEBT_STATUS.UNPAID
-    else:
-        order.debt_status = DEBT_STATUS.APPROVED
 
+    order.debt_status = calculate_debt_status(order, today)
     order.save()
+
+
+def recalculate_order_details_by_payment(payment):
+    if payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+        order_detail = payment.order_detail
+        payment_amount = Payment.objects.filter(order_detail_id=payment.order_detail_id,
+                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                deleted_at__isnull=True).exclude(
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate('value')
+
+        order_detail.paid_payment_amount = payment_amount
+        order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.discount_value - payment_amount
+        order_detail.debt = order_detail.remaining_payment_amount
+        order_detail.save()
+
+    if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+        order_details = OrderDetail.objects.filter(
+            order_id=payment.order_id,
+            type=ORDER_DETAIL_TYPE.NEW_BUY,
+            deleted_at__isnull=True
+        )
+        payment_value = Payment.objects.filter(order_id=payment.order_id, type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                               deleted_at__isnull=True).exclude(
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate('value')
+        for order_detail in order_details:
+            if payment_value == 0:
+                break
+            paid_amount = min(payment_value, order_detail.total_payment_amount)
+            payment_value -= paid_amount
+            order_detail.paid_payment_amount = paid_amount
+            order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.discount_value - paid_amount
+            order_detail.debt = order_detail.remaining_payment_amount
+            order_detail.save()
 
 
 class FilterCrawlDataService(BaseService):
@@ -389,6 +450,8 @@ class CreateOrderDetailService(BaseService):
             )
 
             recalculate_order(order_detail.order)
+            if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
+                self.create_annual_buy(order_detail)
 
             OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
@@ -408,15 +471,10 @@ class CreateOrderDetailService(BaseService):
             raise OrderDetailDuplicated()
 
     def create_annual_buy(self, order_detail):
-        current_date = datetime.now(pytz.timezone(TIME_ZONE)).date()
-        if get_last_of_month(current_date).day < order_detail.product.date_in_month_payment:
-            current_date = get_last_of_month(current_date)
-        else:
-            current_date.replace(day=order_detail.product.date_in_month_payment)
+        annual_order = AnnualOrder.objects.create(company_id=order_detail.company_id, order_detail_id=order_detail.id,
+                                                  product_id=order_detail.product_id)
 
-        order_detail.due_date = current_date
-
-        return order_detail
+        AnnualOrderHistory.objects.create(annual_order_id=annual_order.id, order_detail_id=order_detail.id)
 
 
 class GetOrderDetailService(BaseService):
@@ -803,6 +861,9 @@ class CreatePaymentService(BaseService):
             **kwargs
         )
 
+        recalculate_order_details_by_payment(payment)
+        recalculate_order(payment.order)
+
         payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
         return Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
                                       value=payment.value, status=payment.status, sale_note=payment.sale_note,
@@ -860,6 +921,9 @@ class UpdatePaymentService(BaseService):
                 payment.sale_note = kwargs['sale_note']
 
             payment.save()
+            if 'value' in kwargs:
+                recalculate_order_details_by_payment(payment)
+                recalculate_order(payment.order)
 
             return payment
         except Payment.DoesNotExist:
@@ -885,33 +949,7 @@ class ApprovePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            if payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                order_detail = OrderDetail.objects.get(
-                    pk=payment.order_detail.id,
-                )
-                order_detail.paid_payment_amount = order_detail.paid_payment_amount + payment.value
-                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
-                order_detail.debt = order_detail.annual_price - \
-                                    order_detail.discount_value - order_detail.paid_payment_amount
-                order_detail.save()
-
-            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                order_details = OrderDetail.objects.filter(
-                    order_id=payment.order_id,
-                    type=ORDER_DETAIL_TYPE.NEW_BUY,
-                    deleted_at__isnull=True
-                )
-                payment_value = payment.value
-                for order_detail in order_details:
-                    if payment_value == 0:
-                        break
-                    paid_amount = min(payment_value, order_detail.remaining_payment_amount)
-                    payment_value -= paid_amount
-                    order_detail.paid_payment_amount = order_detail.paid_payment_amount + paid_amount
-                    order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - paid_amount
-                    order_detail.debt = order_detail.total_payment_amount - \
-                                        order_detail.discount_value - order_detail.paid_payment_amount
-                    order_detail.save()
+            recalculate_order(payment.order)
 
             payment.status = ORDER_PAYMENT_STATUS.APPROVED
             payment.accountant_note = kwargs.get('accountant_note')
@@ -942,25 +980,9 @@ class DisapprovePaymentService(BaseService):
                     pk=kwargs.get('id'),
                     company_id=user_roles.first().company_id
                 )
-            if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                order_detail = OrderDetail.objects.get(
-                    pk=payment.order_detail.id,
-                )
-                order_detail.paid_payment_amount = order_detail.paid_payment_amount - payment.value
-                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
-                order_detail.debt = order_detail.annual_price - \
-                                    order_detail.discount_value - order_detail.paid_payment_amount
-                order_detail.save()
 
-            if payment.status == ORDER_PAYMENT_STATUS.APPROVED and payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                order_detail = OrderDetail.objects.get(
-                    pk=payment.order_detail.id,
-                )
-                order_detail.paid_payment_amount = order_detail.paid_payment_amount - payment.value
-                order_detail.remaining_payment_amount = order_detail.remaining_payment_amount - payment.value
-                order_detail.debt = order_detail.remaining_payment_amount - \
-                                    order_detail.discount_value - order_detail.paid_payment_amount
-                order_detail.save()
+            recalculate_order_details_by_payment(payment)
+            recalculate_order(payment.order)
 
             payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
             payment.accountant_note = kwargs.get('accountant_note')
@@ -1017,9 +1039,15 @@ class DeletePaymentService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            return Payment.objects.get(
+            payment = Payment.objects.get(
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
-            ).delete()
+            )
+            payment.delete()
+            recalculate_order_details_by_payment(payment)
+            recalculate_order(payment.order)
+
+            return payment
+
         except Payment.DoesNotExist as e:
             raise PaymentNotFound()
