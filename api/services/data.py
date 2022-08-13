@@ -170,7 +170,10 @@ class GetCrawlDataService(BaseService):
             }
 
             user_roles = UserRole.objects.filter(**filter)
-
+            if 'order_id' in kwargs and kwargs['order_id'] is not None:
+                order = Order.objects.get(pk=kwargs.get('order_id'))
+                if order.crawl_data_id is not None:
+                    return order.crawl_data
             return CrawlData.objects.get(
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id

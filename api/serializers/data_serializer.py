@@ -45,6 +45,7 @@ class FilterCrawlDataResponseSerializer(BaseResponseSerializer):
 
 class GetCrawlDataRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    order_id = serializers.IntegerField(required=False)
 
 
 class GetCrawlDataResponseSerializer(BaseResponseSerializer):
