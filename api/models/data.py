@@ -218,6 +218,8 @@ class OrderDetail(BaseModel):
     invoice = models.TextField(null=True)
     discount_value = models.BigIntegerField(default=0)
     discount_type = models.CharField(max_length=64, default='')
+    annual_paid_payment_amount = models.BigIntegerField(null=True)
+    annual_remaining_payment_amount = models.BigIntegerField(null=True)
 
     class Meta:
         db_table = 'order_details'
@@ -273,6 +275,8 @@ class OrderDetailHistory(BaseModel):
     invoice = models.TextField(null=True)
     discount_value = models.BigIntegerField(default=0)
     discount_type = models.CharField(max_length=64, default='')
+    annual_paid_payment_amount = models.BigIntegerField(null=True)
+    annual_remaining_payment_amount = models.BigIntegerField(null=True)
 
     class Meta:
         db_table = 'order_detail_histories'

@@ -10,7 +10,6 @@ from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.db.models.aggregates import Sum
-from django.utils import timezone
 
 from api.common.base_service import BaseService
 from api.common.common import Common
@@ -87,41 +86,58 @@ def recalculate_order(order):
     if order_details:
         order.due_date = order_details.first().due_date
 
-    order.waiting_approval_debt = Payment.objects.filter(order_id=order.id,
-                                                         status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
-                                                         type=ORDER_DETAIL_TYPE.NEW_BUY,
-                                                         deleted_at__isnull=True).aggregate(Sum('value'))
-    order.waiting_approval_annual_debt = Payment.objects.filter(order_id=order.id,
-                                                                status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
-                                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
-                                                                deleted_at__isnull=True).aggregate(Sum('value'))
+    waiting_approval_debt = Payment.objects.filter(order_id=order.id,
+                                                   status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                   type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                                   deleted_at__isnull=True).aggregate(Sum('value'))['value__sum']
+    order.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
+    waiting_approval_annual_debt = Payment.objects.filter(order_id=order.id,
+                                                          status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                          type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                          deleted_at__isnull=True).aggregate(Sum('value'))['value__sum']
+    order.waiting_approval_annual_debt = 0 if waiting_approval_annual_debt is None else waiting_approval_annual_debt
 
     order.debt_status = calculate_debt_status(order, today)
     order.save()
 
 
-def recalculate_order_details_by_payment(payment):
-    if payment.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-        order_detail = payment.order_detail
-        payment_amount = Payment.objects.filter(order_detail_id=payment.order_detail_id,
+def recalculate_order_details_by_payment(order_detail):
+    if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+        payment_amount = Payment.objects.filter(order_detail_id=order_detail.id,
                                                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                 deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate('value')
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+        payment_amount = 0 if payment_amount is None else payment_amount
+        order_detail.debt = order_detail.total_payment_amount - payment_amount
 
-        order_detail.paid_payment_amount = payment_amount
-        order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.discount_value - payment_amount
-        order_detail.debt = order_detail.remaining_payment_amount
+        annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
+        if annual_order_history:
+            annual_order_history_query = AnnualOrderHistory.objects.filter(
+                annual_order_id=annual_order_history.annual_order_id, deleted_at__isnull=True,
+                id__lte=annual_order_history.id)
+
+            paid_amount = Payment.objects.filter(
+                order_detail_id__in=annual_order_history_query.values_list('order_detail_id', flat=True),
+                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                deleted_at__isnull=True).exclude(
+                status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+            paid_amount = 0 if paid_amount is None else paid_amount
+            order_detail.annual_paid_payment_amount = paid_amount
+            order_detail.annual_remaining_payment_amount = order_detail.price * order_detail.quantity - \
+                                                           order_detail.discount_value - paid_amount
         order_detail.save()
 
-    if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+    if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
         order_details = OrderDetail.objects.filter(
-            order_id=payment.order_id,
+            order_id=order_detail.order_id,
             type=ORDER_DETAIL_TYPE.NEW_BUY,
             deleted_at__isnull=True
         )
-        payment_value = Payment.objects.filter(order_id=payment.order_id, type=ORDER_DETAIL_TYPE.NEW_BUY,
+        payment_value = Payment.objects.filter(order_id=order_detail.order_id, type=ORDER_DETAIL_TYPE.NEW_BUY,
                                                deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate('value')
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+
+        payment_value = 0 if payment_value is None else payment_value
         for order_detail in order_details:
             if payment_value == 0:
                 break
@@ -422,7 +438,7 @@ class FilterOrderService(BaseService):
                 query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
 
             if key == 'debt_status' and value is not None:
-                query_set = query_set.query.filter(debt_status=value)
+                query_set = query_set.filter(debt_status=value)
 
         return query_set.order_by('-created_at')
 
@@ -461,18 +477,19 @@ class CreateOrderDetailService(BaseService):
             if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
                 self.create_annual_buy(order_detail)
 
-            OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+            OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
+                                              order_detail_id=order_detail.id,
                                               type=order_detail.type, product_id=order_detail.product_id,
                                               quantity=order_detail.quantity, price=order_detail.price,
                                               annual_price=order_detail.annual_price,
-                                              discount_type=order_detail.discount_type,
                                               discount_value=order_detail.discount_value,
+                                              discount_type=order_detail.discount_type,
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
-                                              total_payment_amount=order_detail.total_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,
                                               file_attach=order_detail.file_attach, invoice=order_detail.invoice,
-                                              company_id=order_detail.company_id)
+                                              annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
+                                              annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount)
 
             return order_detail
         except IntegrityError as e:
@@ -561,7 +578,7 @@ class UpdateOrderDetailService(BaseService):
                 order_detail.price = kwargs['price']
 
             if kwargs.get('annual_price'):
-                order_detail.price = kwargs['annual_price']
+                order_detail.annual_price = kwargs['annual_price']
 
             if kwargs.get('discount_value'):
                 order_detail.discount_value = kwargs['discount_value']
@@ -587,6 +604,15 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('invoice'):
                 order_detail.invoice = kwargs['invoice']
 
+            if kwargs.get('annual_paid_payment_amount'):
+                order_detail.annual_paid_payment_amount = kwargs['annual_paid_payment_amount']
+
+            if kwargs.get('annual_remaining_payment_amount'):
+                order_detail.annual_remaining_payment_amount = kwargs['annual_remaining_payment_amount']
+
+            if kwargs.get('total_payment_amount'):
+                order_detail.total_payment_amount = kwargs['total_payment_amount']
+
             order_detail.save()
             OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
                                               order_detail_id=order_detail.id,
@@ -598,8 +624,11 @@ class UpdateOrderDetailService(BaseService):
                                               remaining_payment_amount=order_detail.remaining_payment_amount,
                                               paid_payment_amount=order_detail.paid_payment_amount,
                                               debt=order_detail.debt, due_date=order_detail.due_date,
-                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice)
+                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice,
+                                              annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
+                                              annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount)
 
+            recalculate_order_details_by_payment(order_detail)
             recalculate_order(order_detail.order)
 
             return order_detail
@@ -721,10 +750,10 @@ class BulkUpdateOrderPicService(BaseService):
             with transaction.atomic():
                 order_id_list = kwargs.get('order_id_list')
                 pic_list = kwargs.get('pic_list')
-                number_order_per_pic = math.floor(len(order_id_list) / len(pic_list)) + 1
+                number_order_per_pic = len(pic_list)
 
                 for index, order_id in enumerate(order_id_list):
-                    pic_index = math.floor(index / number_order_per_pic)
+                    pic_index = index % number_order_per_pic
                     order = Order.objects.get(pk=order_id)
                     OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
                                                 price=order.price, debt=order.debt, due_date=order.due_date,
@@ -869,14 +898,16 @@ class CreatePaymentService(BaseService):
             **kwargs
         )
 
-        recalculate_order_details_by_payment(payment)
-        recalculate_order(payment.order)
-
         payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
-        return Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
+        payment = Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
                                       value=payment.value, status=payment.status, sale_note=payment.sale_note,
                                       invoice_no=payment.invoice_no, order_detail=payment.order_detail,
                                       payment_method=payment.payment_method)
+
+        recalculate_order_details_by_payment(payment.order_detail)
+        recalculate_order(payment.order)
+
+        return payment
 
 
 class GetPaymentService(BaseService):
@@ -1082,6 +1113,7 @@ class ImportOrderService(BaseService):
                     rows.append(self.rowParser(row))
 
             return rows
+
     def rowParser(self, rows):
         return {
             'id': rows[0].value,

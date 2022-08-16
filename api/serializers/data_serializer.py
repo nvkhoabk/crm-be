@@ -75,6 +75,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CreateOrderRequestSerializer(serializers.Serializer):
     DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.NOTIFIED, DEBT_STATUS.NOTIFIED),
         (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
         (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
         (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
@@ -112,6 +113,7 @@ class GetOrderResponseSerializer(BaseResponseSerializer):
 
 class UpdateOrderRequestSerializer(serializers.Serializer):
     DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.NOTIFIED, DEBT_STATUS.NOTIFIED),
         (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
         (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
         (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
@@ -152,6 +154,7 @@ class DataSourceFilterParamSerializer(serializers.Serializer):
 
 class FilterOrderRequestParamSerializer(serializers.Serializer):
     DEBT_STATUS_CHOICES = (
+        (DEBT_STATUS.NOTIFIED, DEBT_STATUS.NOTIFIED),
         (DEBT_STATUS.UNPAID, DEBT_STATUS.UNPAID),
         (DEBT_STATUS.UNAPPROVED, DEBT_STATUS.UNAPPROVED),
         (DEBT_STATUS.APPROVED, DEBT_STATUS.APPROVED)
@@ -196,7 +199,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'type', 'product', 'quantity', 'price', 'annual_price', 'discount_value',
                   'remaining_payment_amount',
                   'total_payment_amount',
-                  'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at']
+                  'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at',
+                  'annual_paid_payment_amount', 'annual_remaining_payment_amount']
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
@@ -220,6 +224,8 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     due_date = serializers.DateField(required=False, allow_null=True)
     file_attach = serializers.FileField(required=False, allow_null=True)
     invoice = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    annual_paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    annual_remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
 
 
 class CreateOrderDetailResponseSerializer(BaseResponseSerializer):
@@ -249,6 +255,8 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     due_date = serializers.DateField(required=False, allow_null=True)
     file_attach = serializers.FileField(required=False, allow_null=True)
     invoice = serializers.CharField(required=False, allow_null=True)
+    annual_paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    annual_remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
 
 
 class UpdateOrderDetailResponseSerializer(BaseResponseSerializer):

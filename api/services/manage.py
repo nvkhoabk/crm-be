@@ -6,7 +6,7 @@ from api.models.data import Customer
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
-from api.models.system_configuration import DataStatus, DataSource
+from api.models.system_configuration import DataStatus, DataSource, DataSubStatus
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ManageCompanyNotFound,
@@ -169,21 +169,29 @@ class CreateCompanyService(BaseService):
                 DataStatus.objects.create(
                     company_id=company.id,
                     name='Đã xác nhận',
-                    color='#3A08F3',
+                    color='#CC6633',
                     index=0,
                     choose_by_default=False
                 )
-                DataStatus.objects.create(
+                data_status = DataStatus.objects.create(
                     company_id=company.id,
                     name='Chưa xác nhận',
                     color='#a3ce71',
                     index=1,
                     choose_by_default=True
                 )
+                DataSubStatus.objects.create(
+                    company_id=company.id,
+                    data_status_id=data_status.id,
+                    name='Chưa xử lý',
+                    color='#f59da9',
+                    index=0,
+                    choose_by_default=True
+                )
                 DataStatus.objects.create(
                     company_id=company.id,
                     name='Đã hủy',
-                    color='#EF1A1A',
+                    color='#7a7980',
                     index=3,
                     choose_by_default=False
                 )
