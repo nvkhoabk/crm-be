@@ -7,6 +7,7 @@ from api.fb.page import FBPageUtil
 from api.models.article import Article
 from api.models.data import FBComment, FBMessage, FBPage, FBPost, FBUser, ZaloOA
 from api.models.organization import UserRole
+from api.models.system_configuration import DataSource, DataChannel
 from api.services import exceptions
 from api.services.utils import AESCipher
 from api.utils.phone import extract_phone
@@ -102,6 +103,16 @@ class FBLoginCallBackService(BaseService):
                     access_token=page_info['access_token'],
                     expire_time=0,
                 )
+                data_source = DataSource.objects.filter(company_id=user.company_id, name__iexact='Facebook',
+                                                        deleted_at__isnull=True).first()
+                if data_source:
+                    data_channel = DataChannel.objects.filter(company_id=data_source.company_id,
+                                                              data_source_id=data_source.id,
+                                                              name__iexact=page.page_name,
+                                                              deleted_at__isnull=True).first()
+                    if data_channel is None:
+                        DataChannel.objects.create(company_id=data_source.company_id, name=page.page_name,
+                                                   data_source_id=data_source.id)
 
         return redirect(settings.CRAWLER_REDIRECT_URI)
 

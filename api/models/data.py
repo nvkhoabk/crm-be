@@ -32,6 +32,8 @@ class FBPage(BaseModel):
     expire_time = models.IntegerField(default=0)
     last_check_time = models.IntegerField(default=0)
     is_subscribed = models.BooleanField(default=True)
+    last_post_check_time = models.DateTimeField(null=True)
+    last_message_check_time = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'fb_pages'
@@ -164,6 +166,7 @@ class Customer(models.Model):
     name = models.CharField(db_index=True, max_length=255)
     phone = models.CharField(db_index=True, max_length=64)
     address = models.CharField(max_length=2048, null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'customers'

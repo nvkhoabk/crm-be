@@ -168,7 +168,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     data_source = serializers.ListField(child=DataSourceFilterParamSerializer(), required=False, allow_null=True)
     phone = serializers.CharField(required=False, allow_null=True)
     customer_name = serializers.CharField(required=False, allow_null=True)
-    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False)
+    debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
     confirmed_from_date = serializers.DateField(required=False, allow_null=True)
     confirmed_to_date = serializers.DateField(required=False, allow_null=True)
     annual_due_date_from_date = serializers.DateField(required=False, allow_null=True)

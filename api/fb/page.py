@@ -22,8 +22,9 @@ class FBPageUtil:
 
     def get_page_posts(self, page_id, offset, limit):
         posts = self.graph.request(
-            '/{}/posts?offset={}&limit={}&fields=permalink_url,message,full_picture,created_time'.format(page_id,
-                                                                                                         offset, limit))
+            '/{}/posts?offset={}&limit={}&fields=permalink_url,message,full_picture,created_time,updated_time'.format(
+                page_id,
+                offset, limit))
         return posts['data']
 
     def get_page_comments(self, post_id, offset, limit):
@@ -55,7 +56,7 @@ class FBPageUtil:
     def get_page_messages(self, page_id, offset, limit):
         total_messages = []
         
-        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,senders,updated_time,messages{message,from,created_time,attachments}')
+        messages = self.graph.request('{}/conversations/?offset={}&limit={}'.format(page_id, offset, limit) +'&fields=id,senders,created_time,updated_time,messages{message,from,created_time,attachments}')
 
         for message in messages['data']:
             total_messages.append(message)

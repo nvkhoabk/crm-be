@@ -844,7 +844,7 @@ class DeleteFBPageService(BaseService):
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id,
                 deleted_at__isnull=True
-            ).update(deleted_at=timezone.now())
+            ).update(deleted_at=datetime.now())
 
         except FBPage.DoesNotExist as e:
             raise FBPageNotFound()
@@ -881,9 +881,9 @@ class DeleteSynchronizedFBAccountService(BaseService):
         user_roles = UserRole.objects.filter(**filter)
 
         FBPage.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).update(
-            deleted_at=timezone.now())
+            deleted_at=datetime.now())
         FBUser.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True).update(
-            deleted_at=timezone.now())
+            deleted_at=datetime.now())
 
 
 class CreatePaymentService(BaseService):
