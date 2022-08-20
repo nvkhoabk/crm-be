@@ -94,7 +94,7 @@ class AuthGetUserInfoService(BaseService):
                 and response['roles'][0]['department'] is None:
             response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.DATA_MANAGEMENT, MODULES.ACCOUNTING,
                                 MODULES.PRODUCT_AND_WAREHOUSE, MODULES.SYNC_SOCIAL_NETWORK,
-                                MODULES.SYSTEM_CONFIGURATION]
+                                MODULES.SYSTEM_CONFIGURATION, MODULES.REPORT]
             call_center = CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True).order_by(
                 '-id').first()
 

@@ -506,7 +506,8 @@ class DeletePaymentResponseSerializer(BaseResponseSerializer):
 
 
 class ImportOrderRequestSerializer(serializers.Serializer):
-    file = serializers.FileField(max_length=None, allow_empty_file=False)
+    company_id = serializers.IntegerField()
+    file = serializers.FileField(allow_empty_file=False)
 
 
 class OrderFileErrorSerializer(serializers.Serializer):
@@ -516,11 +517,15 @@ class OrderFileErrorSerializer(serializers.Serializer):
 
 
 class OrderFileSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
+    order_id = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
-    full_name = serializers.CharField(required=False)
-    address = serializers.CharField(required=False)
-    data_source = serializers.CharField(required=False)
+    shipping_code = serializers.CharField(required=False)
+    shipping_fee = serializers.CharField(required=False)
+    amount = serializers.CharField(required=False)
+    sale_note = serializers.CharField(required=False)
+
 
 class ImportOrderResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=OrderFileSerializer())
+

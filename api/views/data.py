@@ -677,15 +677,15 @@ class DeletePaymentView(BaseAPIView):
                                  serializer=data_serializer.DeletePaymentResponseSerializer)
 
 
-class ImportOrder(BaseAPIView):
+class ImportOrderView(BaseAPIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
     serializer_class = data_serializer.ImportOrderRequestSerializer
 
     @swagger_auto_schema(
-        tags=['Manage Call Center Report'],
-        operation_id='Upload extension file',
-        operation_description='Upload extension file',
+        tags=['Order'],
+        operation_id='order',
+        operation_description='Import order from csv file',
         request_body=serializer_class,
         responses={
             0: data_serializer.ImportOrderResponseSerializer

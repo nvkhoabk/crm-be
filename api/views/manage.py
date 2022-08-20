@@ -899,6 +899,27 @@ class FilterCustomerView(BaseAPIView):
         return self.get_response(results=Customers, request=serializer.validated_data, serializer=manage_serializer.FilterCustomerResponseSerializer)
 
 
+class ImportCustomerView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = manage_serializer.ImportCustomerRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Customer'],
+        operation_id='customer',
+        operation_description='Import customer from excel file',
+        request_body=serializer_class,
+        responses={
+            0: manage_serializer.ImportCustomerResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = manage_service.ImportCustomerService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=manage_serializer.ImportCustomerResponseSerializer)
+
+
 class CreateOrderView(BaseAPIView):
     authentication_classes = []
     permission_classes = [SuperAdminPermission, ]

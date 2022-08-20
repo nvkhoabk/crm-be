@@ -605,3 +605,21 @@ class FilterCustomerRequestSerializer(BasePagingSerializer):
 
 class FilterCustomerResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=CustomerSerializer())
+
+
+class ImportCustomerRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    file = serializers.FileField(allow_empty_file=False)
+
+
+class CustomerDataSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    full_name = serializers.CharField()
+    phone = serializers.CharField()
+    address = serializers.CharField()
+    email = serializers.CharField()
+
+
+class ImportCustomerResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=CustomerDataSerializer())
+

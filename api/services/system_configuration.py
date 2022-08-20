@@ -651,13 +651,7 @@ class UpdateEmailSyntaxService(BaseService):
 
 class FilterEmailSyntaxService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        filter = {
-            'user': request.user,
-            'deleted_at__isnull': True
-        }
-        user_roles = UserRole.objects.filter(**filter)
-
-        query_set = EmailSyntax.objects.filter(company_id=user_roles.first().company_id)
+        query_set = EmailSyntax.objects.filter()
 
         filters = ['code', 'column_name']
         params = dict(kwargs.get('filter', []))

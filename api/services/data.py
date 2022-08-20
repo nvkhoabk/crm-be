@@ -16,7 +16,7 @@ from api.common.common import Common
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage, FBUser, Payment, AnnualOrderHistory
+    User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords
 from api.models.organization import UserRole
 from api.serializers.data_serializer import ImportOrderRequestSerializer
 from api.services import utils
@@ -306,8 +306,10 @@ class UpdateOrderService(BaseService):
             if kwargs.get('annual_amount'):
                 order.annual_amount = kwargs['annual_amount']
 
-            if kwargs.get('data_status_id'):
+            if kwargs.get('data_status_id') and kwargs.get('data_status_id') != order.data_status_id:
                 order.data_status_id = kwargs['data_status_id']
+                if order.data_status.name.lower() == 'đã xác nhận':
+                    order.confirmed_date = datetime.now(TIME_ZONE).date()
 
             if kwargs.get('data_sub_status_id'):
                 order.data_sub_status_id = kwargs['data_sub_status_id']
@@ -1094,35 +1096,36 @@ class DeletePaymentService(BaseService):
 
 class ImportOrderService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        serializer_class = ImportOrderRequestSerializer(data=request.data)
-        if 'file' not in request.FILES or not serializer_class.is_valid():
-            return 'failed'
-        else:
-            common = Common()
-            file = request.FILES['file']
-            file_name = common.upload_ext_file(file, 'files/import_orders/')
-            with default_storage.open('files/import_orders/' + file_name, 'r') as excel_file:
-                workbook = xlrd.open_workbook(excel_file.name, encoding_override='utf-8')
-                worksheet = workbook.sheet_by_index(0)
-                num_rows = worksheet.nrows - 1
-                curr_row = 0
-                rows = []
-                while curr_row < num_rows:
-                    curr_row += 1
-                    row = worksheet.row(curr_row)
-                    rows.append(self.rowParser(row))
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
 
-            return rows
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        record = ImportOrderRecords.objects.create(
+            **kwargs
+        )
+
+        with record.file.open('r') as excel_file:
+            workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+            worksheet = workbook.sheet_by_index(0)
+            num_rows = worksheet.nrows - 1
+            curr_row = 0
+            rows = []
+            while curr_row < num_rows:
+                curr_row += 1
+                row = worksheet.row(curr_row)
+                rows.append(self.rowParser(row))
+
+        return rows
 
     def rowParser(self, rows):
         return {
             'id': rows[0].value,
-            'phone': rows[1].value,
-            'full_name': rows[2].value,
-            'address': rows[3].value,
-            'data_source': rows[4].value,
-            'ship_code': rows[5].value,
-            'ship_fee': rows[6].value,
-            'product_code': rows[7].value,
-            'product_quantity': rows[8].value,
+            'order_id': rows[1].value,
+            'phone': rows[2].value,
+            'shipping_code': rows[3].value,
+            'shipping_fee': rows[4].value,
+            'amount': rows[5].value,
+            'sale_note': rows[6].value,
         }

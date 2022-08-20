@@ -167,6 +167,7 @@ class Customer(models.Model):
     phone = models.CharField(db_index=True, max_length=64)
     address = models.CharField(max_length=2048, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
+    email = models.CharField(max_length=256, default='')
 
     class Meta:
         db_table = 'customers'
@@ -324,3 +325,11 @@ class AnnualOrderHistory(BaseModel):
 
     class Meta:
         db_table = 'annual_order_histories'
+
+
+class ImportOrderRecords(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='uploads/%Y/%m/%d/')
+
+    class Meta:
+        db_table = 'import_order_records'
