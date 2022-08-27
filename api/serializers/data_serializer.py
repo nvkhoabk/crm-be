@@ -529,8 +529,13 @@ class OrderDataFileSerializer(serializers.Serializer):
     row_number = serializers.IntegerField()
 
 
+class ImportOrderDataRecordSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    rows = serializers.ListField(child=OrderDataFileSerializer())
+
+
 class ImportOrderDataResponseSerializer(BaseResponseSerializer):
-    data = serializers.ListField(child=OrderDataFileSerializer())
+    data = ImportOrderDataRecordSerializer()
 
 
 class ImportOrderRequestSerializer(serializers.Serializer):
@@ -552,8 +557,13 @@ class OrderFileSerializer(serializers.Serializer):
     row_number = serializers.IntegerField()
 
 
+class ImportOrderRecordSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    rows = serializers.ListField(child=OrderFileSerializer())
+
+
 class ImportOrderResponseSerializer(BaseResponseSerializer):
-    data = serializers.ListField(child=OrderFileSerializer())
+    data = ImportOrderRecordSerializer()
 
 
 class ConfirmImportOrderRequestSerializer(serializers.Serializer):

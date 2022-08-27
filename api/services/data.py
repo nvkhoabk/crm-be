@@ -1108,7 +1108,10 @@ class ImportOrderDataService(BaseService):
                     data_record['row_number'] = curr_row
                     rows.append(data_record)
 
-        return rows
+        return {
+            'id': record.id,
+            'rows': rows
+        }
 
     def rowParser(self, rows):
         return {
@@ -1210,7 +1213,10 @@ class ImportOrderService(BaseService):
                     data_record['row_number'] = curr_row
                     rows.append(data_record)
 
-        return rows
+        return {
+            'id': record.id,
+            'rows': rows
+        }
 
     def rowParser(self, rows):
         return {
