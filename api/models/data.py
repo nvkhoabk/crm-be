@@ -200,6 +200,9 @@ class Order(BaseModel):
     confirmed_date = models.DateField(null=True)
     waiting_approval_debt = models.BigIntegerField(default=0)
     waiting_approval_annual_debt = models.BigIntegerField(default=0)
+    customer_name = models.CharField(max_length=512, default='')
+    customer_address = models.CharField(max_length=2048, null=True)
+    customer_email = models.CharField(max_length=256, default='')
 
     class Meta:
         db_table = 'orders'
@@ -256,6 +259,9 @@ class OrderHistory(BaseModel):
     care_notes = models.TextField(default='')
     duplicated_with = models.IntegerField(null=True)
     confirmed_date = models.DateField(null=True)
+    customer_name = models.CharField(max_length=512, default='')
+    customer_address = models.CharField(max_length=2048, null=True)
+    customer_email = models.CharField(max_length=256, default='')
 
     class Meta:
         db_table = 'order_histories'

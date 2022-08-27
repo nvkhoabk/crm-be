@@ -4,6 +4,7 @@ import xlrd
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.const import MODULES
 from api.models.data import Customer, ImportOrderRecords
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
@@ -733,8 +734,13 @@ class FilterSaleUserService(BaseService):
             'user': request.user,
             'deleted_at__isnull': True
         }
+        permissions = Permission.objects.filter(
+            edit_permissions__icontains=MODULES.DATA_MANAGEMENT_FOR_SALE) | Permission.objects.filter(
+            read_permissions__icontains=MODULES.DATA_MANAGEMENT_FOR_SALE)
+        roles = Role.objects.filter(id__in=permissions.values_list('role__id', flat=True))
         user_roles = UserRole.objects.filter(**filter)
-        user_roles = UserRole.objects.filter(company_id=user_roles.first().company_id, role__role_name__iexact='sale')
+        user_roles = UserRole.objects.filter(company_id=user_roles.first().company_id,
+                                             role_id__in=roles.values_list('id', flat=True))
 
         users = User.objects.filter(id__in=user_roles.values_list('user__id', flat=True))
         return users
@@ -863,38 +869,3 @@ class FilterCustomerService(BaseService):
                 )
         return query_set
 
-
-class ImportCustomerService(BaseService):
-    def serve(self, request, cookies: Cookies, *args, **kwargs):
-        if not request.user.is_superuser:
-            user_roles = UserRole.objects.filter(user_id=request.user)
-
-            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
-                raise PermissionDenied()
-
-        record = ImportOrderRecords.objects.create(
-            **kwargs
-        )
-
-        with record.file.open('r') as excel_file:
-            workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
-            worksheet = workbook.sheet_by_index(0)
-            num_rows = worksheet.nrows - 1
-            curr_row = 0
-            rows = []
-            while curr_row < num_rows:
-                curr_row += 1
-                row = worksheet.row(curr_row)
-                rows.append(self.rowParser(row))
-
-        return rows
-
-    def rowParser(self, rows):
-        return {
-            'id': rows[0].value,
-            'phone': rows[1].value,
-            'name': rows[2].value,
-            'full_name': rows[3].value,
-            'address': rows[4].value,
-            'email': rows[5].value
-        }

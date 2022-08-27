@@ -27,7 +27,6 @@ urlpatterns = [
     path('manage/get_customer/', manage.GetCustomerView.as_view(), name='manage.get_customer'),
     path('manage/update_customer/', manage.UpdateCustomerView.as_view(), name='manage.update_customer'),
     path('manage/filter_customer/', manage.FilterCustomerView.as_view(), name='manage.filter_customer'),
-    path('manage/import_customer/', manage.ImportCustomerView.as_view(), name='manage.import_customer'),
 
     path('manage/create_package/', manage.CreatePackageView.as_view(), name='manage.create_package'),
     path('manage/get_package/', manage.GetPackageView.as_view(), name='manage.get_package'),
@@ -220,6 +219,9 @@ urlpatterns = [
     path('data/get_crawl_data/', data.GetCrawlDataView.as_view(), name='data.get_crawl_data'),
     path('data/create_order/', data.CreateOrderView.as_view(), name='data.create_order'),
     path('data/import_order/', data.ImportOrderView.as_view(), name='data.import_order'),
+    path('data/import_order_data/', data.ImportOrderDataView.as_view(), name='data.import_order_data'),
+    path('data/confirm_import_order/', data.ConfirmImportOrderView.as_view(), name='data.confirm_import_order'),
+    path('data/confirm_import_order_data/', data.ConfirmImportOrderDataView.as_view(), name='data.confirm_import_order_data'),
     path('data/filter_order/', data.FilterOrderView.as_view(), name='data.filter_order'),
     path('data/get_order/', data.GetOrderView.as_view(), name='data.get_order'),
     path('data/update_order/', data.UpdateOrderView.as_view(), name='data.update_order'),

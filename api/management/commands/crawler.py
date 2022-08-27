@@ -182,7 +182,7 @@ class FBCrawler(Daemon):
                 if updated_timestamp <= conversation_in_db.last_check_time_int:
                     continue
 
-                phone = self._extract_phone_number(message['messages'], conversation_in_db.last_check_time_int)
+                phone = self._extract_phone_number(message['messages'], last_message_check_time)
                 conversation_in_db.last_check_time_int = updated_timestamp
                 conversation_in_db.save()
 
@@ -206,7 +206,7 @@ class FBCrawler(Daemon):
                     duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id,
                                                            deleted_at__isnull=True).order_by('-id').first()
 
-                    Order.objects.create(
+                    new_order = Order.objects.create(
                         crawl_data=crawl_data,
                         customer=customer,
                         company=page.company,
@@ -217,6 +217,7 @@ class FBCrawler(Daemon):
                         data_source=data_source,
                         data_channel=data_channel
                     )
+                    logger.debug('Create new order, id = ' + str(new_order.id))
                 else:
                     logger.debug('Create new CrawlData for mess with phone: ' + phone)
                     crawl_data = CrawlData.objects.create(
@@ -238,7 +239,7 @@ class FBCrawler(Daemon):
                             company=page.company
                         )
 
-                    Order.objects.create(
+                    new_order = Order.objects.create(
                         crawl_data=crawl_data,
                         customer=customer,
                         company=page.company,
@@ -248,6 +249,8 @@ class FBCrawler(Daemon):
                         data_source=data_source,
                         data_channel=data_channel
                     )
+                    logger.debug('Create new order, id = ' + str(new_order.id))
+
         page.last_message_check_time = lastest_updated_time
         page.save()
 
@@ -261,7 +264,8 @@ class FBCrawler(Daemon):
         for user in users:
             logger.debug('Crawling user: ' + user.name)
             fbpages = FBPage.objects.filter(
-                user=user
+                user=user,
+                deleted_at__isnull=True
             )
             data_status = DataStatus.objects.filter(company_id=user.company_id, name__iexact='Chưa xác nhận',
                                                     deleted_at__isnull=True).first()
@@ -289,7 +293,8 @@ class FBCrawler(Daemon):
 
     def _extract_phone_number(self, messages, last_check_time):
         for message in messages['data']:
-            if extract_phone(message['message']) is not None:
+            if datetime.strptime(message['created_time'], Const.FB_TIME_FORMAT) > last_check_time and extract_phone(
+                    message['message']) is not None:
                 return extract_phone(message['message'])
 
         return None

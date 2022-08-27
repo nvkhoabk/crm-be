@@ -159,6 +159,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://115.146.123.8:8000',
     'http://crm.ity.vn',
     'https://crm.ity.vn',
+    'https://115.146.123.8',
 ]
 
 SESSION_COOKIE_SAMESITE = None
@@ -273,17 +274,24 @@ ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'timestamp': {
+            'format': '{asctime} {levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR + '/warning.log',
+            'filename': BASE_DIR + '/crm.log',
+            'formatter': 'timestamp'
         },
     },
     'loggers': {
         '': {
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
     },

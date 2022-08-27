@@ -48,13 +48,17 @@ class FilterReportService(BaseService):
                     'top': 0
                 }
 
-        report = list(report.values())
+        reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
-            report.sort(key=lambda r: r['actual_amount'], reverse=True)
+            reports.sort(key=lambda r: r['actual_amount'], reverse=True)
+            for index, report in enumerate(reports):
+                report['top'] = index + 1
         else:
-            report.sort(key=lambda r: r['actual_amount'], reverse=False)
+            reports.sort(key=lambda r: r['actual_amount'], reverse=False)
+            for index, report in enumerate(reports[::-1]):
+                report['top'] = index + 1
 
-        return report
+        return reports
 
     def initializer_report(self, sales, report):
         for sale in sales:
@@ -124,13 +128,17 @@ class FilterAnnualOrderReportService(BaseService):
                     'top': 0
                 }
 
-        report = list(report.values())
+        reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
-            report.sort(key=lambda r: r['paid_amount'], reverse=True)
+            reports.sort(key=lambda r: r['paid_amount'], reverse=True)
+            for index, report in enumerate(reports):
+                report['top'] = index + 1
         else:
-            report.sort(key=lambda r: r['paid_amount'], reverse=False)
+            reports.sort(key=lambda r: r['paid_amount'], reverse=False)
+            for index, report in enumerate(reports.reverse()):
+                report['top'] = index + 1
 
-        return report
+        return reports
 
     def initializer_report(self, sales, report):
         for sale in sales:
@@ -179,13 +187,17 @@ class FilterBadDebtReportService(BaseService):
                     'top': 0
                 }
 
-        report = list(report.values())
+        reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
-            report.sort(key=lambda r: r['remaining_debt'], reverse=True)
+            reports.sort(key=lambda r: r['remaining_debt'], reverse=True)
+            for index, report in enumerate(reports):
+                report['top'] = index + 1
         else:
-            report.sort(key=lambda r: r['remaining_debt'], reverse=False)
+            reports.sort(key=lambda r: r['remaining_debt'], reverse=False)
+            for index, report in enumerate(reports.reverse()):
+                report['top'] = index + 1
 
-        return report
+        return reports
 
     def initializer_report(self, sales, report):
         for sale in sales:

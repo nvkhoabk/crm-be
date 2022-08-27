@@ -677,15 +677,36 @@ class DeletePaymentView(BaseAPIView):
                                  serializer=data_serializer.DeletePaymentResponseSerializer)
 
 
+class ImportOrderDataView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = data_serializer.ImportOrderDataRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='import order data',
+        operation_description='Import order data from excel file',
+        request_body=serializer_class,
+        responses={
+            0: data_serializer.ImportOrderDataResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.ImportOrderDataService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=data_serializer.ImportOrderDataResponseSerializer)
+
+
 class ImportOrderView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = data_serializer.ImportOrderRequestSerializer
 
     @swagger_auto_schema(
         tags=['Order'],
-        operation_id='order',
-        operation_description='Import order from csv file',
+        operation_id='import order',
+        operation_description='Import order from excel file',
         request_body=serializer_class,
         responses={
             0: data_serializer.ImportOrderResponseSerializer
@@ -693,6 +714,48 @@ class ImportOrderView(BaseAPIView):
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
         service = data_service.ImportOrderService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=data_serializer.ImportOrderResponseSerializer)
+
+
+class ConfirmImportOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.ConfirmImportOrderRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='confirm import order',
+        operation_description='confirm import order from excel file',
+        request_body=serializer_class,
+        responses={
+            0: data_serializer.ConfirmImportOrderRequestSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.ConfirmImportOrderService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=data_serializer.ImportOrderResponseSerializer)
+
+
+class ConfirmImportOrderDataView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.ConfirmImportOrderRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='confirm import order data',
+        operation_description='confirm import order dataa from excel file',
+        request_body=serializer_class,
+        responses={
+            0: data_serializer.ConfirmImportOrderRequestSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.ConfirmImportOrderDataService()
         results = service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=data_serializer.ImportOrderResponseSerializer)

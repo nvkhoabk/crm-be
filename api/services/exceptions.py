@@ -276,6 +276,11 @@ class CrawlDataNotFound(APIException):
     msg = 'CrawlData is not found'
 
 
+class ImportRecordNotFound(APIException):
+    code = 5009
+    msg = 'ImportRecord not found'
+
+
 class ZaloOAAPIHasNoPermission(APIException):
     code = 6001
     msg = 'Zalo OA need buy another package, see details: https://developers.zalo.me/docs/api/official-account-api/phu-luc/official-account-access-token-post-4307'

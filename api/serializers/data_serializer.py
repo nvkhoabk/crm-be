@@ -70,7 +70,8 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_date', 'price', 'debt', 'due_date', 'annual_debt', 'annual_due_date', 'pic',
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
-                  'annual_amount', 'care_notes', 'duplicated_with', 'crawl_data']
+                  'annual_amount', 'care_notes', 'duplicated_with', 'crawl_data', 'customer_name', 'customer_address',
+                  'customer_email']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
@@ -97,6 +98,9 @@ class CreateOrderRequestSerializer(serializers.Serializer):
     data_source_id = serializers.IntegerField(required=False, allow_null=True)
     data_channel_id = serializers.IntegerField(required=False, allow_null=True)
     debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
+    customer_name = serializers.CharField(max_length=512, allow_null=True, allow_blank=True)
+    customer_address = serializers.CharField(max_length=2048, allow_null=True, allow_blank=True)
+    customer_email = serializers.CharField(max_length=256, allow_null=True, allow_blank=True)
 
 
 class CreateOrderResponseSerializer(BaseResponseSerializer):
@@ -136,6 +140,9 @@ class UpdateOrderRequestSerializer(serializers.Serializer):
     data_channel_id = serializers.IntegerField(required=False, allow_null=True)
     debt_status = serializers.ChoiceField(choices=DEBT_STATUS_CHOICES, required=False, allow_null=True)
     care_notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    customer_name = serializers.CharField(max_length=512, allow_null=True, allow_blank=True)
+    customer_address = serializers.CharField(max_length=2048, allow_null=True, allow_blank=True)
+    customer_email = serializers.CharField(max_length=256, allow_null=True, allow_blank=True)
 
 
 class UpdateOrderResponseSerializer(BaseResponseSerializer):
@@ -505,18 +512,12 @@ class DeletePaymentResponseSerializer(BaseResponseSerializer):
     pass
 
 
-class ImportOrderRequestSerializer(serializers.Serializer):
+class ImportOrderDataRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     file = serializers.FileField(allow_empty_file=False)
 
 
-class OrderFileErrorSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
-    error_type = serializers.CharField(required=False)
-    error_message = serializers.CharField(required=False)
-
-
-class OrderFileSerializer(serializers.Serializer):
+class OrderDataFileSerializer(serializers.Serializer):
     id = serializers.CharField(required=False)
     order_id = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
@@ -524,8 +525,41 @@ class OrderFileSerializer(serializers.Serializer):
     shipping_fee = serializers.CharField(required=False)
     amount = serializers.CharField(required=False)
     sale_note = serializers.CharField(required=False)
+    error_codes = serializers.ListField(child=serializers.IntegerField())
+    row_number = serializers.IntegerField()
+
+
+class ImportOrderDataResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=OrderDataFileSerializer())
+
+
+class ImportOrderRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    file = serializers.FileField(allow_empty_file=False)
+
+
+class OrderFileSerializer(serializers.Serializer):
+    id = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
+    name = serializers.CharField(required=False)
+    data_source = serializers.CharField(required=False)
+    data_channel = serializers.CharField(required=False)
+    care_note = serializers.CharField(required=False)
+    data_status = serializers.CharField(required=False)
+    data_sub_status = serializers.CharField(required=False)
+    email = serializers.CharField(required=False)
+    error_codes = serializers.ListField(child=serializers.IntegerField())
+    row_number = serializers.IntegerField()
 
 
 class ImportOrderResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=OrderFileSerializer())
 
+
+class ConfirmImportOrderRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    id = serializers.IntegerField()
+
+
+class ConfirmImportOrderResponseSerializer(BaseResponseSerializer):
+    pass

@@ -25,7 +25,7 @@ class ReportSerializer(serializers.Serializer):
     debt = serializers.FloatField()
     waiting_approved_debt = serializers.FloatField()
     average_confirmed_time = serializers.IntegerField()
-    top = serializers.IntegerField
+    top = serializers.IntegerField()
 
 
 class FilterReportParamRequestSerializer(serializers.Serializer):
@@ -52,7 +52,7 @@ class AnnualOrderReportSerializer(serializers.Serializer):
     paid_amount = serializers.FloatField()
     remaining_debt = serializers.FloatField()
     waiting_approved_remaining_debt = serializers.FloatField()
-    top = serializers.IntegerField
+    top = serializers.IntegerField()
 
 
 class FilterAnnualOrderReportParamRequestSerializer(serializers.Serializer):
@@ -79,7 +79,7 @@ class BadDebtReportSerializer(serializers.Serializer):
     paid_amount = serializers.FloatField()
     remaining_debt = serializers.FloatField()
     waiting_approved_remaining_debt = serializers.FloatField()
-    top = serializers.IntegerField
+    top = serializers.IntegerField()
 
 
 class FilterBadDebtReportParamRequestSerializer(serializers.Serializer):

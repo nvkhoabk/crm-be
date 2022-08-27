@@ -1,5 +1,6 @@
 import json
 import math
+import re
 from datetime import datetime
 from pytz import timezone
 
@@ -14,35 +15,56 @@ from django.db.models.aggregates import Sum
 from api.common.base_service import BaseService
 from api.common.common import Common
 from api.common.cookies import Cookies
-from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS
+from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords
 from api.models.organization import UserRole
-from api.serializers.data_serializer import ImportOrderRequestSerializer
+from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
+from api.serializers.data_serializer import ImportOrderDataRequestSerializer
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound, FBUserNotExisted, PaymentNotFound
+    FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound
+import api.services.validate_error_code as vec
 import operator
 import functools
 import pytz
 
 from api.utils.date import get_last_of_month
+from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE
 
 
 def create_order_detail_history(order_detail):
-    OrderDetailHistory.objects.create(order_id=order_detail.order_id, order_detail_id=order_detail.id,
+    OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
+                                      order_detail_id=order_detail.id,
                                       type=order_detail.type, product_id=order_detail.product_id,
                                       quantity=order_detail.quantity, price=order_detail.price,
                                       annual_price=order_detail.annual_price,
-                                      discount_type=order_detail.discount_type,
                                       discount_value=order_detail.discount_value,
+                                      discount_type=order_detail.discount_type,
                                       remaining_payment_amount=order_detail.remaining_payment_amount,
-                                      total_payment_amount=order_detail.total_payment_amount,
                                       paid_payment_amount=order_detail.paid_payment_amount,
                                       debt=order_detail.debt, due_date=order_detail.due_date,
                                       file_attach=order_detail.file_attach, invoice=order_detail.invoice,
-                                      company_id=order_detail.company_id)
+                                      annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
+                                      annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount,
+                                      total_payment_amount=order_detail.total_payment_amount)
+
+
+def create_order_history(order):
+    OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
+                                price=order.price, debt=order.debt, due_date=order.due_date,
+                                annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
+                                pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
+                                shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
+                                data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
+                                data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
+                                company_id=order.company_id, discount_type=order.discount_type,
+                                discount_value=order.discount_value, amount=order.amount,
+                                annual_amount=order.annual_amount, care_notes=order.care_notes,
+                                duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date,
+                                customer_name=order.customer_name, customer_address=order.customer_address,
+                                customer_email=order.customer_email)
 
 
 def calculate_debt_status(order, today):
@@ -210,17 +232,7 @@ class CreateOrderService(BaseService):
                 **kwargs
             )
 
-            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
-                                        price=order.price, debt=order.debt, due_date=order.due_date,
-                                        annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
-                                        pic=order.pic, customer_id=order.customer_id, shipping_code=order.shipping_code,
-                                        shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
-                                        data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
-                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
-                                        company_id=order.company_id, discount_type=order.discount_type,
-                                        discount_value=order.discount_value, amount=order.amount,
-                                        annual_amount=order.annual_amount, care_notes=order.care_notes,
-                                        duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date)
+            create_order_history(order)
 
             return order
         except IntegrityError as e:
@@ -323,20 +335,18 @@ class UpdateOrderService(BaseService):
             if kwargs.get('care_notes'):
                 order.care_notes = kwargs['care_notes']
 
+            if kwargs.get('customer_name'):
+                order.customer_name = kwargs['customer_name']
+
+            if kwargs.get('customer_address'):
+                order.customer_address = kwargs['customer_address']
+
+            if kwargs.get('customer_email'):
+                order.customer_email = kwargs['customer_email']
+
             order.save()
 
-            OrderHistory.objects.create(order_id=order.id, created_date=order.created_date,
-                                        price=order.price, debt=order.debt, due_date=order.due_date,
-                                        annual_debt=order.annual_debt, annual_due_date=order.annual_due_date,
-                                        pic_id=order.pic_id, customer_id=order.customer_id,
-                                        shipping_code=order.shipping_code,
-                                        shipping_fee=order.shipping_fee, data_status_id=order.data_status_id,
-                                        data_sub_status_id=order.data_sub_status_id, debt_status=order.debt_status,
-                                        data_source_id=order.data_source_id, data_channel_id=order.data_channel_id,
-                                        company_id=order.company_id, discount_type=order.discount_type,
-                                        discount_value=order.discount_value, amount=order.amount,
-                                        annual_amount=order.annual_amount, care_notes=order.care_notes,
-                                        duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date)
+            create_order_history(order)
 
             return order
         except Order.DoesNotExist:
@@ -479,19 +489,7 @@ class CreateOrderDetailService(BaseService):
             if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
                 self.create_annual_buy(order_detail)
 
-            OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
-                                              order_detail_id=order_detail.id,
-                                              type=order_detail.type, product_id=order_detail.product_id,
-                                              quantity=order_detail.quantity, price=order_detail.price,
-                                              annual_price=order_detail.annual_price,
-                                              discount_value=order_detail.discount_value,
-                                              discount_type=order_detail.discount_type,
-                                              remaining_payment_amount=order_detail.remaining_payment_amount,
-                                              paid_payment_amount=order_detail.paid_payment_amount,
-                                              debt=order_detail.debt, due_date=order_detail.due_date,
-                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice,
-                                              annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
-                                              annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount)
+            create_order_detail_history(order_detail)
 
             return order_detail
         except IntegrityError as e:
@@ -616,20 +614,8 @@ class UpdateOrderDetailService(BaseService):
                 order_detail.total_payment_amount = kwargs['total_payment_amount']
 
             order_detail.save()
-            OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
-                                              order_detail_id=order_detail.id,
-                                              type=order_detail.type, product_id=order_detail.product_id,
-                                              quantity=order_detail.quantity, price=order_detail.price,
-                                              annual_price=order_detail.annual_price,
-                                              discount_value=order_detail.discount_value,
-                                              discount_type=order_detail.discount_type,
-                                              remaining_payment_amount=order_detail.remaining_payment_amount,
-                                              paid_payment_amount=order_detail.paid_payment_amount,
-                                              debt=order_detail.debt, due_date=order_detail.due_date,
-                                              file_attach=order_detail.file_attach, invoice=order_detail.invoice,
-                                              annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
-                                              annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount)
 
+            create_order_detail_history(order_detail)
             recalculate_order_details_by_payment(order_detail)
             recalculate_order(order_detail.order)
 
@@ -1094,6 +1080,108 @@ class DeletePaymentService(BaseService):
             raise PaymentNotFound()
 
 
+class ImportOrderDataService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
+
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        record = ImportOrderRecords.objects.create(
+            **kwargs
+        )
+
+        with record.file.open('r') as excel_file:
+            workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+            worksheet = workbook.sheet_by_index(0)
+            num_rows = worksheet.nrows - 1
+            curr_row = 0
+            rows = []
+            while curr_row < num_rows:
+                curr_row += 1
+                row = worksheet.row(curr_row)
+                data_record = self.rowParser(row)
+                error_codes = self.validate_data(data_record, kwargs['company_id'])
+                if error_codes:
+                    data_record['error_codes'] = error_codes
+                    data_record['row_number'] = curr_row
+                    rows.append(data_record)
+
+        return rows
+
+    def rowParser(self, rows):
+        return {
+            'id': str(int(rows[0].value)),
+            'order_id': str(rows[1].value).strip(),
+            'phone': str(rows[2].value).strip(),
+            'shipping_code': str(rows[3].value).strip(),
+            'shipping_fee': str(rows[4].value).strip(),
+            'amount': str(int(rows[5].value)).strip(),
+            'sale_note': str(rows[6].value).strip(),
+        }
+
+    def validate_data(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_id(data))
+        error_codes.extend(self.validate_phone(data))
+        error_codes.extend(self.validate_order_id(data, company_id))
+        error_codes.extend(self.validate_payment_amount(data))
+        return error_codes
+
+    def validate_id(self, row):
+        error_codes = []
+        id_str = str(row['id']).strip()
+        if id_str == '':
+            error_codes.append(vec.IdIsEmpty.code)
+
+        if not id_str.isnumeric():
+            error_codes.append(vec.IdIsNotNumeric.code)
+
+        return error_codes
+
+    def validate_order_id(self, row, company_id):
+        error_codes = []
+        order_id = str(row['order_id']).strip()
+
+        if order_id == '':
+            error_codes.append(vec.OrderIdEmpty.code)
+        else:
+            if not order_id.isnumeric():
+                error_codes.append(vec.OrderIdIsNotNumeric.code)
+            else:
+                if Order.objects.filter(pk=int(order_id), company_id=company_id).first() is None:
+                    error_codes.append(vec.OrderNotFound.code)
+
+        return error_codes
+
+    def validate_phone(self, row):
+        phone = str(row['phone']).strip()
+        if phone == '':
+            return []
+
+        phone.replace(' ', '')
+        phone.replace('.', '')
+        phone.replace('+', '')
+        path = r'([\+84|84|0]+(3|5|7|8|9|1[2|6|8|9]))+([0-9]{8})\b'
+
+        if re.match(path, phone):
+            return []
+
+        return [vec.InvalidPhoneFormat.code]
+
+    def validate_payment_amount(self, row):
+        amount = str(row['amount']).strip()
+
+        if amount == '':
+            return []
+
+        if not amount.isnumeric():
+            return [vec.AmountIsNotNumeric.code]
+
+        return []
+
+
 class ImportOrderService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         if not request.user.is_superuser:
@@ -1115,17 +1203,232 @@ class ImportOrderService(BaseService):
             while curr_row < num_rows:
                 curr_row += 1
                 row = worksheet.row(curr_row)
-                rows.append(self.rowParser(row))
+                data_record = self.rowParser(row)
+                error_codes = self.validate_data(data_record, kwargs['company_id'])
+                if error_codes:
+                    data_record['error_codes'] = error_codes
+                    data_record['row_number'] = curr_row
+                    rows.append(data_record)
 
         return rows
 
     def rowParser(self, rows):
         return {
-            'id': rows[0].value,
-            'order_id': rows[1].value,
-            'phone': rows[2].value,
-            'shipping_code': rows[3].value,
-            'shipping_fee': rows[4].value,
-            'amount': rows[5].value,
-            'sale_note': rows[6].value,
+            'id': str(int(rows[0].value)),
+            'phone': str(rows[1].value).strip(),
+            'name': str(rows[2].value).strip(),
+            'data_source': str(rows[3].value).strip(),
+            'data_channel': str(rows[4].value).strip(),
+            'care_note': str(rows[5].value).strip(),
+            'data_status': str(rows[6].value).strip(),
+            'data_sub_status': str(rows[7].value).strip(),
+            'email': str(rows[8].value).strip()
         }
+
+    def validate_data(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_id(data))
+        error_codes.extend(self.validate_phone(data))
+        error_codes.extend(self.validate_data_status(data, company_id))
+        error_codes.extend(self.validate_data_source(data, company_id))
+        error_codes.extend(self.validate_email(data))
+        return error_codes
+
+    def validate_id(self, row):
+        error_codes = []
+        id_str = str(row['id']).strip()
+        if id_str == '':
+            error_codes.append(vec.IdIsEmpty.code)
+
+        if not id_str.isnumeric():
+            error_codes.append(vec.IdIsNotNumeric.code)
+
+        return error_codes
+
+    def validate_phone(self, row):
+        phone = str(row['phone']).strip()
+        if phone == '':
+            return []
+
+        phone.replace(' ', '')
+        phone.replace('.', '')
+        phone.replace('+', '')
+        path = r'([\+84|84|0]+(3|5|7|8|9|1[2|6|8|9]))+([0-9]{8})\b'
+
+        if re.match(path, phone):
+            return []
+
+        return [vec.InvalidPhoneFormat.code]
+
+    def validate_data_status(self, row, company_id):
+        error_codes = []
+        data_status = str(row['data_status']).strip()
+        data_sub_status = str(row['data_sub_status']).strip()
+        if data_status == '':
+            if data_sub_status != '':
+                error_codes.append(vec.DataStatusEmptyDataSubStatusNotEmpty.code)
+        else:
+            data_status = DataStatus.objects.filter(name__iexact=data_status).first()
+            if data_status is None:
+                error_codes.append(vec.DataStatusNotFound.code)
+
+        if data_sub_status != '':
+            data_sub_status = DataSubStatus.objects.filter(data_status_id=data_status.id, company_id=company_id,
+                                                           name__iexact=data_sub_status)
+            if data_sub_status is None:
+                error_codes.append(vec.DataStatusNotFound.code)
+
+        return error_codes
+
+    def validate_data_source(self, row, company_id):
+        error_codes = []
+        data_source = str(row['data_source']).strip()
+        data_channel = str(row['data_channel']).strip()
+        if data_source == '':
+            if data_channel != '':
+                error_codes.append(vec.DataSourceEmptyDataChannelNotEmpty.code)
+
+        else:
+            data_source = DataSource.objects.filter(name__iexact=data_source).first()
+            if data_source is None:
+                error_codes.append(vec.DataSourceNotFound.code)
+
+        if data_channel != '':
+            data_channel = DataChannel.objects.filter(data_status_id=data_source.id, company_id=company_id,
+                                                      name__iexact=data_channel)
+            if data_channel is None:
+                error_codes.append(vec.DataChannelNotFound.code)
+
+        return error_codes
+
+    def validate_email(self, row):
+        error_codes = []
+        email = str(row['email']).strip()
+        if email == '':
+            return error_codes
+
+        pat = r'^[a-zA-Z0-9-_]+@[a-zA-Z0-9]+\.[a-z]{1,3}$'
+        if re.match(pat, email):
+            return error_codes
+        return [vec.InvalidEmailFormat.code]
+
+
+class ConfirmImportOrderService(ImportOrderService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
+
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        try:
+            record = ImportOrderRecords.objects.get(
+                pk=kwargs.get('id')
+            )
+
+            create_order_service = CreateOrderService()
+
+            with record.file.open('r') as excel_file:
+                workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+                worksheet = workbook.sheet_by_index(0)
+                num_rows = worksheet.nrows - 1
+                curr_row = 0
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    data_record = self.rowParser(row)
+                    error_codes = self.validate_data(data_record, kwargs['company_id'])
+                    if not error_codes:
+                        customer = None
+                        if data_record['phone'] != '':
+                            customer = Customer.objects.filter(
+                                phone=data_record['phone'], company_id=kwargs['company_id']).first()
+                            if customer is None:
+                                customer = Customer.objects.create(
+                                    phone=data_record['phone'], company_id=kwargs['company_id'],
+                                    name=data_record['name'], email=data_record['email'])
+                            else:
+                                if data_record['name'] != '' or data_record['email'] != '':
+                                    customer.name = data_record['name'] if data_record['name'] != '' else customer.name
+                                    customer.email = data_record['email'] if data_record[
+                                                                                 'email'] != '' else customer.email
+                                    customer.save()
+
+                        data_source = DataSource.objects.filter(name=data_record['data_source']).first()
+                        data_channel = DataChannel.objects.filter(name=data_record['data_channel']).first()
+                        data_status = DataStatus.objects.filter(name=data_record['data_status']).first()
+                        data_sub_status = DataSubStatus.objects.filter(name=data_record['data_sub_status']).first()
+                        order = Order(customer_name=data_record['name'], data_source=data_source,
+                                      data_channel=data_channel, data_status=data_status,
+                                      data_sub_status=data_sub_status, care_notes=data_record['care_note'],
+                                      customer_email=data_record['email'], customer=customer)
+                        create_order_service.serve(request, cookies, *args, **order.__dict__)
+
+        except ImportOrderRecords.DoesNotExist:
+            raise ImportRecordNotFound
+
+
+class ConfirmImportOrderDataService(ImportOrderDataService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
+
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        try:
+            record = ImportOrderRecords.objects.get(
+                pk=kwargs.get('id')
+            )
+
+            update_order_service = UpdateOrderService()
+
+            with record.file.open('r') as excel_file:
+                workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+                worksheet = workbook.sheet_by_index(0)
+                num_rows = worksheet.nrows - 1
+                curr_row = 0
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    data_record = self.rowParser(row)
+                    error_codes = self.validate_data(data_record, kwargs['company_id'])
+                    if not error_codes:
+                        order_data = {'id': int(data_record['order_id'])}
+                        order = Order.objects.filter(pk=int(data_record['order_id']),
+                                                     company_id=kwargs['company_id']).first()
+
+                        if data_record['phone'] != '':
+                            order = Order.objects.filter(pk=int(data_record['order_id']),
+                                                         company_id=kwargs['company_id']).first()
+                            normalized_phone = data_record['phone']
+                            if order.customer and order.customer.phone != normalized_phone:
+                                customer = Customer.objects.create(phone=normalized_phone,
+                                                                   company_id=kwargs['company_id'])
+                                order_data['customer_id'] = customer.id
+
+                        if data_record['shipping_code'] != '':
+                            order_data['shipping_code'] = data_record['shipping_code']
+
+                        if data_record['shipping_fee'] != '':
+                            order_data['shipping_fee'] = int(data_record['shipping_fee'])
+
+                        update_order_service.serve(request, cookies, *args, **order_data)
+
+                        if data_record['amount'] != '':
+                            payment_service = CreatePaymentService()
+                            payment = payment_service.serve(request, cookies, *args, **{
+                                'company_id': kwargs['company_id'], 'order_id': order.id,
+                                'type': ORDER_DETAIL_TYPE.NEW_BUY,
+                                'value': int(data_record['amount']), 'sale_note': data_record['sale_note'],
+                                'payment_method': PAYMENT_METHOD.TRANSFER
+                            })
+                            payment_service = ApprovePaymentService()
+                            payment_service.serve(request, cookies, *args, **{
+                                'id': payment.id,
+                                'accountant_note': 'Import từ excel'
+                            })
+
+        except ImportOrderRecords.DoesNotExist:
+            raise ImportRecordNotFound
+
