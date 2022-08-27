@@ -63,6 +63,12 @@ class OrderNotFound:
     code = 13
     msg = 'Order is not found'
 
+
 class AmountIsNotNumeric:
     code = 14
     msg = 'Amount is not numeric'
+
+
+class PaymentForNoProductOrder:
+    code = 15
+    msg = 'Create payment for order that have no product'

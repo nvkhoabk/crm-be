@@ -20,10 +20,10 @@ from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistor
     User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
-from api.serializers.data_serializer import ImportOrderDataRequestSerializer
+from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound
+    FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound, PaymentForNoProductOrder
 import api.services.validate_error_code as vec
 import operator
 import functools
@@ -892,7 +892,17 @@ class CreatePaymentService(BaseService):
                                       invoice_no=payment.invoice_no, order_detail=payment.order_detail,
                                       payment_method=payment.payment_method)
 
-        recalculate_order_details_by_payment(payment.order_detail)
+        if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+            order_details = OrderDetail.objects.filter(
+                order_id=payment.order.order_id,
+                type=ORDER_DETAIL_TYPE.NEW_BUY,
+                deleted_at__isnull=True
+            )
+            if order_details.first() is None:
+                raise PaymentForNoProductOrder()
+            recalculate_order_details_by_payment(order_details.first())
+        else:
+            recalculate_order_details_by_payment(payment.order_detail)
         recalculate_order(payment.order)
 
         return payment
@@ -1115,12 +1125,12 @@ class ImportOrderDataService(BaseService):
 
     def rowParser(self, rows):
         return {
-            'id': str(int(rows[0].value)),
-            'order_id': str(rows[1].value).strip(),
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
+            'order_id': '' if str(rows[1].value).strip() == '' else str(int(rows[1].value)).strip(),
             'phone': str(rows[2].value).strip(),
             'shipping_code': str(rows[3].value).strip(),
-            'shipping_fee': str(rows[4].value).strip(),
-            'amount': str(int(rows[5].value)).strip(),
+            'shipping_fee': '' if str(rows[4].value).strip() == '' else str(int(rows[4].value)),
+            'amount': '' if str(rows[5].value).strip() == '' else str(int(rows[5].value)),
             'sale_note': str(rows[6].value).strip(),
         }
 
@@ -1129,7 +1139,7 @@ class ImportOrderDataService(BaseService):
         error_codes.extend(self.validate_id(data))
         error_codes.extend(self.validate_phone(data))
         error_codes.extend(self.validate_order_id(data, company_id))
-        error_codes.extend(self.validate_payment_amount(data))
+        error_codes.extend(self.validate_payment_amount(data, company_id))
         return error_codes
 
     def validate_id(self, row):
@@ -1173,16 +1183,27 @@ class ImportOrderDataService(BaseService):
 
         return [vec.InvalidPhoneFormat.code]
 
-    def validate_payment_amount(self, row):
+    def validate_payment_amount(self, row, company_id):
         amount = str(row['amount']).strip()
+        error_codes = []
 
         if amount == '':
             return []
 
         if not amount.isnumeric():
-            return [vec.AmountIsNotNumeric.code]
+            error_codes.append(vec.AmountIsNotNumeric.code)
 
-        return []
+        if row['order_id'] != '' and int(amount) > 0:
+            order = Order.objects.filter(pk=int(row['order_id']), company_id=company_id).first()
+            if order is not None:
+                order_details = OrderDetail.objects.filter(
+                    order_id=order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    error_codes.append(vec.PaymentForNoProductOrder.code)
+        return error_codes
 
 
 class ImportOrderService(BaseService):
@@ -1220,7 +1241,7 @@ class ImportOrderService(BaseService):
 
     def rowParser(self, rows):
         return {
-            'id': str(int(rows[0].value)),
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
             'phone': str(rows[1].value).strip(),
             'name': str(rows[2].value).strip(),
             'data_source': str(rows[3].value).strip(),
@@ -1254,7 +1275,7 @@ class ImportOrderService(BaseService):
     def validate_phone(self, row):
         phone = str(row['phone']).strip()
         if phone == '':
-            return []
+            return [vec.InvalidPhoneFormat.code]
 
         phone.replace(' ', '')
         phone.replace('.', '')
@@ -1367,8 +1388,10 @@ class ConfirmImportOrderService(ImportOrderService):
                         order = Order(customer_name=data_record['name'], data_source=data_source,
                                       data_channel=data_channel, data_status=data_status,
                                       data_sub_status=data_sub_status, care_notes=data_record['care_note'],
-                                      customer_email=data_record['email'], customer=customer)
-                        create_order_service.serve(request, cookies, *args, **order.__dict__)
+                                      customer_email=data_record['email'], customer=customer,
+                                      company_id=kwargs['company_id'])
+                        order.created_date = datetime.today().date()
+                        create_order_service.serve(request, cookies, *args, **CreateOrderRequestSerializer(order).data)
 
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
@@ -1421,10 +1444,11 @@ class ConfirmImportOrderDataService(ImportOrderDataService):
 
                         update_order_service.serve(request, cookies, *args, **order_data)
 
-                        if data_record['amount'] != '':
+                        if data_record['amount'] != '' and int(data_record['amount']) > 0:
                             payment_service = CreatePaymentService()
                             payment = payment_service.serve(request, cookies, *args, **{
-                                'company_id': kwargs['company_id'], 'order_id': order.id,
+                                'company_id': kwargs['company_id'],
+                                'order_id': order.id,
                                 'type': ORDER_DETAIL_TYPE.NEW_BUY,
                                 'value': int(data_record['amount']), 'sale_note': data_record['sale_note'],
                                 'payment_method': PAYMENT_METHOD.TRANSFER
