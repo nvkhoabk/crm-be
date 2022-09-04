@@ -124,12 +124,6 @@ class CreateCompanyRequestSerializer(serializers.Serializer):
     phone = serializers.CharField(
         allow_blank=True, required=False, help_text='Company phone')
 
-    def validate_phone(self, value):
-        value = validate.check_phone_number(value)
-        if not value:
-            raise serializers.ValidationError('Phone is not valid')
-        return value
-
 
 class CompanySerializer(serializers.ModelSerializer):
     call_center = serializers.SerializerMethodField()

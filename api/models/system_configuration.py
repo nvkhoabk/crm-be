@@ -18,13 +18,14 @@ class CompanyEmail(BaseModel):
 
 class DataStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=128)
     index = models.IntegerField(default=0)
     color = models.CharField(max_length=32)
     choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_status'
+        unique_together = ('name', 'company',)
 
 
 class DataSubStatus(BaseModel):
@@ -42,12 +43,13 @@ class DataSubStatus(BaseModel):
 
 class DataSource(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=128)
     index = models.IntegerField(default=0)
     choose_by_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'data_sources'
+        unique_together = ('name', 'company',)
 
 
 class DataChannel(BaseModel):

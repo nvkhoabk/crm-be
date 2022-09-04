@@ -69,7 +69,7 @@ class FBLoginCallBackService(BaseService):
         user_info = fb.get_user_info()
 
         try:
-            fb_user = FBUser.objects.get(uid=user_info['id'])
+            fb_user = FBUser.objects.get(uid=user_info['id'], company=user_roles.company)
         except FBUser.DoesNotExist:
             fb_user = FBUser.objects.create(
                 uid=user_info['id'],
@@ -88,7 +88,7 @@ class FBLoginCallBackService(BaseService):
         for page_info in pages:
             try:
                 page = FBPage.objects.get(
-                    user__uid=fb_user.uid, page_id=page_info['id'])
+                    user__uid=fb_user.uid, page_id=page_info['id'], company=user_roles.company)
                 page.access_token = page_info['access_token']
                 page.name = page_info['name']
                 if page.deleted_at is not None:
@@ -103,7 +103,7 @@ class FBLoginCallBackService(BaseService):
                     access_token=page_info['access_token'],
                     expire_time=0,
                 )
-                data_source = DataSource.objects.filter(company_id=user.company_id, name__iexact='Facebook',
+                data_source = DataSource.objects.filter(company=user_roles.company, name__iexact='Facebook',
                                                         deleted_at__isnull=True).first()
                 if data_source:
                     data_channel = DataChannel.objects.filter(company_id=data_source.company_id,

@@ -204,13 +204,13 @@ class CreateCompanyService(BaseService):
                     index=0,
                     choose_by_default=False
                 )
-                DataStatus.objects.create(
+                DataSource.objects.create(
                     company_id=company.id,
                     name='Zalo',
                     index=1,
                     choose_by_default=False
                 )
-                DataStatus.objects.create(
+                DataSource.objects.create(
                     company_id=company.id,
                     name='Web',
                     index=3,

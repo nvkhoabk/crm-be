@@ -236,7 +236,8 @@ class CreateCompanyView(BaseAPIView):
         create_company_service = manage_service.CreateCompanyService()
         company = create_company_service.serve(
             request, cookies, *args, **serializer.validated_data)
-        return self.get_response(results=company, request=request, serializer=manage_serializer.CreateCompanyResponseSerializer)
+        return self.get_response(results=company, request=request,
+                                 serializer=manage_serializer.CreateCompanyResponseSerializer)
 
 
 class GetCompanyView(BaseAPIView):
