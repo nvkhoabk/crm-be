@@ -64,7 +64,8 @@ def create_order_history(order):
                                 annual_amount=order.annual_amount, care_notes=order.care_notes,
                                 duplicated_with=order.duplicated_with, confirmed_date=order.confirmed_date,
                                 customer_name=order.customer_name, customer_address=order.customer_address,
-                                customer_email=order.customer_email)
+                                customer_email=order.customer_email, created_by=order.created_by,
+                                updated_by=order.updated_by)
 
 
 def calculate_debt_status(order, today):
@@ -228,6 +229,10 @@ class CreateOrderService(BaseService):
 
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
+
+            kwargs['created_by'] = request.user.username
+            kwargs['updated_by'] = request.user.username
+
             order = Order.objects.create(
                 **kwargs
             )
@@ -344,6 +349,7 @@ class UpdateOrderService(BaseService):
             if kwargs.get('customer_email'):
                 order.customer_email = kwargs['customer_email']
 
+            order.updated_by = request.user.username
             order.save()
 
             create_order_history(order)
@@ -882,30 +888,31 @@ class CreatePaymentService(BaseService):
             if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                 raise PermissionDenied()
 
-        payment = Payment(
-            **kwargs
-        )
-
-        payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
-        payment = Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
-                                      value=payment.value, status=payment.status, sale_note=payment.sale_note,
-                                      invoice_no=payment.invoice_no, order_detail=payment.order_detail,
-                                      payment_method=payment.payment_method)
-
-        if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-            order_details = OrderDetail.objects.filter(
-                order_id=payment.order.order_id,
-                type=ORDER_DETAIL_TYPE.NEW_BUY,
-                deleted_at__isnull=True
+        with transaction.atomic():
+            payment = Payment(
+                **kwargs
             )
-            if order_details.first() is None:
-                raise PaymentForNoProductOrder()
-            recalculate_order_details_by_payment(order_details.first())
-        else:
-            recalculate_order_details_by_payment(payment.order_detail)
-        recalculate_order(payment.order)
 
-        return payment
+            payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
+            payment = Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
+                                          value=payment.value, status=payment.status, sale_note=payment.sale_note,
+                                          invoice_no=payment.invoice_no, order_detail=payment.order_detail,
+                                          payment_method=payment.payment_method)
+
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    raise PaymentForNoProductOrder()
+                recalculate_order_details_by_payment(order_details.first())
+            else:
+                recalculate_order_details_by_payment(payment.order_detail)
+            recalculate_order(payment.order)
+
+            return payment
 
 
 class GetPaymentService(BaseService):

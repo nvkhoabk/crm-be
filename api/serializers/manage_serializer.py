@@ -555,13 +555,14 @@ class GetUserRoleResponseSerializer(BaseResponseSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['id', 'name', 'phone', 'address']
+        fields = ['id', 'name', 'phone', 'address', 'email']
 
 
 class CreateCustomerRequestSerializer(serializers.Serializer):
-    name = serializers.CharField()
+    name = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField()
-    address = serializers.CharField()
+    address = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.CharField(required=False, allow_blank=True)
 
 
 class CreateCustomerResponseSerializer(BaseResponseSerializer):
@@ -578,9 +579,10 @@ class GetCustomerResponseSerializer(BaseResponseSerializer):
 
 class UpdateCustomerRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    name = serializers.CharField()
-    phone = serializers.CharField()
-    address = serializers.CharField()
+    name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    address = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.CharField(required=False, allow_blank=True)
 
 
 class UpdateCustomerResponseSerializer(BaseResponseSerializer):

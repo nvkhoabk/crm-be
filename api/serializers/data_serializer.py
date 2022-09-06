@@ -71,7 +71,7 @@ class OrderSerializer(serializers.ModelSerializer):
                   'customer', 'shipping_code', 'shipping_fee', 'data_status', 'data_sub_status', 'debt_status',
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
                   'annual_amount', 'care_notes', 'duplicated_with', 'crawl_data', 'customer_name', 'customer_address',
-                  'customer_email', 'created_at']
+                  'customer_email', 'created_at', 'updated_by', 'created_by']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):

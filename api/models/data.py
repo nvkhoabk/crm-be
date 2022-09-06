@@ -205,6 +205,8 @@ class Order(BaseModel):
     customer_name = models.CharField(max_length=512, default='')
     customer_address = models.CharField(max_length=2048, null=True)
     customer_email = models.CharField(max_length=256, default='')
+    created_by = models.CharField(max_length=64, default='')
+    updated_by = models.CharField(max_length=64, default='')
 
     class Meta:
         db_table = 'orders'
@@ -264,6 +266,8 @@ class OrderHistory(BaseModel):
     customer_name = models.CharField(max_length=512, default='')
     customer_address = models.CharField(max_length=2048, null=True)
     customer_email = models.CharField(max_length=256, default='')
+    created_by = models.CharField(max_length=64, default='')
+    updated_by = models.CharField(max_length=64, default='')
 
     class Meta:
         db_table = 'order_histories'

@@ -9,6 +9,7 @@ import pytz
 
 from api.const import Const
 from api.models.system_configuration import DataStatus, DataSubStatus, DataSource, DataChannel
+from api.services.data import create_order_history
 from api.utils.phone import extract_phone
 from api.fb.page import FBPageUtil
 from api.management.commands.daemon import Daemon
@@ -124,7 +125,7 @@ class FBCrawler(Daemon):
                                 company=page.company
                             )
 
-                        Order.objects.create(
+                        new_order = Order.objects.create(
                             crawl_data=crawl_data,
                             customer=customer,
                             company=page.company,
@@ -132,8 +133,11 @@ class FBCrawler(Daemon):
                             data_status=data_status,
                             data_sub_status=data_sub_status,
                             data_source=data_source,
-                            data_channel=data_channel
+                            data_channel=data_channel,
+                            created_by='system',
+                            updated_by='system'
                         )
+                        create_order_history(new_order)
 
                 if post_in_db is not None and last_check_time_int != 0:
                     post_in_db.last_check_time_int = last_check_time_int
@@ -189,7 +193,7 @@ class FBCrawler(Daemon):
                 if phone is None:
                     continue
 
-                crawl_data = CrawlData.objects.filter(object_id=message['id']).first()
+                crawl_data = CrawlData.objects.filter(object_id=message['id'], company_id=page.company_id).first()
                 if crawl_data:
                     logger.debug('Use existing CrawlData for mess with phone: ' + phone)
                     crawl_data.content = json.dumps(message['messages'])
@@ -203,7 +207,7 @@ class FBCrawler(Daemon):
                             name=message['senders']['data'][0]['name']
                         )
 
-                    duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id,
+                    duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id, company_id=page.company_id,
                                                            deleted_at__isnull=True).order_by('-id').first()
 
                     new_order = Order.objects.create(
@@ -215,8 +219,11 @@ class FBCrawler(Daemon):
                         data_status=data_status,
                         data_sub_status=data_sub_status,
                         data_source=data_source,
-                        data_channel=data_channel
+                        data_channel=data_channel,
+                        created_by='system',
+                        updated_by='system'
                     )
+                    create_order_history(new_order)
                     logger.debug('Create new order, id = ' + str(new_order.id))
                 else:
                     logger.debug('Create new CrawlData for mess with phone: ' + phone)
@@ -247,8 +254,11 @@ class FBCrawler(Daemon):
                         data_status=data_status,
                         data_sub_status=data_sub_status,
                         data_source=data_source,
-                        data_channel=data_channel
+                        data_channel=data_channel,
+                        created_by='system',
+                        updated_by='system'
                     )
+                    create_order_history(new_order)
                     logger.debug('Create new order, id = ' + str(new_order.id))
 
         page.last_message_check_time = lastest_updated_time
