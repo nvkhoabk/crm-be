@@ -29,7 +29,7 @@ class FilterReportService(BaseService):
         self.initializer_report(sales, report)
 
         for order in orders:
-            if order.pic:
+            if order.pic and order.pic.username in report:
                 report[order.pic.username] = {
                     'pic': order.pic.username,
                     'total_order': report[order.pic.username]['total_order'] + 1,
@@ -86,7 +86,7 @@ class FilterReportService(BaseService):
         if self.confirmed_order(order) == 0:
             return 0
 
-        return order.confirmed_date - order.created_date
+        return (order.confirmed_date - order.created_date).days
 
     def calculate_average_confirmed_time(self, report, order):
         if (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(order)) == 0:
@@ -116,7 +116,7 @@ class FilterAnnualOrderReportService(BaseService):
         self.initializer_report(sales, report)
 
         for order in orders:
-            if order.pic:
+            if order.pic and order.pic.username in report:
                 report[order.pic.username] = {
                     'pic': order.pic.username,
                     'total_order': report[order.pic.username]['total_order'] + 1,

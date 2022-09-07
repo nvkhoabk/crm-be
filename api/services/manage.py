@@ -848,7 +848,14 @@ class UpdateCustomerService(BaseService):
 
 class FilterCustomerService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        query_set = Customer.objects.all()
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = Customer.objects.filter(company_id=user_roles.first().company_id)
         filters = ['name', 'phone', 'address']
         customers = dict(kwargs.get('filter', []))
         for key, value in customers.items():

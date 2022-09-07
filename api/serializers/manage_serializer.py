@@ -512,6 +512,10 @@ class FilterUserResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=UserSerializer())
 
 
+class FilterSaleUserRequestSerializer(BasePagingSerializer):
+    None
+
+
 class UpdateUserRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='User id')
     company_id = serializers.IntegerField(required=True)

@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from api.common.base_view import BaseAPIView
-from api.permissions import DataReadPermission, DataEditPermission, AccountEditPermission
+from api.permissions import DataReadPermission, DataEditPermission, AccountEditPermission, MarketingReadPermission, \
+    MarketingEditPermission
 from api.serializers import data_serializer
 from api.services import data as data_service
 from api.services import exceptions
@@ -393,7 +394,7 @@ class BulkUpdateOrderPicView(BaseAPIView):
 
 class FilterFBPageView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataReadPermission]
+    permission_classes = [IsAuthenticated, MarketingEditPermission]
     serializer_class = data_serializer.FilterFBPageRequestSerializer
     pagination_class = True
 
@@ -417,7 +418,7 @@ class FilterFBPageView(BaseAPIView):
 
 class DeleteFBPageView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated, MarketingEditPermission]
     serializer_class = data_serializer.DeleteFBPageRequestSerializer
 
     @swagger_auto_schema(
@@ -441,7 +442,7 @@ class DeleteFBPageView(BaseAPIView):
 
 class UpdateFBPageView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated, MarketingEditPermission]
     serializer_class = data_serializer.UpdateFBPageRequestSerializer
 
     @swagger_auto_schema(
@@ -465,7 +466,7 @@ class UpdateFBPageView(BaseAPIView):
 
 class GetSynchronizedFBAccountView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataReadPermission]
+    permission_classes = [IsAuthenticated, MarketingReadPermission]
     serializer_class = data_serializer.GetSynchronizedFBAccountRequestSerializer
 
     @swagger_auto_schema(
@@ -488,7 +489,7 @@ class GetSynchronizedFBAccountView(BaseAPIView):
 
 class DeleteSynchronizedFBAccountView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, DataEditPermission]
+    permission_classes = [IsAuthenticated, MarketingEditPermission]
     serializer_class = data_serializer.DeleteSynchronizedFBAccountRequestSerializer
 
     @swagger_auto_schema(

@@ -236,6 +236,10 @@ class CreateOrderService(BaseService):
             order = Order.objects.create(
                 **kwargs
             )
+            if kwargs.get('data_status_id', None):
+                if order.data_status.name.lower() == 'đã xác nhận':
+                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+            order.save()
 
             create_order_history(order)
 
