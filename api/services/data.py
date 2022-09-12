@@ -238,7 +238,7 @@ class CreateOrderService(BaseService):
             )
             if kwargs.get('data_status_id', None):
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
             order.save()
 
             create_order_history(order)
@@ -330,7 +330,7 @@ class UpdateOrderService(BaseService):
             if kwargs.get('data_status_id') and kwargs.get('data_status_id') != order.data_status_id:
                 order.data_status_id = kwargs['data_status_id']
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
 
             if kwargs.get('data_sub_status_id'):
                 order.data_sub_status_id = kwargs['data_sub_status_id']
@@ -1059,7 +1059,7 @@ class FilterPaymentService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **value)
+                orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 query_set = query_set.filter(
                     order_id__in=orders.values_list('id', flat=True),
                 )
