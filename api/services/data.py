@@ -94,12 +94,12 @@ def recalculate_order(order):
     order.debt = 0
     today = datetime.now(timezone(TIME_ZONE)).date()
     for order_detail in annual_order_details:
-        if order_detail.due_date >= today:
+        if order_detail.due_date <= today:
             order.annual_amount += order_detail.total_payment_amount
             order.annual_debt += order_detail.debt
 
     for order_detail in order_details:
-        if order_detail.due_date >= today:
+        if order_detail.due_date <= today:
             order.amount += order_detail.total_payment_amount
             order.debt += order_detail.debt
 
@@ -239,6 +239,11 @@ class CreateOrderService(BaseService):
             if kwargs.get('data_status_id', None):
                 if order.data_status.name.lower() == 'đã xác nhận':
                     order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
+            if order.customer:
+                duplicated = Order.objects.filter(deleted_at__isnull=True, customer_id=order.customer_id,
+                                                  company_id=order.company_id).exclude(pk=order.id).order_by('-id')
+                if duplicated.first():
+                    order.duplicated_with = duplicated.first().id
             order.save()
 
             create_order_history(order)
@@ -424,10 +429,13 @@ class FilterOrderService(BaseService):
                     annual_due_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
-            if key == 'pics' and value is not None and value:
-                query_set = query_set.filter(
-                    pic__in=value,
-                )
+            if key == 'pics' and value is not None:
+                if len(value) == 0:
+                    query_set = query_set.filter(pic__isnull=True)
+                else:
+                    query_set = query_set.filter(
+                        pic__in=value,
+                    )
 
             if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
