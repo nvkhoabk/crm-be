@@ -430,32 +430,26 @@ class FilterOrderService(BaseService):
                 )
 
             if key == 'data_status' and value is not None and value:
-                if len(value) == 0:
-                    query_set = query_set.filter(data_status__isnull=True)
-                else:
-                    query = functools.reduce(
-                        operator.or_,
-                        (Q(data_status_id=data_status['data_status_id'],
-                           data_sub_status_id=data_status['data_sub_status_id']) if 'data_sub_status_id' in data_status and
-                                                                                    data_status[
-                                                                                        'data_sub_status_id'] is not None else Q(
-                            data_status_id=data_status['data_status_id']) for data_status in value)
-                    )
-                    query_set = query_set.filter(query)
+                query = functools.reduce(
+                    operator.or_,
+                    (Q(data_status_id=data_status['data_status_id'],
+                       data_sub_status_id=data_status['data_sub_status_id']) if 'data_sub_status_id' in data_status and
+                                                                                data_status[
+                                                                                    'data_sub_status_id'] is not None else Q(
+                        data_status_id=data_status['data_status_id']) for data_status in value)
+                )
+                query_set = query_set.filter(query)
 
             if key == 'data_source' and value is not None and value:
-                if len(value) == 0:
-                    query_set = query_set.filter(data_source__isnull=True)
-                else:
-                    query = functools.reduce(
-                        operator.or_,
-                        (Q(data_source_id=data_source['data_source_id'],
-                           data_channel_id=data_source['data_channel_id']) if 'data_channel_id' in data_source and
-                                                                              data_source[
-                                                                                  'data_channel_id'] is not None else Q(
-                            data_source_id=data_source['data_source_id']) for data_source in value)
-                    )
-                    query_set = query_set.filter(query)
+                query = functools.reduce(
+                    operator.or_,
+                    (Q(data_source_id=data_source['data_source_id'],
+                       data_channel_id=data_source['data_channel_id']) if 'data_channel_id' in data_source and
+                                                                          data_source[
+                                                                              'data_channel_id'] is not None else Q(
+                        data_source_id=data_source['data_source_id']) for data_source in value)
+                )
+                query_set = query_set.filter(query)
 
             if key == 'phone' and value is not None:
                 customers = Customer.objects.filter(phone__icontains=value)
