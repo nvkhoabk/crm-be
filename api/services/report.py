@@ -20,7 +20,7 @@ class FilterReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **value)
+                orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 orders = orders.filter(due_date__isnull=False)
 
         report = dict()
@@ -107,7 +107,7 @@ class FilterAnnualOrderReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **value)
+                orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 orders = orders.filter(annual_due_date__isnull=False)
 
         report = dict()
@@ -164,7 +164,7 @@ class FilterBadDebtReportService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **value)
+                orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 if params.get('months', None):
                     from_date = datetime.today() - relativedelta(months=params.get('months'))
                     orders.filter(annual_due_date__lt=from_date)
