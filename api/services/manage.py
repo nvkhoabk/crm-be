@@ -812,10 +812,19 @@ class DeleteUserService(BaseService):
 class CreateCustomerService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+
+            user_roles = UserRole.objects.filter(**filter)
+
             return Customer.objects.create(
                 name=kwargs['name'],
                 phone=kwargs['phone'],
                 address=kwargs['address'],
+                email=kwargs['email'],
+                company_id=user_roles.first().company_id
             )
         except IntegrityError as e:
             raise ManageCustomerDuplicated()
