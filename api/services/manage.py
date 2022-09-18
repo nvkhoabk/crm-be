@@ -816,6 +816,7 @@ class CreateCustomerService(BaseService):
                 name=kwargs['name'],
                 phone=kwargs['phone'],
                 address=kwargs['address'],
+                company_id=kwargs['company_id']
             )
         except IntegrityError as e:
             raise ManageCustomerDuplicated()
