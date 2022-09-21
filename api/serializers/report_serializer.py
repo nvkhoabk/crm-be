@@ -98,3 +98,31 @@ class FilterBadDebtReportRequestSerializer(BasePagingSerializer):
 class FilterBadDebtReportResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=BadDebtReportSerializer())
 
+
+class DateOrderReportSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    value = serializers.IntegerField()
+
+
+class StatusReportSerializer(serializers.Serializer):
+    level = serializers.IntegerField()
+    title = serializers.CharField()
+    total = serializers.IntegerField()
+    records = serializers.ListField(child=DateOrderReportSerializer())
+
+
+class OrderStatusReportSerializer(serializers.Serializer):
+    report_by_status = serializers.ListField(child=StatusReportSerializer())
+    report_by_date = serializers.ListField(child=DateOrderReportSerializer())
+
+
+class FilterOrderStatusReportParamRequestSerializer(serializers.Serializer):
+    order = FilterOrderRequestParamSerializer(required=False)
+
+
+class FilterOrderStatusReportRequestSerializer(serializers.Serializer):
+    filter = FilterOrderStatusReportParamRequestSerializer()
+
+
+class FilterOrderStatusReportResponseSerializer(BaseResponseSerializer):
+    data = OrderStatusReportSerializer()
