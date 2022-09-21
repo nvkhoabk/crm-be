@@ -24,7 +24,6 @@ class FilterReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
-                orders = orders.filter(due_date__isnull=False)
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -33,23 +32,25 @@ class FilterReportService(BaseService):
 
         for order in orders:
             if order.pic and order.pic.username in report:
-                report[order.pic.username] = {
-                    'pic': order.pic.username,
-                    'total_order': report[order.pic.username]['total_order'] + 1,
-                    'total_confirmed_order': report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                        order),
-                    'conversion_rate': (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                        order)) / (report[order.pic.username]['total_order'] + 1),
-                    'turnover': report[order.pic.username]['turnover'] + order.amount,
-                    'debt': report[order.pic.username]['debt'] + order.debt,
-                    'waiting_approved_debt': report[order.pic.username][
-                                                 'waiting_approved_debt'] + order.waiting_approval_debt,
-                    'total_confirmed_time': report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
-                        order),
-                    'average_confirmed_time': self.calculate_average_confirmed_time(report, order),
-                    'actual_amount': report[order.pic.username]['actual_amount'] + order.amount - order.debt,
-                    'top': 0
-                }
+                report[order.pic.username]['total_order'] += 1
+                if order.due_date:
+                    report[order.pic.username] = {
+                        'pic': order.pic.username,
+                        'total_order': report[order.pic.username]['total_order'],
+                        'total_confirmed_order': report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
+                            order),
+                        'conversion_rate': (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
+                            order)) / (report[order.pic.username]['total_order'] + 1),
+                        'turnover': report[order.pic.username]['turnover'] + order.amount,
+                        'debt': report[order.pic.username]['debt'] + order.debt,
+                        'waiting_approved_debt': report[order.pic.username][
+                                                     'waiting_approved_debt'] + order.waiting_approval_debt,
+                        'total_confirmed_time': report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
+                            order),
+                        'average_confirmed_time': self.calculate_average_confirmed_time(report, order),
+                        'actual_amount': report[order.pic.username]['actual_amount'] + order.amount - order.debt,
+                        'top': 0
+                    }
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -111,7 +112,6 @@ class FilterAnnualOrderReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
-                orders = orders.filter(annual_due_date__isnull=False)
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -119,17 +119,19 @@ class FilterAnnualOrderReportService(BaseService):
         self.initialize_report(sales, report)
 
         for order in orders:
-            if order.pic and order.pic.username in report:
-                report[order.pic.username] = {
-                    'pic': order.pic.username,
-                    'total_order': report[order.pic.username]['total_order'] + 1,
-                    'total_debt': report[order.pic.username]['total_debt'] + order.annual_amount,
-                    'paid_amount': report[order.pic.username]['paid_amount'] + order.annual_amount - order.annual_debt,
-                    'remaining_debt': report[order.pic.username]['remaining_debt'] + order.annual_debt,
-                    'waiting_approved_remaining_debt': report[order.pic.username][
-                                                           'waiting_approved_remaining_debt'] + order.waiting_approval_annual_debt,
-                    'top': 0
-                }
+            if order.pic and order.pic.username in report and order.annual_due_date:
+                report[order.pic.username]['total_order'] += 1
+                if order.annual_due_date:
+                    report[order.pic.username] = {
+                        'pic': order.pic.username,
+                        'total_order': report[order.pic.username]['total_order'],
+                        'total_debt': report[order.pic.username]['total_debt'] + order.annual_amount,
+                        'paid_amount': report[order.pic.username]['paid_amount'] + order.annual_amount - order.annual_debt,
+                        'remaining_debt': report[order.pic.username]['remaining_debt'] + order.annual_debt,
+                        'waiting_approved_remaining_debt': report[order.pic.username][
+                                                               'waiting_approved_remaining_debt'] + order.waiting_approval_annual_debt,
+                        'top': 0
+                    }
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
