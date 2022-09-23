@@ -94,14 +94,12 @@ def recalculate_order(order):
     order.debt = 0
     today = datetime.now(timezone(TIME_ZONE)).date()
     for order_detail in annual_order_details:
-        if order_detail.due_date <= today:
-            order.annual_amount += order_detail.total_payment_amount
-            order.annual_debt += order_detail.debt
+        order.annual_amount += order_detail.total_payment_amount
+        order.annual_debt += order_detail.debt
 
     for order_detail in order_details:
-        if order_detail.due_date <= today:
-            order.amount += order_detail.total_payment_amount
-            order.debt += order_detail.debt
+        order.amount += order_detail.total_payment_amount
+        order.debt += order_detail.debt
 
     if annual_order_details:
         order.annual_due_date = annual_order_details.first().due_date
