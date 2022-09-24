@@ -14,6 +14,12 @@ from api.services.manage import FilterSaleUserService
 
 class FilterReportService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
         filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         orders = []
@@ -24,6 +30,10 @@ class FilterReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
+                                                        deleted_at__isnull=True).first()
+                if data_status:
+                    orders = orders.exclude(data_status_id=data_status.id)
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -102,6 +112,11 @@ class FilterReportService(BaseService):
 
 class FilterAnnualOrderReportService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
         orders = []
         filters = ['order']
         params = dict(kwargs.get('filter', []))
@@ -112,6 +127,10 @@ class FilterAnnualOrderReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
+                                                        deleted_at__isnull=True).first()
+                if data_status:
+                    orders = orders.exclude(data_status_id=data_status.id)
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -160,6 +179,11 @@ class FilterAnnualOrderReportService(BaseService):
 
 class FilterBadDebtReportService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
         orders = []
         filters = ['order']
         params = dict(kwargs.get('filter', []))
@@ -170,6 +194,10 @@ class FilterBadDebtReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
+                                                        deleted_at__isnull=True).first()
+                if data_status:
+                    orders = orders.exclude(data_status_id=data_status.id)
                 if params.get('months', None):
                     from_date = datetime.today() - relativedelta(months=params.get('months'))
                     orders.filter(annual_due_date__lt=from_date)
@@ -219,6 +247,11 @@ class FilterBadDebtReportService(BaseService):
 
 class FilterOrderStatusReportService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
         filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         orders = []
@@ -229,6 +262,10 @@ class FilterOrderStatusReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
+                                                        deleted_at__isnull=True).first()
+                if data_status:
+                    orders = orders.exclude(data_status_id=data_status.id)
 
         reports = dict()
         report_by_date = dict()
