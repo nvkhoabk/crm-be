@@ -75,3 +75,24 @@ class FilterBadDebtReportView(BaseAPIView):
         report = filter_report_service.serve(
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=report, request=serializer.validated_data, serializer=report_serializer.FilterBadDebtReportResponseSerializer)
+
+
+class FilterOrderStatusReportView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = report_serializer.FilterOrderStatusReportRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Report'],
+        operation_id='Filter order status report',
+        operation_description='Filter order status report',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_200_OK: report_serializer.FilterOrderStatusReportRequestSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_report_service = report_service.FilterOrderStatusReportService()
+        report = filter_report_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=report, request=serializer.validated_data, serializer=report_serializer.FilterOrderStatusReportResponseSerializer)

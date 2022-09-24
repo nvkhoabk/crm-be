@@ -252,7 +252,8 @@ urlpatterns = [
 
     path('report/filter_report/', report.FilterReportView.as_view(), name='report.filter_report'),
     path('report/filter_annual_order_report/', report.FilterAnnualOrderReportView.as_view(), name='report.filter_annual_order_report'),
-    path('report/filter_bad_debt_report/', report.FilterBadDebtReportView.as_view(), name='report.filter_bad_debt_report')
+    path('report/filter_bad_debt_report/', report.FilterBadDebtReportView.as_view(), name='report.filter_bad_debt_report'),
+    path('report/filter_order_status_report/', report.FilterOrderStatusReportView.as_view(), name='report.filter_order_status_report')
 
 
 ] + static('files/', document_root=Const.FILE_ROOT)

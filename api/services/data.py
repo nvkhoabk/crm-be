@@ -94,14 +94,12 @@ def recalculate_order(order):
     order.debt = 0
     today = datetime.now(timezone(TIME_ZONE)).date()
     for order_detail in annual_order_details:
-        if order_detail.due_date >= today:
-            order.annual_amount += order_detail.total_payment_amount
-            order.annual_debt += order_detail.debt
+        order.annual_amount += order_detail.total_payment_amount
+        order.annual_debt += order_detail.debt
 
     for order_detail in order_details:
-        if order_detail.due_date >= today:
-            order.amount += order_detail.total_payment_amount
-            order.debt += order_detail.debt
+        order.amount += order_detail.total_payment_amount
+        order.debt += order_detail.debt
 
     if annual_order_details:
         order.annual_due_date = annual_order_details.first().due_date
@@ -238,7 +236,12 @@ class CreateOrderService(BaseService):
             )
             if kwargs.get('data_status_id', None):
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
+                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+            if order.customer:
+                duplicated = Order.objects.filter(deleted_at__isnull=True, customer_id=order.customer_id,
+                                                  company_id=order.company_id).exclude(pk=order.id).order_by('-id')
+                if duplicated.first():
+                    order.duplicated_with = duplicated.first().id
             order.save()
 
             create_order_history(order)
@@ -330,7 +333,7 @@ class UpdateOrderService(BaseService):
             if kwargs.get('data_status_id') and kwargs.get('data_status_id') != order.data_status_id:
                 order.data_status_id = kwargs['data_status_id']
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
+                    order.confirmed_date = datetime.now(TIME_ZONE).date()
 
             if kwargs.get('data_sub_status_id'):
                 order.data_sub_status_id = kwargs['data_sub_status_id']
@@ -424,10 +427,13 @@ class FilterOrderService(BaseService):
                     annual_due_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
-            if key == 'pics' and value is not None and value:
-                query_set = query_set.filter(
-                    pic__in=value,
-                )
+            if key == 'pics' and value is not None:
+                if len(value) == 0:
+                    query_set = query_set.filter(pic__isnull=True)
+                else:
+                    query_set = query_set.filter(
+                        pic__in=value,
+                    )
 
             if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
@@ -1059,7 +1065,7 @@ class FilterPaymentService(BaseService):
 
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **value)
+                orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 query_set = query_set.filter(
                     order_id__in=orders.values_list('id', flat=True),
                 )

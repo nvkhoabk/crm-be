@@ -101,6 +101,7 @@ class CreateOrderRequestSerializer(serializers.Serializer):
     customer_name = serializers.CharField(max_length=512, allow_null=True, allow_blank=True)
     customer_address = serializers.CharField(max_length=2048, allow_null=True, allow_blank=True)
     customer_email = serializers.CharField(max_length=256, allow_null=True, allow_blank=True)
+    care_notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class CreateOrderResponseSerializer(BaseResponseSerializer):

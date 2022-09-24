@@ -42,8 +42,7 @@ class Command(BaseCommand):
 
     def calculate_debt_status_order(self):
         today = datetime.now(timezone(TIME_ZONE))
-        order_id_list = OrderDetail.objects.filter(due_date=today, deleted_at__isnull=True).distinct(
-            'order_id')
+        order_id_list = OrderDetail.objects.filter(due_date=today, deleted_at__isnull=True)
         orders = Order.objects.filter(id__in=order_id_list, deleted_at__isnull=True)
         for order in orders:
             recalculate_order(order)

@@ -36,7 +36,7 @@ class GetCompanyEmailResponseSerializer(BaseResponseSerializer):
 class UpdateCompanyEmailRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='CompanyEmail id', required=True)
     email = serializers.CharField(max_length=1024, required=False)
-    password = serializers.CharField(max_length=1024, required=False, allow_null=True)
+    password = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class UpdateCompanyEmailResponseSerializer(BaseResponseSerializer):
