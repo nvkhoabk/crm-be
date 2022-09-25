@@ -165,7 +165,7 @@ def recalculate_order_details_by_payment(order_detail):
             paid_amount = min(payment_value, order_detail.total_payment_amount)
             payment_value -= paid_amount
             order_detail.paid_payment_amount = paid_amount
-            order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.discount_value - paid_amount
+            order_detail.remaining_payment_amount = order_detail.total_payment_amount - paid_amount
             order_detail.debt = order_detail.remaining_payment_amount
             order_detail.save()
 
