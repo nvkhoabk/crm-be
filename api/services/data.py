@@ -236,7 +236,7 @@ class CreateOrderService(BaseService):
             )
             if kwargs.get('data_status_id', None):
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
             if order.customer:
                 duplicated = Order.objects.filter(deleted_at__isnull=True, customer_id=order.customer_id,
                                                   company_id=order.company_id).exclude(pk=order.id).order_by('-id')
@@ -333,7 +333,7 @@ class UpdateOrderService(BaseService):
             if kwargs.get('data_status_id') and kwargs.get('data_status_id') != order.data_status_id:
                 order.data_status_id = kwargs['data_status_id']
                 if order.data_status.name.lower() == 'đã xác nhận':
-                    order.confirmed_date = datetime.now(TIME_ZONE).date()
+                    order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
 
             if kwargs.get('data_sub_status_id'):
                 order.data_sub_status_id = kwargs['data_sub_status_id']

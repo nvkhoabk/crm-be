@@ -262,10 +262,6 @@ class FilterOrderStatusReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
-                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
-                                                        deleted_at__isnull=True).first()
-                if data_status:
-                    orders = orders.exclude(data_status_id=data_status.id)
 
         reports = dict()
         report_by_date = dict()
