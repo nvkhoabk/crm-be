@@ -41,12 +41,18 @@ class Command(BaseCommand):
                 AnnualOrderHistory.objects.create(annual_order_id=annual_order.id, order_detail_id=new_order_detail.id)
 
     def calculate_debt_status_order(self):
-        today = datetime.now(timezone(TIME_ZONE))
-        order_id_list = OrderDetail.objects.filter(due_date=today, deleted_at__isnull=True)
+        yesterday = datetime.now(timezone(TIME_ZONE)) - relativedelta(days=1)
+        order_id_list = OrderDetail.objects.filter(due_date=yesterday, deleted_at__isnull=True)
         orders = Order.objects.filter(id__in=order_id_list, deleted_at__isnull=True)
+        for order in orders:
+            recalculate_order(order)
+
+    def recalculate_order_17(self):
+        orders = Order.objects.filter(company_id=17)
         for order in orders:
             recalculate_order(order)
 
     def handle(self, *args, **options):
         self.process_annual_buy()
         self.calculate_debt_status_order()
+        #self.recalculate_order_17()
