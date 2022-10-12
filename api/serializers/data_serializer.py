@@ -150,6 +150,14 @@ class UpdateOrderResponseSerializer(BaseResponseSerializer):
     data = OrderSerializer()
 
 
+class StopAnnualOrderRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Order detail id')
+
+
+class StopAnnualOrderResponseSerializer(BaseResponseSerializer):
+    pass
+
+
 class DataStatusFilterParamSerializer(serializers.Serializer):
     data_status_id = serializers.IntegerField()
     data_sub_status_id = serializers.IntegerField(required=False, allow_null=True)

@@ -671,6 +671,27 @@ class DeleteOrderDetailService(BaseService):
             raise OrderDetailNotFound()
 
 
+class StopAnnualOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+
+            order_detail = OrderDetail.objects.get(
+                pk=kwargs['id'],
+                company_id=user_roles.first().company_id
+            )
+
+            AnnualOrder.objects.filter(order_detail_id=order_detail.id, deleted_at__isnull=True).update(is_active=False)
+
+            return order_detail
+        except OrderDetail.DoesNotExist as e:
+            raise OrderDetailNotFound()
+
+
 class FilterOrderHistoryService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {

@@ -176,6 +176,30 @@ class DeleteOrderView(BaseAPIView):
                                  serializer=data_serializer.DeleteOrderResponseSerializer)
 
 
+class StopAnnualOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataEditPermission]
+    serializer_class = data_serializer.StopAnnualOrderRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='Stop annual order',
+        operation_description='Stop annual order api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.StopAnnualOrderResponseSerializer,
+            exceptions.OrderDetailNotFound.code: exceptions.OrderDetailNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.StopAnnualOrderService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=request,
+                                 serializer=data_serializer.StopAnnualOrderResponseSerializer)
+
+
 class CreateOrderDetailView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, DataEditPermission]
