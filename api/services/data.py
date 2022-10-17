@@ -81,12 +81,12 @@ def calculate_debt_status(order, today):
     if order.annual_debt > 0 and order.annual_due_date and order.annual_due_date < today:
         return DEBT_STATUS.UNPAID
 
-    if order.waiting_approval_debt > 0 or order.waiting_approval_annual_debt:
-        return DEBT_STATUS.UNAPPROVED
-
     if OrderDetail.objects.filter(order_id=order.id, due_date__gte=today,
                                   deleted_at__isnull=True):
         return DEBT_STATUS.NOTIFIED
+
+    if order.waiting_approval_debt > 0 or order.waiting_approval_annual_debt:
+        return DEBT_STATUS.UNAPPROVED
 
     return DEBT_STATUS.APPROVED
 
