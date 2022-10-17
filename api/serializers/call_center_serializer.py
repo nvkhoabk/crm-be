@@ -196,7 +196,7 @@ class GetAgentsResponseSerializer(BaseResponseSerializer):
 
 class UpdateAgentsParamSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=True, help_text='call agent id')
-    user_id = serializers.IntegerField(required=True)
+    user_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class UpdateAgentsRequestSerializer(serializers.Serializer):
