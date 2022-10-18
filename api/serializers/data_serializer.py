@@ -206,10 +206,12 @@ class DeleteOrderRequestSerializer(serializers.Serializer):
 class DeleteOrderResponseSerializer(BaseResponseSerializer):
     pass
 
+
 class AnnualOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnnualOrder
         fields = ['id', 'is_active', 'created_at']
+
 
 class OrderDetailSerializer(serializers.ModelSerializer):
 

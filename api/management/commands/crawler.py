@@ -220,6 +220,7 @@ class FBCrawler(Daemon):
                         data_sub_status=data_sub_status,
                         data_source=data_source,
                         data_channel=data_channel,
+                        customer_name=customer.name,
                         created_by='system',
                         updated_by='system'
                     )
@@ -255,6 +256,7 @@ class FBCrawler(Daemon):
                         data_sub_status=data_sub_status,
                         data_source=data_source,
                         data_channel=data_channel,
+                        customer_name=customer.name,
                         created_by='system',
                         updated_by='system'
                     )
