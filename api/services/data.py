@@ -605,7 +605,7 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('annual_price'):
                 order_detail.annual_price = kwargs['annual_price']
 
-            if kwargs.get('discount_value'):
+            if kwargs.get('discount_value', None) is not None:
                 order_detail.discount_value = kwargs['discount_value']
 
             if kwargs.get('discount_type'):

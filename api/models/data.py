@@ -300,7 +300,7 @@ class OrderDetailHistory(BaseModel):
 
 class AnnualOrder(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
-    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE)
+    order_detail = models.OneToOneField(OrderDetail, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 

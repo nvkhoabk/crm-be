@@ -1,7 +1,7 @@
 import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD
-from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment
+from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment, AnnualOrder
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
@@ -206,9 +206,15 @@ class DeleteOrderRequestSerializer(serializers.Serializer):
 class DeleteOrderResponseSerializer(BaseResponseSerializer):
     pass
 
+class AnnualOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnualOrder
+        fields = ['id', 'is_active', 'created_at']
 
 class OrderDetailSerializer(serializers.ModelSerializer):
+
     product = ProductSerializer()
+    annual_order = AnnualOrderSerializer(source='annualorder')
 
     class Meta:
         model = OrderDetail
@@ -216,7 +222,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                   'remaining_payment_amount',
                   'total_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at',
-                  'annual_paid_payment_amount', 'annual_remaining_payment_amount']
+                  'annual_paid_payment_amount', 'annual_remaining_payment_amount',
+                  'annual_order']
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
