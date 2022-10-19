@@ -22,7 +22,7 @@ class FBPageUtil:
 
     def get_page_posts(self, page_id, offset, limit):
         posts = self.graph.request(
-            '/{}/posts?offset={}&limit={}&fields=permalink_url,message,full_picture,created_time,updated_time'.format(
+            '{}/posts?offset={}&limit={}&fields=permalink_url,message,full_picture,created_time,updated_time'.format(
                 page_id,
                 offset, limit))
         return posts['data']

@@ -46,6 +46,7 @@ class TestCrawl(SimpleTestCase):
     def test_crawl_page(self):
         crawl = FBCrawler('/tmp/test.pid')
 
+        crawl.initializer_logger()
         crawl.do_crawl()
 
     def tearDown(self) -> None:

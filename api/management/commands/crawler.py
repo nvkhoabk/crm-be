@@ -41,7 +41,7 @@ class FBCrawler(Daemon):
 
     def initializer_logger(self):
         logging.basicConfig(handlers=[RotatingFileHandler(filename=LOG_ROOT + 'crm.{}.log'.format(self.id),
-                                                          maxBytes=512000, backupCount=4)], level=LOG_LEVEL,
+                                                          maxBytes=2048000, backupCount=4)], level=LOG_LEVEL,
                             format='%(levelname)s %(asctime)s %(message)s',
                             datefmt='%m/%d/%Y %H:%M:%S %p')
 
@@ -62,13 +62,22 @@ class FBCrawler(Daemon):
 
         return extract_phone(comment_content)
 
+    def extract_phone_from_message(self, messages, last_check_time):
+        result = []
+        for message in reversed(messages['data']):
+            if datetime.strptime(message['created_time'], Const.FB_TIME_FORMAT) > last_check_time and extract_phone(
+                    message['message']) is not None:
+                result.append({'phone': extract_phone(message['message']), 'uid': message['from']['id']})
+
+        return result
+
     def crawl_posts(self, page, data_status, data_sub_status, data_source, data_channel):
         self.logger.debug('Crawling post for page: ' + page.page_name)
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
 
         offset = 0
-        limit = 100
+        limit = 50
 
         last_post_check_time = page.last_post_check_time if page.last_post_check_time is not None else page.created_at
         lastest_updated_time = last_post_check_time
@@ -221,7 +230,7 @@ class FBCrawler(Daemon):
         fb = FBPageUtil(access_token=page.access_token)
 
         offset = 0
-        limit = 100
+        limit = 50
 
         last_message_check_time = page.last_message_check_time if page.last_message_check_time is not None else page.created_at
         lastest_updated_time = last_message_check_time
@@ -255,83 +264,84 @@ class FBCrawler(Daemon):
                 if updated_timestamp <= conversation_in_db.last_check_time_int:
                     continue
 
-                phone = self._extract_phone_number(message['messages'], last_message_check_time)
+                phone_list = self.extract_phone_from_message(message['messages'], last_message_check_time)
                 conversation_in_db.last_check_time_int = updated_timestamp
                 conversation_in_db.save()
 
-                if phone is None:
-                    continue
+                for phone_uid in phone_list:
+                    phone = phone_uid['phone']
+                    uid = phone_uid['uid']
+                    crawl_data = self.get_crawl_data(phone, uid, page.company_id)
 
-                crawl_data = self.get_crawl_data(phone, message['from']['id'], page.company_id)
+                    if crawl_data:
+                        self.logger.debug('Use existing CrawlData for mess with phone: ' + phone)
+                        crawl_data.content = json.dumps(message['messages'])
+                        crawl_data.save()
 
-                if crawl_data:
-                    self.logger.debug('Use existing CrawlData for mess with phone: ' + phone)
-                    crawl_data.content = json.dumps(message['messages'])
-                    crawl_data.save()
+                        customer = Customer.objects.filter(phone=phone).first()
+                        if not customer:
+                            self.logger.debug('Create new customer for mess with phone: ' + phone)
+                            customer = Customer.objects.create(
+                                phone=phone,
+                                name=message['senders']['data'][0]['name']
+                            )
 
-                    customer = Customer.objects.filter(phone=phone).first()
-                    if not customer:
-                        self.logger.debug('Create new customer for mess with phone: ' + phone)
-                        customer = Customer.objects.create(
+                        duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id, company_id=page.company_id,
+                                                               deleted_at__isnull=True).order_by('-id').first()
+
+                        new_order = Order.objects.create(
+                            crawl_data=crawl_data,
+                            customer=customer,
+                            company=page.company,
+                            created_date=datetime.today(),
+                            duplicated_with=duplicated_with.id,
+                            data_status=data_status,
+                            data_sub_status=data_sub_status,
+                            data_source=data_source,
+                            data_channel=data_channel,
+                            customer_name=customer.name,
+                            created_by='system',
+                            updated_by='system'
+                        )
+                        create_order_history(new_order)
+                        self.logger.debug('Create new order, id = ' + str(new_order.id))
+                    else:
+                        self.logger.debug('Create new CrawlData for mess with phone: ' + phone)
+                        crawl_data = CrawlData.objects.create(
+                            source='fb',
+                            object_id=message['id'],
+                            uid=uid,
+                            username=message['senders']['data'][0]['id'],
+                            content=json.dumps(message['messages']),
                             phone=phone,
-                            name=message['senders']['data'][0]['name']
+                            company=page.company,
+                            type=CrawlData.TYPE_MSG,
                         )
 
-                    duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id, company_id=page.company_id,
-                                                           deleted_at__isnull=True).order_by('-id').first()
+                        customer = Customer.objects.filter(phone=phone, company=page.company).first()
+                        if not customer:
+                            self.logger.debug('Create new customer for mess with phone: ' + phone)
+                            customer = Customer.objects.create(
+                                phone=phone,
+                                name=message['senders']['data'][0]['name'],
+                                company=page.company
+                            )
 
-                    new_order = Order.objects.create(
-                        crawl_data=crawl_data,
-                        customer=customer,
-                        company=page.company,
-                        created_date=datetime.today(),
-                        duplicated_with=duplicated_with.id,
-                        data_status=data_status,
-                        data_sub_status=data_sub_status,
-                        data_source=data_source,
-                        data_channel=data_channel,
-                        customer_name=customer.name,
-                        created_by='system',
-                        updated_by='system'
-                    )
-                    create_order_history(new_order)
-                    self.logger.debug('Create new order, id = ' + str(new_order.id))
-                else:
-                    self.logger.debug('Create new CrawlData for mess with phone: ' + phone)
-                    crawl_data = CrawlData.objects.create(
-                        source='fb',
-                        object_id=message['id'],
-                        uid=message['from']['id'],
-                        username=message['senders']['data'][0]['id'],
-                        content=json.dumps(message['messages']),
-                        phone=phone,
-                        company=page.company,
-                    )
-
-                    customer = Customer.objects.filter(phone=phone, company=page.company).first()
-                    if not customer:
-                        self.logger.debug('Create new customer for mess with phone: ' + phone)
-                        customer = Customer.objects.create(
-                            phone=phone,
-                            name=message['senders']['data'][0]['name'],
-                            company=page.company
+                        new_order = Order.objects.create(
+                            crawl_data=crawl_data,
+                            customer=customer,
+                            company=page.company,
+                            created_date=datetime.today(),
+                            data_status=data_status,
+                            data_sub_status=data_sub_status,
+                            data_source=data_source,
+                            data_channel=data_channel,
+                            customer_name=customer.name,
+                            created_by='system',
+                            updated_by='system'
                         )
-
-                    new_order = Order.objects.create(
-                        crawl_data=crawl_data,
-                        customer=customer,
-                        company=page.company,
-                        created_date=datetime.today(),
-                        data_status=data_status,
-                        data_sub_status=data_sub_status,
-                        data_source=data_source,
-                        data_channel=data_channel,
-                        customer_name=customer.name,
-                        created_by='system',
-                        updated_by='system'
-                    )
-                    create_order_history(new_order)
-                    self.logger.debug('Create new order, id = ' + str(new_order.id))
+                        create_order_history(new_order)
+                        self.logger.debug('Create new order, id = ' + str(new_order.id))
 
         page.last_message_check_time = lastest_updated_time
         page.save()
@@ -378,13 +388,6 @@ class FBCrawler(Daemon):
             finally:
                 time.sleep(self.TIME)
 
-    def _extract_phone_number(self, messages, last_check_time):
-        for message in messages['data']:
-            if datetime.strptime(message['created_time'], Const.FB_TIME_FORMAT) > last_check_time and extract_phone(
-                    message['message']) is not None:
-                return extract_phone(message['message'])
-
-        return None
 
 class ZaloCrawler(Daemon):
     BULK_SIZE = 10
