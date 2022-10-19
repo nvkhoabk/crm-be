@@ -20,24 +20,50 @@ from django.db.models import F
 from pyfacebook import FacebookApi
 from django.utils import timezone
 import time
-import logging
 
-logger = logging.getLogger(__name__)
+import logging
+from logging.handlers import RotatingFileHandler
+
+from crm.settings import LOG_ROOT, LOG_LEVEL
 
 
 class FBCrawler(Daemon):
     BULK_SIZE = 10
-    TIME = 20
+    TIME = 120
     START_TIME = 1651289937
 
     def __init__(self, pidfile, shard=1, id=0):
         pidfile = '{}_{}'.format(pidfile, id)
         self.shard = shard
         self.id = id
+        self.logger = None
         super().__init__(pidfile)
 
+    def initializer_logger(self):
+        logging.basicConfig(handlers=[RotatingFileHandler(filename=LOG_ROOT + 'crm.{}.log'.format(self.id),
+                                                          maxBytes=512000, backupCount=4)], level=LOG_LEVEL,
+                            format='%(levelname)s %(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S %p')
+
+        self.logger = logging.getLogger(__name__)
+
+    def get_crawl_data(self, phone, uid, company_id):
+        crawl_data = CrawlData.objects.filter(phone=phone, company_id=company_id).first()
+
+        if crawl_data is None:
+            crawl_data = CrawlData.objects.filter(uid=uid, company_id=company_id).first()
+
+        return crawl_data
+
+    def extract_phone_from_comment(self, last_check_time, comment_content, created_time):
+        created_time = datetime.strptime(created_time, Const.FB_TIME_FORMAT)
+        if created_time < last_check_time:
+            return None
+
+        return extract_phone(comment_content)
+
     def crawl_posts(self, page, data_status, data_sub_status, data_source, data_channel):
-        logger.debug('Crawling post for page: ' + page.page_name)
+        self.logger.debug('Crawling post for page: ' + page.page_name)
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
 
@@ -59,7 +85,7 @@ class FBCrawler(Daemon):
                 if post_updated_time <= last_post_check_time:
                     continue
                 lastest_updated_time = max(lastest_updated_time, post_updated_time)
-                logger.debug('Crawling post: '.format(post['id']))
+                self.logger.debug('Crawling post: '.format(post['id']))
                 c_offset = 0
                 c_limit = 100
                 post_in_db = CrawlObject.objects.filter(
@@ -77,12 +103,12 @@ class FBCrawler(Daemon):
                     created_timestamp = int(
                         datetime.strptime(comments[0]['created_time'], Const.FB_TIME_FORMAT).timestamp())
                     if post_in_db:
-                        logger.debug('Use existing CrawObject for post: {}, last check time: {}'.format(post['id'],
+                        self.logger.debug('Use existing CrawObject for post: {}, last check time: {}'.format(post['id'],
                                                                                                         post_in_db.last_check_time_int))
                         if created_timestamp <= post_in_db.last_check_time_int:
                             break
                     else:
-                        logger.debug('Create new CrawObject for post: {}'.format(post['id']))
+                        self.logger.debug('Create new CrawObject for post: {}'.format(post['id']))
                         new_last_check_time_int = int(page.created_at.timestamp())
                         post_in_db = CrawlObject.objects.create(company_id=page.company_id, object_id=post['id'],
                                                                 source='fb', type='post', last_check_time_int=new_last_check_time_int)
@@ -98,46 +124,89 @@ class FBCrawler(Daemon):
 
                         last_check_time_int = max(last_check_time_int, created_timestamp)
 
-                        phone = extract_phone(comment['message'])
+                        phone = self.extract_phone_from_comment(lastest_updated_time, comment['message'],
+                                                                comment['created_time'])
                         if not phone:
                             continue
 
-                        logger.debug('Creating order from comment: {}'.format(comment['id']))
-                        #crawl_data = CrawlData.objects.filter(ref_link=post['permalink_url'])
-                        crawl_data = CrawlData.objects.create(
-                            source='fb',
-                            object_id=comment['id'],
-                            type=CrawlData.TYPE_POST,
-                            ref_link=post['permalink_url'],
-                            post_message=post['message'],
-                            post_picture=post['full_picture'] if 'full_picture' in post else '',
-                            uid=comment['id'],  # Temporary use comment id for this until app is reviewed
-                            username=comment['id'],  # Temporary use comment id for this until app is reviewed
-                            content=fb.dump_comment_hierarchy_to_json(comment['id']),
-                            phone=phone,
-                        )
+                        self.logger.debug('Creating order from comment: {}'.format(comment['id']))
+                        crawl_data = self.get_crawl_data(phone, comment['from']['id'], page.company_id)
 
-                        customer = Customer.objects.filter(phone=phone, company=page.company).first()
-                        if not customer:
-                            logger.debug('Creating new customer with phone number: ' + phone)
-                            customer = Customer.objects.create(
+                        if crawl_data:
+                            self.logger.debug('Use existing CrawlData for comment with phone: ' + phone)
+                            crawl_data.content = fb.dump_comment_hierarchy_to_json(comment['id'])
+                            crawl_data.save()
+                            customer = Customer.objects.filter(phone=phone,
+                                                               company=page.company).first()
+                            if not customer:
+                                self.logger.debug('Creating new customer with phone number: ' + phone)
+                                customer = Customer.objects.create(
+                                    phone=phone,
+                                    name=comment['from']['name'],
+                                    company=page.company
+                                )
+
+                            duplicated_with = Order.objects.filter(crawl_data_id=crawl_data.id,
+                                                                   company_id=page.company_id,
+                                                                   deleted_at__isnull=True).order_by('-id').first()
+
+                            new_order = Order.objects.create(
+                                crawl_data=crawl_data,
+                                customer=customer,
+                                company=page.company,
+                                created_date=datetime.today(),
+                                data_status=data_status,
+                                data_sub_status=data_sub_status,
+                                data_source=data_source,
+                                data_channel=data_channel,
+                                customer_name=customer.name,
+                                duplicated_with=duplicated_with.id,
+                                created_by='system',
+                                updated_by='system'
+                            )
+                            create_order_history(new_order)
+                            self.logger.debug('Create new order, id = ' + str(new_order.id))
+                        else:
+                            self.logger.debug('Create new CrawlData for mess with phone: ' + phone)
+                            crawl_data = CrawlData.objects.create(
+                                source='fb',
+                                object_id=comment['id'],
+                                type=CrawlData.TYPE_POST,
+                                ref_link=post['permalink_url'],
+                                post_message=post['message'],
+                                post_picture=post['full_picture'] if 'full_picture' in post else '',
+                                uid=comment['from']['id'],
+                                username=comment['from']['name'],
+                                content=fb.dump_comment_hierarchy_to_json(comment['id']),
                                 phone=phone,
-                                company=page.company
+                                company=page.company,
                             )
 
-                        new_order = Order.objects.create(
-                            crawl_data=crawl_data,
-                            customer=customer,
-                            company=page.company,
-                            created_date=datetime.today(),
-                            data_status=data_status,
-                            data_sub_status=data_sub_status,
-                            data_source=data_source,
-                            data_channel=data_channel,
-                            created_by='system',
-                            updated_by='system'
-                        )
-                        create_order_history(new_order)
+                            customer = Customer.objects.filter(phone=phone,
+                                                               company=page.company).first()
+                            if not customer:
+                                self.logger.debug('Creating new customer with phone number: ' + phone)
+                                customer = Customer.objects.create(
+                                    phone=phone,
+                                    name=comment['from']['name'],
+                                    company=page.company
+                                )
+
+                            new_order = Order.objects.create(
+                                crawl_data=crawl_data,
+                                customer=customer,
+                                company=page.company,
+                                created_date=datetime.today(),
+                                data_status=data_status,
+                                data_sub_status=data_sub_status,
+                                data_source=data_source,
+                                data_channel=data_channel,
+                                customer_name=customer.name,
+                                created_by='system',
+                                updated_by='system'
+                            )
+                            create_order_history(new_order)
+                            self.logger.debug('Create new order, id = ' + str(new_order.id))
 
                 if post_in_db is not None and last_check_time_int != 0:
                     post_in_db.last_check_time_int = last_check_time_int
@@ -147,7 +216,7 @@ class FBCrawler(Daemon):
         page.save()
 
     def crawl_messages(self, page, data_status, data_sub_status, data_source, data_channel):
-        logger.debug('Crawling fb mess for page: ' + page.page_name)
+        self.logger.debug('Crawling fb mess for page: ' + page.page_name)
         api = FacebookApi(access_token=page.access_token)
         fb = FBPageUtil(access_token=page.access_token)
 
@@ -168,14 +237,14 @@ class FBCrawler(Daemon):
                 if conversation_updated_time <= last_message_check_time:
                     continue
                 lastest_updated_time = max(lastest_updated_time, conversation_updated_time)
-                logger.debug('Crawling fb mess: {}'.format(message['id']))
+                self.logger.debug('Crawling fb mess: {}'.format(message['id']))
                 conversation_in_db = CrawlObject.objects.filter(
                     object_id=message['id'], source='fb', type='msg', company_id=page.company_id,
                     deleted_at__isnull=True
                 ).first()
 
                 if conversation_in_db is None:
-                    logger.debug('Create new CrawlObject for mess: {}'.format(message['id']))
+                    self.logger.debug('Create new CrawlObject for mess: {}'.format(message['id']))
                     new_last_check_time_int = int(page.created_at.timestamp())
                     conversation_in_db = CrawlObject.objects.create(object_id=message['id'], source='fb', type='msg',
                                                                     company_id=page.company_id,
@@ -193,15 +262,16 @@ class FBCrawler(Daemon):
                 if phone is None:
                     continue
 
-                crawl_data = CrawlData.objects.filter(object_id=message['id'], company_id=page.company_id).first()
+                crawl_data = self.get_crawl_data(phone, message['from']['id'], page.company_id)
+
                 if crawl_data:
-                    logger.debug('Use existing CrawlData for mess with phone: ' + phone)
+                    self.logger.debug('Use existing CrawlData for mess with phone: ' + phone)
                     crawl_data.content = json.dumps(message['messages'])
                     crawl_data.save()
 
                     customer = Customer.objects.filter(phone=phone).first()
                     if not customer:
-                        logger.debug('Create new customer for mess with phone: ' + phone)
+                        self.logger.debug('Create new customer for mess with phone: ' + phone)
                         customer = Customer.objects.create(
                             phone=phone,
                             name=message['senders']['data'][0]['name']
@@ -225,22 +295,22 @@ class FBCrawler(Daemon):
                         updated_by='system'
                     )
                     create_order_history(new_order)
-                    logger.debug('Create new order, id = ' + str(new_order.id))
+                    self.logger.debug('Create new order, id = ' + str(new_order.id))
                 else:
-                    logger.debug('Create new CrawlData for mess with phone: ' + phone)
+                    self.logger.debug('Create new CrawlData for mess with phone: ' + phone)
                     crawl_data = CrawlData.objects.create(
                         source='fb',
                         object_id=message['id'],
-                        type=CrawlData.TYPE_MSG,
-                        uid=message['senders']['data'][0]['id'],
+                        uid=message['from']['id'],
                         username=message['senders']['data'][0]['id'],
                         content=json.dumps(message['messages']),
                         phone=phone,
+                        company=page.company,
                     )
 
                     customer = Customer.objects.filter(phone=phone, company=page.company).first()
                     if not customer:
-                        logger.debug('Create new customer for mess with phone: ' + phone)
+                        self.logger.debug('Create new customer for mess with phone: ' + phone)
                         customer = Customer.objects.create(
                             phone=phone,
                             name=message['senders']['data'][0]['name'],
@@ -261,7 +331,7 @@ class FBCrawler(Daemon):
                         updated_by='system'
                     )
                     create_order_history(new_order)
-                    logger.debug('Create new order, id = ' + str(new_order.id))
+                    self.logger.debug('Create new order, id = ' + str(new_order.id))
 
         page.last_message_check_time = lastest_updated_time
         page.save()
@@ -274,7 +344,7 @@ class FBCrawler(Daemon):
         )[:self.BULK_SIZE]
 
         for user in users:
-            logger.debug('Crawling user: ' + user.name)
+            self.logger.debug('Crawling user: ' + user.name)
             fbpages = FBPage.objects.filter(
                 user=user,
                 deleted_at__isnull=True
@@ -285,16 +355,21 @@ class FBCrawler(Daemon):
                                                            deleted_at__isnull=True).first()
             data_source = DataSource.objects.filter(company_id=user.company_id, name__iexact='Facebook',
                                                     deleted_at__isnull=True).first()
-            for page in fbpages:
-                logger.debug('Crawling page: ' + page.page_name)
-                data_channel = DataChannel.objects.filter(company_id=user.company_id, data_source=data_source,
-                                                          name__iexact=page.page_name,
-                                                          deleted_at__isnull=True).first()
 
-                self.crawl_posts(page, data_status, data_sub_status, data_source, data_channel)
-                self.crawl_messages(page, data_status, data_sub_status, data_source, data_channel)
+            for page in fbpages:
+                try:
+                    self.logger.debug('Crawling page: ' + page.page_name)
+                    data_channel = DataChannel.objects.filter(company_id=user.company_id, data_source=data_source,
+                                                              name__iexact=page.page_name,
+                                                              deleted_at__isnull=True).first()
+
+                    self.crawl_posts(page, data_status, data_sub_status, data_source, data_channel)
+                    self.crawl_messages(page, data_status, data_sub_status, data_source, data_channel)
+                except Exception as e:
+                    self.logger.debug('ERROR: ' + str(e))
 
     def run(self):
+        self.initializer_logger()
         while True:
             try:
                 self.do_crawl()
@@ -410,19 +485,3 @@ class Command(BaseCommand):
             elif action == 'stop':
                 fb_crawler.stop()
 
-        zalo_path = pid_path + '.zalo'
-
-        for id in range(shard):
-            zalo_crawler = ZaloCrawler(pidfile=zalo_path, shard=shard, id=id)
-            if action == 'start':
-                try:
-                    pid = os.fork()
-                    if pid == 0:
-                        zalo_crawler.start()
-                        sys.exit(0)
-                except OSError as e:
-                    sys.stderr.write("fork #1 failed: %d (%s)\n" %
-                                     (e.errno, e.strerror))
-                    sys.exit(1)
-            elif action == 'stop':
-                zalo_crawler.stop()

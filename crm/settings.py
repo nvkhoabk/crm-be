@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/2.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
-
+import logging
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -271,28 +271,6 @@ ZALO_APP_SECRET = 'mNC5uCK6TN6kBgD5oqU6'
 ZALO_SECRET_KEY = 'c091a3a9b59e1475abc049f9b352cc72' 
 ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'timestamp': {
-            'format': '{asctime} {levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR + '/crm.log',
-            'formatter': 'timestamp'
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
+LOG_ROOT = '/var/log/crm/'
+LOG_LEVEL = logging.DEBUG
+

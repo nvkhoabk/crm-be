@@ -8,18 +8,38 @@ from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderD
 from api.services.data import create_order_detail_history, recalculate_order
 from api.utils.date import get_last_of_month
 from crm.settings import TIME_ZONE
+import logging
+from logging.handlers import RotatingFileHandler
+
+from crm.settings import LOG_ROOT, LOG_LEVEL
 
 
 class Command(BaseCommand):
-    help = 'Runs a job'
+    help = 'Job generate annual buy and recalculate debt status'
 
-    def process_annual_buy(self):
-        month_end = get_last_of_month(datetime.now(timezone(TIME_ZONE)))
+    def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
+        super().__init__(stdout, stderr, no_color, force_color)
+        self.logger = None
+
+    def add_arguments(self, parser):
+        parser.add_argument('--date', help='Processing date', default='')
+
+    def initializer_logger(self):
+        logging.basicConfig(handlers=[RotatingFileHandler(filename=LOG_ROOT + 'crm.order.log',
+                                                          maxBytes=512000, backupCount=4)], level=LOG_LEVEL,
+                            format='%(levelname)s %(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S %p')
+        self.logger = logging.getLogger(__name__)
+
+    def process_annual_buy(self, processing_date):
+        month_end = get_last_of_month(processing_date)
+        self.logger.info('Processing annual buy, month_end: ' + str(month_end))
         annual_orders = AnnualOrder.objects.filter(is_active=True, deleted_at__isnull=True)
         for annual_order in annual_orders:
             date_in_month_payment = min(annual_order.product.date_in_month_payment, month_end.day)
-            if date_in_month_payment + 1 - annual_order.product.number_of_date_notify == datetime.now(
-                    timezone(TIME_ZONE)).day:
+            if date_in_month_payment + 1 - annual_order.product.number_of_date_notify == processing_date:
+                self.logger.info('Creating new order detail for annual_order_id: ' + str(annual_order.id))
+
                 new_order_detail = OrderDetail.objects.create(order_id=annual_order.order_detail.order_id,
                                                               company_id=annual_order.order_detail.company_id,
                                                               product_id=annual_order.order_detail.product_id,
@@ -40,11 +60,13 @@ class Command(BaseCommand):
                 annual_order.save()
                 AnnualOrderHistory.objects.create(annual_order_id=annual_order.id, order_detail_id=new_order_detail.id)
 
-    def calculate_debt_status_order(self):
-        yesterday = datetime.now(timezone(TIME_ZONE)) - relativedelta(days=1)
+    def calculate_debt_status_order(self, processing_date):
+        yesterday = processing_date - relativedelta(days=1)
+        self.logger.info('Calculating debt status, yesterday: ' + str(yesterday))
         order_id_list = OrderDetail.objects.filter(due_date=yesterday, deleted_at__isnull=True).values_list('order_id',
                                                                                                             flat=True)
         orders = Order.objects.filter(id__in=order_id_list, deleted_at__isnull=True)
+        self.logger.info('Number of orders: ' + str(len(orders)))
         for order in orders:
             recalculate_order(order)
 
@@ -54,6 +76,10 @@ class Command(BaseCommand):
             recalculate_order(order)
 
     def handle(self, *args, **options):
-        self.process_annual_buy()
-        self.calculate_debt_status_order()
+        self.initializer_logger()
+        processing_date = datetime.now(timezone(TIME_ZONE)) if options['date'] == '' else datetime.strptime(
+            options['date'], '%Y%M%D')
+
+        self.process_annual_buy(processing_date)
+        self.calculate_debt_status_order(processing_date)
         #self.recalculate_order_17()

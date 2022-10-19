@@ -86,7 +86,7 @@ class FBPageUtil:
             '{}?fields=parent,message,from,created_time'.format(comment_id))
         while 'parent' in comment:
             comment = self.graph.request(
-                '{}?fields=parent,message,from,created_time'.format(comment['id']))
+                '{}?fields=parent,message,from,created_time'.format(comment['parent']['id']))
 
         return comment
     
