@@ -394,7 +394,7 @@ class FilterOrderService(BaseService):
             )
 
         filters = ['id', 'from_date', 'to_date', 'pics', 'data_status', 'debt_status', 'data_source', 'phone',
-                   'customer_name', 'confirmed_from_date', 'confirmed_to_date']
+                   'customer_name', 'confirmed_from_date', 'confirmed_to_date', 'data_from_date', 'data_to_date']
         params = dict(kwargs.get('filter', []))
         items = params.items()
         for key, value in items:
