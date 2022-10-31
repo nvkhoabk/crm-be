@@ -51,6 +51,8 @@ class Command(BaseCommand):
                                                               annual_price=annual_order.order_detail.annual_price,
                                                               total_payment_amount=annual_order.order_detail.total_payment_amount,
                                                               remaining_payment_amount=annual_order.order_detail.remaining_payment_amount,
+                                                              annual_remaining_payment_amount=annual_order.order_detail.price * annual_order.order_detail.quantity - annual_order.order_detail.discount_value,
+                                                              annual_paid_payment_amount=0,
                                                               paid_payment_amount=0,
                                                               debt=annual_order.product.period_fee,
                                                               due_date=annual_order.order_detail.due_date + relativedelta(

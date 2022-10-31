@@ -397,6 +397,13 @@ class FilterOrderService(BaseService):
                    'customer_name', 'confirmed_from_date', 'confirmed_to_date', 'data_from_date', 'data_to_date']
         params = dict(kwargs.get('filter', []))
         items = params.items()
+
+        if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params['data_to_date']:
+            order_list = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
+                                                    created_at__lte=params['data_to_date']).values_list(
+                'order_id', flat=True)
+            query_set = query_set.filter(id__in=order_list)
+
         for key, value in items:
             if key not in filters:
                 continue
