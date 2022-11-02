@@ -2,9 +2,12 @@ from datetime import datetime
 
 import json
 from dateutil.relativedelta import relativedelta
+from django.db.models import Sum
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.const import ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE
+from api.models.data import OrderDetail, Payment
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus
 from api.services.data import FilterOrderService
@@ -23,6 +26,7 @@ class FilterReportService(BaseService):
         filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         orders = []
+        order_detail_map = dict()
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -35,6 +39,8 @@ class FilterReportService(BaseService):
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
+                order_detail_map = self.get_order_detail_map(orders, value['data_from_date'], value['data_to_date'])
+
         report = dict()
         user_service = FilterSaleUserService()
         sales = user_service.serve(request, cookies, *args, **kwargs)
@@ -44,23 +50,7 @@ class FilterReportService(BaseService):
             if order.pic and order.pic.username in report:
                 report[order.pic.username]['total_order'] += 1
                 if order.due_date:
-                    report[order.pic.username] = {
-                        'pic': order.pic.username,
-                        'total_order': report[order.pic.username]['total_order'],
-                        'total_confirmed_order': report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                            order),
-                        'conversion_rate': (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                            order)) / (report[order.pic.username]['total_order'] + 1),
-                        'turnover': report[order.pic.username]['turnover'] + order.amount,
-                        'debt': report[order.pic.username]['debt'] + order.debt,
-                        'waiting_approved_debt': report[order.pic.username][
-                                                     'waiting_approved_debt'] + order.waiting_approval_debt,
-                        'total_confirmed_time': report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
-                            order),
-                        'average_confirmed_time': self.calculate_average_confirmed_time(report, order),
-                        'actual_amount': report[order.pic.username]['actual_amount'] + order.amount - order.debt,
-                        'top': 0
-                    }
+                    report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -89,6 +79,47 @@ class FilterReportService(BaseService):
                 'actual_amount': 0,
                 'top': 0
             }
+
+    def calculate_report_record(self, report, order, order_detail_map):
+        if order.id not in order_detail_map:
+            return report[order.pic.username]
+        amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
+        debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
+
+        return {
+            'pic': order.pic.username,
+            'total_order': report[order.pic.username]['total_order'],
+            'total_confirmed_order': report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
+                order),
+            'conversion_rate': (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
+                order)) / (report[order.pic.username]['total_order'] + 1),
+            'turnover': report[order.pic.username]['turnover'] + amount,
+            'debt': report[order.pic.username]['debt'] + debt,
+            'waiting_approved_debt': report[order.pic.username][
+                                         'waiting_approved_debt'] + order.waiting_approval_debt,
+            'total_confirmed_time': report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
+                order),
+            'average_confirmed_time': self.calculate_average_confirmed_time(report, order),
+            'actual_amount': report[order.pic.username]['actual_amount'] + amount - debt,
+            'top': 0
+        }
+
+    def get_order_detail_map(self, orders, data_from_date, data_to_date):
+        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
+                                                   type=ORDER_DETAIL_TYPE.NEW_BUY)
+
+        if data_from_date and data_to_date:
+            order_details = order_details.filter(created_at__gte=data_from_date,
+                                                 created_at__lte=data_to_date)
+
+        order_detail_map = dict()
+        for order_detail in order_details:
+            if order_detail.order_id in order_detail_map:
+                order_detail_map[order_detail.order_id].append(order_detail)
+            else:
+                order_detail_map[order_detail.order_id] = [order_detail]
+
+        return order_detail_map
 
     def confirmed_order(self, order):
         if order.data_status and order.data_status.name.lower() == 'đã xác nhận':
@@ -120,6 +151,7 @@ class FilterAnnualOrderReportService(BaseService):
         orders = []
         filters = ['order']
         params = dict(kwargs.get('filter', []))
+        order_detail_map = dict()
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -132,6 +164,8 @@ class FilterAnnualOrderReportService(BaseService):
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
+                order_detail_map = self.get_order_detail_map(orders, value['data_from_date'], value['data_to_date'])
+
         report = dict()
         user_service = FilterSaleUserService()
         sales = user_service.serve(request, cookies, *args, **kwargs)
@@ -141,16 +175,7 @@ class FilterAnnualOrderReportService(BaseService):
             if order.pic and order.pic.username in report and order.annual_due_date:
                 report[order.pic.username]['total_order'] += 1
                 if order.annual_due_date:
-                    report[order.pic.username] = {
-                        'pic': order.pic.username,
-                        'total_order': report[order.pic.username]['total_order'],
-                        'total_debt': report[order.pic.username]['total_debt'] + order.annual_amount,
-                        'paid_amount': report[order.pic.username]['paid_amount'] + order.annual_amount - order.annual_debt,
-                        'remaining_debt': report[order.pic.username]['remaining_debt'] + order.annual_debt,
-                        'waiting_approved_remaining_debt': report[order.pic.username][
-                                                               'waiting_approved_remaining_debt'] + order.waiting_approval_annual_debt,
-                        'top': 0
-                    }
+                    report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -175,6 +200,47 @@ class FilterAnnualOrderReportService(BaseService):
                 'waiting_approved_remaining_debt': 0,
                 'top': 0
             }
+
+    def calculate_report_record(self, report, order, order_detail_map):
+        if order.id not in order_detail_map:
+            return report[order.pic.username]
+
+        annual_amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
+        annual_debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
+        waiting_approval_annual_debt = \
+        Payment.objects.filter(order_detail_id__in=[order_detail.id for order_detail in order_detail_map[order.id]],
+                               status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                               type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                               deleted_at__isnull=True).aggregate(Sum('value'))['value__sum']
+        waiting_approval_annual_debt = 0 if waiting_approval_annual_debt is None else waiting_approval_annual_debt
+
+        return {
+            'pic': order.pic.username,
+            'total_order': report[order.pic.username]['total_order'],
+            'total_debt': report[order.pic.username]['total_debt'] + annual_amount,
+            'paid_amount': report[order.pic.username]['paid_amount'] + annual_amount - annual_debt,
+            'remaining_debt': report[order.pic.username]['remaining_debt'] + annual_debt,
+            'waiting_approved_remaining_debt': report[order.pic.username][
+                                                   'waiting_approved_remaining_debt'] + waiting_approval_annual_debt,
+            'top': 0
+        }
+
+    def get_order_detail_map(self, orders, data_from_date, data_to_date):
+        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
+                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
+
+        if data_from_date and data_to_date:
+            order_details = order_details.filter(created_at__gte=data_from_date,
+                                                 created_at__lte=data_to_date)
+
+        order_detail_map = dict()
+        for order_detail in order_details:
+            if order_detail.order_id in order_detail_map:
+                order_detail_map[order_detail.order_id].append(order_detail)
+            else:
+                order_detail_map[order_detail.order_id] = [order_detail]
+
+        return order_detail_map
 
 
 class FilterBadDebtReportService(BaseService):
