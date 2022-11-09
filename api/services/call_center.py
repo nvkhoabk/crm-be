@@ -173,7 +173,7 @@ class UpdateCallCenterService(BaseService):
             Company.objects.get(pk=kwargs['company_id'])
             call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
 
-            old_call_center = CallCenter(call_center)
+            old_call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
 
             if kwargs.get('charge_by'):
                 call_center.charge_by = kwargs.get('charge_by')
