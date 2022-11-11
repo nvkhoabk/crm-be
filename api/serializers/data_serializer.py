@@ -179,7 +179,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     from_date = serializers.DateField(required=False, allow_null=True)
     to_date = serializers.DateField(required=False, allow_null=True)
-    pics = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
+    pics = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
     data_status = serializers.ListField(child=DataStatusFilterParamSerializer(), required=False, allow_null=True)
     data_source = serializers.ListField(child=DataSourceFilterParamSerializer(), required=False, allow_null=True)
     phone = serializers.CharField(required=False, allow_null=True)

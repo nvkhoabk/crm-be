@@ -286,6 +286,11 @@ class PaymentForNoProductOrder(APIException):
     msg = 'Payment for not product order'
 
 
+class PaymentMoreThanAmount(APIException):
+    code = 5008
+    msg = 'Payment more than amount'
+
+
 class ZaloOAAPIHasNoPermission(APIException):
     code = 6001
     msg = 'Zalo OA need buy another package, see details: https://developers.zalo.me/docs/api/official-account-api/phu-luc/official-account-access-token-post-4307'

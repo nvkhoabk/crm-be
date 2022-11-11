@@ -23,7 +23,8 @@ from api.models.system_configuration import DataStatus, DataSubStatus, DataChann
 from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
-    FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound, PaymentForNoProductOrder
+    FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound, PaymentForNoProductOrder, \
+    PaymentMoreThanAmount
 import api.services.validate_error_code as vec
 import operator
 import functools
@@ -139,6 +140,8 @@ def recalculate_order_details_by_payment(order_detail):
             status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
         payment_amount = 0 if payment_amount is None else payment_amount
         order_detail.debt = order_detail.total_payment_amount - payment_amount
+        if payment_amount > order_detail.order.annual_amount:
+            raise PaymentMoreThanAmount()
 
         annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
         if annual_order_history:
@@ -168,6 +171,9 @@ def recalculate_order_details_by_payment(order_detail):
             status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
 
         payment_value = 0 if payment_value is None else payment_value
+        if payment_value > order_detail.order.amount:
+            raise PaymentMoreThanAmount()
+
         for order_detail in order_details:
             if payment_value == 0:
                 break
@@ -443,13 +449,11 @@ class FilterOrderService(BaseService):
                     annual_due_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
-            if key == 'pics' and value is not None:
-                if len(value) == 0:
-                    query_set = query_set.filter(pic__isnull=True)
+            if key == 'pics' and value is not None and value:
+                if None in value:
+                    query_set = query_set.filter(Q(pic__isnull=True) | Q(pic__in=value))
                 else:
-                    query_set = query_set.filter(
-                        pic__in=value,
-                    )
+                    query_set = query_set.filter(pic__in=value)
 
             if key == 'data_status' and value is not None and value:
                 query = functools.reduce(
@@ -478,8 +482,7 @@ class FilterOrderService(BaseService):
                 query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
 
             if key == 'customer_name' and value is not None:
-                customers = Customer.objects.filter(name__icontains=value)
-                query_set = query_set.filter(customer_id__in=customers.values_list('id', flat=True))
+                query_set = query_set.filter(customer_name__icontains=value)
 
             if key == 'debt_status' and value is not None:
                 query_set = query_set.filter(debt_status=value)
@@ -881,7 +884,7 @@ class DeleteFBPageService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            return FBPage.objects.get(
+            return FBPage.objects.filter(
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id,
                 deleted_at__isnull=True
