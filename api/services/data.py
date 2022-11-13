@@ -128,6 +128,18 @@ def recalculate_order(order):
                                                           deleted_at__isnull=True).aggregate(Sum('value'))['value__sum']
     order.waiting_approval_annual_debt = 0 if waiting_approval_annual_debt is None else waiting_approval_annual_debt
 
+    paid_amount = Payment.objects.filter(order_id=order.id,
+                                         type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                         deleted_at__isnull=True).exclude(
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+    order.paid_amount = 0 if paid_amount is None else paid_amount
+
+    annual_paid_amount = Payment.objects.filter(order_id=order.id,
+                                         type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                         deleted_at__isnull=True).exclude(
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+    order.annual_paid_amount = 0 if annual_paid_amount is None else annual_paid_amount
+
     order.debt_status = calculate_debt_status(order, today)
     order.save()
 
@@ -140,9 +152,6 @@ def recalculate_order_details_by_payment(order_detail):
             status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
         payment_amount = 0 if payment_amount is None else payment_amount
         order_detail.debt = order_detail.total_payment_amount - payment_amount
-        if payment_amount > order_detail.order.annual_amount:
-            raise PaymentMoreThanAmount()
-
         annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
         if annual_order_history:
             annual_order_history_query = AnnualOrderHistory.objects.filter(
@@ -171,8 +180,6 @@ def recalculate_order_details_by_payment(order_detail):
             status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
 
         payment_value = 0 if payment_value is None else payment_value
-        if payment_value > order_detail.order.amount:
-            raise PaymentMoreThanAmount()
 
         for order_detail in order_details:
             if payment_value == 0:

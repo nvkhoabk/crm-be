@@ -202,6 +202,8 @@ class Order(BaseModel):
     confirmed_date = models.DateField(null=True)
     waiting_approval_debt = models.BigIntegerField(default=0)
     waiting_approval_annual_debt = models.BigIntegerField(default=0)
+    paid_amount = models.BigIntegerField(default=0)
+    annual_paid_amount = models.BigIntegerField(default=0)
     customer_name = models.CharField(max_length=512, default='')
     customer_address = models.CharField(max_length=2048, null=True)
     customer_email = models.CharField(max_length=256, default='')

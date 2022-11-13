@@ -7,7 +7,7 @@ from django.db.models import Sum
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE
-from api.models.data import OrderDetail, Payment
+from api.models.data import OrderDetail, Payment, Order
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus
 from api.services.data import FilterOrderService
@@ -251,22 +251,22 @@ class FilterBadDebtReportService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
         orders = []
-        filters = ['order']
+        filters = ['months']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'order' and value is not None:
-                order_service = FilterOrderService()
-                orders = order_service.serve(request, cookies, *args, **{'filter': value})
+            if key == 'months' and value is not None:
+                orders = Order.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True,
+                                              annual_due_date__isnull=False, annual_debt__gt=0)
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
                 if params.get('months', None):
                     from_date = datetime.today() - relativedelta(months=params.get('months'))
-                    orders.filter(annual_due_date__lt=from_date)
+                    orders = orders.filter(annual_due_date__lt=from_date)
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -274,7 +274,7 @@ class FilterBadDebtReportService(BaseService):
         self.initialize_report(sales, report)
 
         for order in orders:
-            if order.pic and order.pic.username not in report:
+            if order.pic and order.pic.username in report:
                 report[order.pic.username] = {
                     'pic': order.pic.username,
                     'total_order': report[order.pic.username]['total_order'] + 1,
