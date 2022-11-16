@@ -111,6 +111,12 @@ def recalculate_order(order):
         order.amount += order_detail.total_payment_amount
         order.debt += order_detail.debt
 
+    if order.debt < 0:
+        order.debt = 0
+
+    if order.annual_debt < 0:
+        order.annual_debt = 0
+
     if annual_order_details:
         order.annual_due_date = annual_order_details.first().due_date
 
@@ -151,7 +157,7 @@ def recalculate_order_details_by_payment(order_detail):
                                                 deleted_at__isnull=True).exclude(
             status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
         payment_amount = 0 if payment_amount is None else payment_amount
-        order_detail.debt = order_detail.total_payment_amount - payment_amount
+        order_detail.debt = max(0, order_detail.total_payment_amount - payment_amount)
         annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
         if annual_order_history:
             annual_order_history_query = AnnualOrderHistory.objects.filter(
@@ -188,7 +194,7 @@ def recalculate_order_details_by_payment(order_detail):
             payment_value -= paid_amount
             order_detail.paid_payment_amount = paid_amount
             order_detail.remaining_payment_amount = order_detail.total_payment_amount - paid_amount
-            order_detail.debt = order_detail.remaining_payment_amount
+            order_detail.debt = max(0, order_detail.remaining_payment_amount)
             order_detail.save()
 
 
@@ -1023,7 +1029,17 @@ class UpdatePaymentService(BaseService):
 
             payment.save()
             if 'value' in kwargs:
-                recalculate_order_details_by_payment(payment)
+                if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                    order_details = OrderDetail.objects.filter(
+                        order_id=payment.order.id,
+                        type=ORDER_DETAIL_TYPE.NEW_BUY,
+                        deleted_at__isnull=True
+                    )
+                    if order_details.first() is None:
+                        raise PaymentForNoProductOrder()
+                    recalculate_order_details_by_payment(order_details.first())
+                else:
+                    recalculate_order_details_by_payment(payment.order_detail)
                 recalculate_order(payment.order)
 
             return payment
