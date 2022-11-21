@@ -291,6 +291,11 @@ class PaymentMoreThanAmount(APIException):
     msg = 'Payment more than amount'
 
 
+class DeleteApprovedOrderDetail(APIException):
+    code = 5009
+    msg = 'Cannot delete order detail when payment has been approved'
+
+
 class ZaloOAAPIHasNoPermission(APIException):
     code = 6001
     msg = 'Zalo OA need buy another package, see details: https://developers.zalo.me/docs/api/official-account-api/phu-luc/official-account-access-token-post-4307'

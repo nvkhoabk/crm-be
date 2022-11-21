@@ -24,7 +24,7 @@ from api.serializers.data_serializer import ImportOrderDataRequestSerializer, Cr
 from api.services import utils
 from api.services.exceptions import OrderNotFound, OrderDuplicated, OrderDetailNotFound, OrderDetailDuplicated, \
     FBPageNotFound, FBUserNotExisted, PaymentNotFound, ImportRecordNotFound, PaymentForNoProductOrder, \
-    PaymentMoreThanAmount
+    PaymentMoreThanAmount, DeleteApprovedOrderDetail
 import api.services.validate_error_code as vec
 import operator
 import functools
@@ -137,13 +137,15 @@ def recalculate_order(order):
     paid_amount = Payment.objects.filter(order_id=order.id,
                                          type=ORDER_DETAIL_TYPE.NEW_BUY,
                                          deleted_at__isnull=True).exclude(
-        status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(Sum('value'))[
+        'value__sum']
     order.paid_amount = 0 if paid_amount is None else paid_amount
 
     annual_paid_amount = Payment.objects.filter(order_id=order.id,
-                                         type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
-                                         deleted_at__isnull=True).exclude(
-        status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                deleted_at__isnull=True).exclude(
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(Sum('value'))[
+        'value__sum']
     order.annual_paid_amount = 0 if annual_paid_amount is None else annual_paid_amount
 
     order.debt_status = calculate_debt_status(order, today)
@@ -155,7 +157,8 @@ def recalculate_order_details_by_payment(order_detail):
         payment_amount = Payment.objects.filter(order_detail_id=order_detail.id,
                                                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                 deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+            Sum('value'))['value__sum']
         payment_amount = 0 if payment_amount is None else payment_amount
         order_detail.debt = max(0, order_detail.total_payment_amount - payment_amount)
         annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
@@ -168,7 +171,8 @@ def recalculate_order_details_by_payment(order_detail):
                 order_detail_id__in=annual_order_history_query.values_list('order_detail_id', flat=True),
                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                 deleted_at__isnull=True).exclude(
-                status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+                status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+                Sum('value'))['value__sum']
             paid_amount = 0 if paid_amount is None else paid_amount
             order_detail.annual_paid_payment_amount = paid_amount
             order_detail.annual_remaining_payment_amount = order_detail.price * order_detail.quantity - \
@@ -183,7 +187,8 @@ def recalculate_order_details_by_payment(order_detail):
         )
         payment_value = Payment.objects.filter(order_id=order_detail.order_id, type=ORDER_DETAIL_TYPE.NEW_BUY,
                                                deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).aggregate(Sum('value'))['value__sum']
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+            Sum('value'))['value__sum']
 
         payment_value = 0 if payment_value is None else payment_value
 
@@ -576,7 +581,7 @@ class FilterOrderDetailService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = OrderDetail.objects.filter(company_id=user_roles.first().company_id)
+        query_set = OrderDetail.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
         filters = ['order_id', 'type']
         params = dict(kwargs.get('filter', []))
@@ -615,6 +620,12 @@ class UpdateOrderDetailService(BaseService):
                     pk=kwargs.get('order_detail_id'),
                     company_id=user_roles.first().company_id
                 )
+
+            if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+                payments = Payment.objects.filter(order_detail_id=order_detail.id)
+                for payment in payments:
+                    if payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                        raise DeleteApprovedOrderDetail()
 
             if kwargs.get('product_id'):
                 order_detail.product_id = kwargs['product_id']
@@ -685,7 +696,14 @@ class DeleteOrderDetailService(BaseService):
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
             )
-            order_detail.delete()
+            if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
+                payments = Payment.objects.filter(order_detail_id=order_detail.id)
+                for payment in payments:
+                    if payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                        raise DeleteApprovedOrderDetail()
+
+            order_detail.deleted_at = datetime.now(timezone(TIME_ZONE))
+            order_detail.save()
 
             recalculate_order(order_detail.order)
 
@@ -747,7 +765,7 @@ class FilterOrderDetailHistoryService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = OrderDetailHistory.objects.filter(company_id=user_roles.first().company_id)
+        query_set = OrderDetailHistory.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
         filters = ['order_detail_id', 'order_id', 'type']
         params = dict(kwargs.get('filter', []))
@@ -1098,7 +1116,17 @@ class DisapprovePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            recalculate_order_details_by_payment(payment)
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    raise PaymentForNoProductOrder()
+                recalculate_order_details_by_payment(order_details.first())
+            else:
+                recalculate_order_details_by_payment(payment.order_detail)
             recalculate_order(payment.order)
 
             payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
@@ -1160,8 +1188,20 @@ class DeletePaymentService(BaseService):
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
             )
-            payment.delete()
-            recalculate_order_details_by_payment(payment)
+            payment.status = ORDER_PAYMENT_STATUS.CANCELLED
+            payment.save()
+
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    raise PaymentForNoProductOrder()
+                recalculate_order_details_by_payment(order_details.first())
+            else:
+                recalculate_order_details_by_payment(payment.order_detail)
             recalculate_order(payment.order)
 
             return payment
