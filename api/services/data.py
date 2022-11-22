@@ -1084,13 +1084,22 @@ class ApprovePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            recalculate_order(payment.order)
-
             payment.status = ORDER_PAYMENT_STATUS.APPROVED
             payment.accountant_note = kwargs.get('accountant_note')
             payment.save()
 
-            recalculate_order(Order.objects.get(pk=payment.order_id))
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    raise PaymentForNoProductOrder()
+                recalculate_order_details_by_payment(order_details.first())
+            else:
+                recalculate_order_details_by_payment(payment.order_detail)
+            recalculate_order(payment.order)
 
             return payment
         except Payment.DoesNotExist:
@@ -1116,6 +1125,10 @@ class DisapprovePaymentService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
+            payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
+            payment.accountant_note = kwargs.get('accountant_note')
+            payment.save()
+
             if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
                 order_details = OrderDetail.objects.filter(
                     order_id=payment.order.id,
@@ -1128,10 +1141,6 @@ class DisapprovePaymentService(BaseService):
             else:
                 recalculate_order_details_by_payment(payment.order_detail)
             recalculate_order(payment.order)
-
-            payment.status = ORDER_PAYMENT_STATUS.DISAPPROVED
-            payment.accountant_note = kwargs.get('accountant_note')
-            payment.save()
 
             return payment
         except Payment.DoesNotExist:
