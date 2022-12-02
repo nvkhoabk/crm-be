@@ -128,9 +128,8 @@ class FilterReportService(BaseService):
         return 0
 
     def confirmed_time(self, order):
-        if self.confirmed_order(order) == 0:
+        if self.confirmed_order(order) == 0 or order.confirmed_date is None or order.created_date is None:
             return 0
-
         return (order.confirmed_date - order.created_date).days
 
     def calculate_average_confirmed_time(self, report, order):
