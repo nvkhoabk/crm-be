@@ -72,7 +72,7 @@ class ExtFileHistory(BaseModel):
         db_table = 'ext_files'
 
 class CallCenterPaymentHistory(BaseModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, unique=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     charge_by = models.CharField(max_length=128)
     payment_method = models.CharField(max_length=128)
     payment_date = models.DateField()
