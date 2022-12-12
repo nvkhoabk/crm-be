@@ -248,6 +248,7 @@ urlpatterns = [
     path('data/delete_payment/', data.DeletePaymentView.as_view(), name='data.delete_payment'),
     path('data/approve_payment/', data.ApprovePaymentView.as_view(), name='data.approve_payment'),
     path('data/disapprove_payment/', data.DisapprovePaymentView.as_view(), name='data.disapprove_payment'),
+    path('data/cancel_approved_payment/', data.CancelApprovedPaymentView.as_view(), name='data.cancel_approved_payment'),
     path('data/stop_annual_order/', data.StopAnnualOrderView.as_view(), name='data.stop_annual_order'),
 
 

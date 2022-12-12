@@ -629,6 +629,29 @@ class ApprovePaymentView(BaseAPIView):
         return self.get_response(results=payment, request=request,
                                  serializer=data_serializer.ApprovePaymentResponseSerializer)
 
+class CancelApprovedPaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, AccountEditPermission]
+    serializer_class = data_serializer.CancelApprovedPaymentRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Cancel Approved Payment',
+        operation_description='Cancel Approved Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.CancelApprovedPaymentResponseSerializer,
+            exceptions.PaymentNotFound.code: exceptions.PaymentNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.CancelApprovedPaymentService()
+        payment = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=payment, request=request,
+                                 serializer=data_serializer.CancelApprovedPaymentResponseSerializer)
+
 
 class DisapprovePaymentView(BaseAPIView):
     authentication_classes = []

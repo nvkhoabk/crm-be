@@ -137,14 +137,16 @@ def recalculate_order(order):
     paid_amount = Payment.objects.filter(order_id=order.id,
                                          type=ORDER_DETAIL_TYPE.NEW_BUY,
                                          deleted_at__isnull=True).exclude(
-        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(Sum('value'))[
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).exclude(
+        status=ORDER_PAYMENT_STATUS.DELETED).aggregate(Sum('value'))[
         'value__sum']
     order.paid_amount = 0 if paid_amount is None else paid_amount
 
     annual_paid_amount = Payment.objects.filter(order_id=order.id,
                                                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                 deleted_at__isnull=True).exclude(
-        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(Sum('value'))[
+        status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).exclude(
+        status=ORDER_PAYMENT_STATUS.DELETED).aggregate(Sum('value'))[
         'value__sum']
     order.annual_paid_amount = 0 if annual_paid_amount is None else annual_paid_amount
 
@@ -157,7 +159,8 @@ def recalculate_order_details_by_payment(order_detail):
         payment_amount = Payment.objects.filter(order_detail_id=order_detail.id,
                                                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                                                 deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).exclude(
+            status=ORDER_PAYMENT_STATUS.DELETED).aggregate(
             Sum('value'))['value__sum']
         payment_amount = 0 if payment_amount is None else payment_amount
         order_detail.debt = max(0, order_detail.total_payment_amount - payment_amount)
@@ -171,7 +174,8 @@ def recalculate_order_details_by_payment(order_detail):
                 order_detail_id__in=annual_order_history_query.values_list('order_detail_id', flat=True),
                 type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
                 deleted_at__isnull=True).exclude(
-                status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+                status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).exclude(
+                status=ORDER_PAYMENT_STATUS.DELETED).aggregate(
                 Sum('value'))['value__sum']
             paid_amount = 0 if paid_amount is None else paid_amount
             order_detail.annual_paid_payment_amount = paid_amount
@@ -187,7 +191,8 @@ def recalculate_order_details_by_payment(order_detail):
         )
         payment_value = Payment.objects.filter(order_id=order_detail.order_id, type=ORDER_DETAIL_TYPE.NEW_BUY,
                                                deleted_at__isnull=True).exclude(
-            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).aggregate(
+            status=ORDER_PAYMENT_STATUS.DISAPPROVED).exclude(status=ORDER_PAYMENT_STATUS.CANCELLED).exclude(
+            status=ORDER_PAYMENT_STATUS.DELETED).aggregate(
             Sum('value'))['value__sum']
 
         payment_value = 0 if payment_value is None else payment_value
@@ -1106,6 +1111,46 @@ class ApprovePaymentService(BaseService):
             raise PaymentNotFound()
 
 
+class CancelApprovedPaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if request.user.is_superuser:
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id')
+                )
+            else:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+
+                payment = Payment.objects.get(
+                    pk=kwargs.get('id'),
+                    company_id=user_roles.first().company_id
+                )
+
+            payment.status = ORDER_PAYMENT_STATUS.CANCELLED
+            payment.accountant_note = kwargs.get('accountant_note')
+            payment.save()
+
+            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                order_details = OrderDetail.objects.filter(
+                    order_id=payment.order.id,
+                    type=ORDER_DETAIL_TYPE.NEW_BUY,
+                    deleted_at__isnull=True
+                )
+                if order_details.first() is None:
+                    raise PaymentForNoProductOrder()
+                recalculate_order_details_by_payment(order_details.first())
+            else:
+                recalculate_order_details_by_payment(payment.order_detail)
+            recalculate_order(payment.order)
+
+            return payment
+        except Payment.DoesNotExist:
+            raise PaymentNotFound()
+
 class DisapprovePaymentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -1197,7 +1242,7 @@ class DeletePaymentService(BaseService):
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
             )
-            payment.status = ORDER_PAYMENT_STATUS.CANCELLED
+            payment.status = ORDER_PAYMENT_STATUS.DELETED
             payment.save()
 
             if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:

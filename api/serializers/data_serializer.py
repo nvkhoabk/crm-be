@@ -492,6 +492,9 @@ class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
     accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
 
+class CancelApprovedPaymentRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text='Payment id', required=True)
+    accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
 
 class DisapprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
@@ -499,6 +502,10 @@ class DisapprovePaymentRequestSerializer(serializers.Serializer):
 
 
 class ApprovePaymentResponseSerializer(BaseResponseSerializer):
+    data = PaymentSerializer()
+
+
+class CancelApprovedPaymentResponseSerializer(BaseResponseSerializer):
     data = PaymentSerializer()
 
 
