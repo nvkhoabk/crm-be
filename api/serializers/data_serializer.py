@@ -227,7 +227,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                   'total_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at',
                   'annual_paid_payment_amount', 'annual_remaining_payment_amount',
-                  'annual_order']
+                  'annual_order', 'renew_date', 'payment_date', 'addition_fee']
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
@@ -253,6 +253,9 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     invoice = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     annual_paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     annual_remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    renew_date = serializers.DateField(required=False, allow_null=True)
+    payment_date = serializers.DateField(required=False, allow_null=True)
+    addition_fee = serializers.IntegerField(required=False, allow_null=True)
 
 
 class CreateOrderDetailResponseSerializer(BaseResponseSerializer):
@@ -284,6 +287,9 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     invoice = serializers.CharField(required=False, allow_null=True)
     annual_paid_payment_amount = serializers.IntegerField(required=False, allow_null=True)
     annual_remaining_payment_amount = serializers.IntegerField(required=False, allow_null=True)
+    renew_date = serializers.DateField(required=False, allow_null=True)
+    payment_date = serializers.DateField(required=False, allow_null=True)
+    addition_fee = serializers.IntegerField(required=False, allow_null=True)
 
 
 class UpdateOrderDetailResponseSerializer(BaseResponseSerializer):

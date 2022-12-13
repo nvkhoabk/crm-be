@@ -49,7 +49,9 @@ def create_order_detail_history(order_detail):
                                       file_attach=order_detail.file_attach, invoice=order_detail.invoice,
                                       annual_paid_payment_amount=order_detail.annual_paid_payment_amount,
                                       annual_remaining_payment_amount=order_detail.annual_remaining_payment_amount,
-                                      total_payment_amount=order_detail.total_payment_amount)
+                                      total_payment_amount=order_detail.total_payment_amount,
+                                      renew_date=order_detail.renew_date, payment_date=order_detail.payment_date,
+                                      addition_fee=order_detail.addition_fee)
 
 
 def create_order_history(order):
@@ -180,7 +182,8 @@ def recalculate_order_details_by_payment(order_detail):
             paid_amount = 0 if paid_amount is None else paid_amount
             order_detail.annual_paid_payment_amount = paid_amount
             order_detail.annual_remaining_payment_amount = order_detail.price * order_detail.quantity - \
-                                                           order_detail.discount_value - paid_amount
+                                                           order_detail.discount_value + order_detail.addition_fee\
+                                                           - paid_amount
         order_detail.save()
 
     if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
@@ -676,6 +679,15 @@ class UpdateOrderDetailService(BaseService):
 
             if kwargs.get('total_payment_amount'):
                 order_detail.total_payment_amount = kwargs['total_payment_amount']
+
+            if kwargs.get('renew_date'):
+                order_detail.renew_date = kwargs['renew_date']
+
+            if kwargs.get('payment_date'):
+                order_detail.payment_date = kwargs['payment_date']
+
+            if kwargs.get('addition_fee'):
+                order_detail.addition_fee = kwargs['addition_fee']
 
             order_detail.save()
 
