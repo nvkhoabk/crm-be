@@ -430,14 +430,13 @@ class DeleteSynchronizedFBAccountResponseSerializer(BaseResponseSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-
     order = OrderSerializer()
 
     class Meta:
         model = Payment
         fields = ['id', 'company', 'order', 'type', 'value', 'status', 'sale_note',
                   'invoice_no', 'accountant_note', 'approved_at', 'approver_id',
-                  'payment_method', 'order_detail_id', 'created_at']
+                  'payment_method', 'order_detail_id', 'created_at', 'order_detail_list']
 
 
 class CreatePaymentRequestSerializer(serializers.Serializer):
@@ -462,6 +461,7 @@ class CreatePaymentRequestSerializer(serializers.Serializer):
     approver_id = serializers.IntegerField(allow_null=True, required=False)
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=True, required=False)
     invoice_no = serializers.CharField(max_length=128, allow_null=True, allow_blank=True, required=False)
+    order_detail_list = serializers.ListField(child=serializers.CharField(), required=False, allow_null=True)
 
 
 class CreatePaymentResponseSerializer(BaseResponseSerializer):

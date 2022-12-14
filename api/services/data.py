@@ -182,8 +182,8 @@ def recalculate_order_details_by_payment(order_detail):
             paid_amount = 0 if paid_amount is None else paid_amount
             order_detail.annual_paid_payment_amount = paid_amount
             order_detail.annual_remaining_payment_amount = order_detail.price * order_detail.quantity - \
-                                                           order_detail.discount_value + order_detail.addition_fee\
-                                                           - paid_amount
+                                                           order_detail.discount_value + order_detail.addition_fee - \
+                                                           paid_amount
         order_detail.save()
 
     if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
@@ -430,7 +430,8 @@ class FilterOrderService(BaseService):
         params = dict(kwargs.get('filter', []))
         items = params.items()
 
-        if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params['data_to_date']:
+        if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params[
+            'data_to_date']:
             order_list = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
                                                     created_at__lte=params['data_to_date']).values_list(
                 'order_id', flat=True)
@@ -992,10 +993,11 @@ class CreatePaymentService(BaseService):
             )
 
             payment.status = ORDER_PAYMENT_STATUS.WAITING_APPROVAL
-            payment = Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id, type=payment.type,
-                                          value=payment.value, status=payment.status, sale_note=payment.sale_note,
-                                          invoice_no=payment.invoice_no, order_detail=payment.order_detail,
-                                          payment_method=payment.payment_method)
+            payment = Payment.objects.create(company_id=payment.company_id, order_id=payment.order_id,
+                                             type=payment.type,
+                                             value=payment.value, status=payment.status, sale_note=payment.sale_note,
+                                             invoice_no=payment.invoice_no, order_detail=payment.order_detail,
+                                             payment_method=payment.payment_method)
 
             if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
                 order_details = OrderDetail.objects.filter(
@@ -1162,6 +1164,7 @@ class CancelApprovedPaymentService(BaseService):
             return payment
         except Payment.DoesNotExist:
             raise PaymentNotFound()
+
 
 class DisapprovePaymentService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -1647,4 +1650,3 @@ class ConfirmImportOrderDataService(ImportOrderDataService):
 
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
-

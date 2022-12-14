@@ -329,6 +329,7 @@ class Payment(BaseModel):
     approved_at = models.DateTimeField(blank=True, null=True)
     payment_method = models.CharField(max_length=128, null=True)
     invoice_no = models.CharField(max_length=128, null=True)
+    order_detail_list = models.CharField(max_length=1024, default='')
 
     class Meta:
         db_table = 'payments'
