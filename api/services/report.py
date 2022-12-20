@@ -109,8 +109,8 @@ class FilterReportService(BaseService):
                                                    type=ORDER_DETAIL_TYPE.NEW_BUY)
 
         if data_from_date and data_to_date:
-            order_details = order_details.filter(created_at__gte=data_from_date,
-                                                 created_at__lte=data_to_date)
+            order_details = order_details.filter(payment_date__gte=data_from_date,
+                                                 payment_date__lte=data_to_date)
 
         order_detail_map = dict()
         for order_detail in order_details:
@@ -229,8 +229,8 @@ class FilterAnnualOrderReportService(BaseService):
                                                    type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
 
         if data_from_date and data_to_date:
-            order_details = order_details.filter(created_at__gte=data_from_date,
-                                                 created_at__lte=data_to_date)
+            order_details = order_details.filter(payment_date__gte=data_from_date,
+                                                 payment_date__lte=data_to_date)
 
         order_detail_map = dict()
         for order_detail in order_details:

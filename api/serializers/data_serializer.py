@@ -461,7 +461,7 @@ class CreatePaymentRequestSerializer(serializers.Serializer):
     approver_id = serializers.IntegerField(allow_null=True, required=False)
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, allow_blank=True, required=False)
     invoice_no = serializers.CharField(max_length=128, allow_null=True, allow_blank=True, required=False)
-    order_detail_list = serializers.ListField(child=serializers.CharField(), required=False, allow_null=True)
+    order_detail_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
 
 
 class CreatePaymentResponseSerializer(BaseResponseSerializer):
