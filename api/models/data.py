@@ -235,8 +235,8 @@ class OrderDetail(BaseModel):
     annual_remaining_payment_amount = models.BigIntegerField(null=True)
     renew_date = models.DateField(null=True)
     payment_date = models.DateField(null=True)
-    addition_fee = models.BigIntegerField(default=0)
-    waiting_approval_debt = models.BigIntegerField(default=0)
+    addition_fee = models.BigIntegerField(default=0, null=True)
+    waiting_approval_debt = models.BigIntegerField(default=0, null=True)
 
     class Meta:
         db_table = 'order_details'
@@ -302,7 +302,7 @@ class OrderDetailHistory(BaseModel):
     renew_date = models.DateField(null=True)
     payment_date = models.DateField(null=True)
     addition_fee = models.BigIntegerField(null=True)
-    waiting_approval_debt = models.BigIntegerField(default=0)
+    waiting_approval_debt = models.BigIntegerField(null=True)
 
     class Meta:
         db_table = 'order_detail_histories'
