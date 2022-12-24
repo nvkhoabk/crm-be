@@ -191,6 +191,8 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     annual_due_date_to_date = serializers.DateField(required=False, allow_null=True)
     data_from_date = serializers.DateField(required=False, allow_null=True)
     data_to_date = serializers.DateField(required=False, allow_null=True)
+    payment_from_date = serializers.DateField(required=False, allow_null=True)
+    payment_to_date = serializers.DateField(required=False, allow_null=True)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

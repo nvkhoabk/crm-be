@@ -39,7 +39,7 @@ class FilterReportService(BaseService):
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
-                order_detail_map = self.get_order_detail_map(orders, value['data_from_date'], value['data_to_date'])
+                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -104,13 +104,13 @@ class FilterReportService(BaseService):
             'top': 0
         }
 
-    def get_order_detail_map(self, orders, data_from_date, data_to_date):
+    def get_order_detail_map(self, orders, payment_from_date, payment_to_date):
         order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
                                                    type=ORDER_DETAIL_TYPE.NEW_BUY)
 
-        if data_from_date and data_to_date:
-            order_details = order_details.filter(payment_date__gte=data_from_date,
-                                                 payment_date__lte=data_to_date)
+        if payment_from_date and payment_to_date:
+            order_details = order_details.filter(payment_date__gte=payment_from_date,
+                                                 payment_date__lte=payment_to_date)
 
         order_detail_map = dict()
         for order_detail in order_details:
@@ -163,7 +163,7 @@ class FilterAnnualOrderReportService(BaseService):
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
-                order_detail_map = self.get_order_detail_map(orders, value['data_from_date'], value['data_to_date'])
+                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
 
         report = dict()
         user_service = FilterSaleUserService()
@@ -206,12 +206,7 @@ class FilterAnnualOrderReportService(BaseService):
 
         annual_amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
         annual_debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
-        waiting_approval_annual_debt = \
-        Payment.objects.filter(order_detail_id__in=[order_detail.id for order_detail in order_detail_map[order.id]],
-                               status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
-                               type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
-                               deleted_at__isnull=True).aggregate(Sum('value'))['value__sum']
-        waiting_approval_annual_debt = 0 if waiting_approval_annual_debt is None else waiting_approval_annual_debt
+        waiting_approval_annual_debt = sum(order_detail.waiting_approval_debt for order_detail in order_detail_map[order.id])
 
         return {
             'pic': order.pic.username,
@@ -224,13 +219,13 @@ class FilterAnnualOrderReportService(BaseService):
             'top': 0
         }
 
-    def get_order_detail_map(self, orders, data_from_date, data_to_date):
+    def get_order_detail_map(self, orders, payment_from_date, payment_to_date):
         order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
                                                    type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
 
-        if data_from_date and data_to_date:
-            order_details = order_details.filter(payment_date__gte=data_from_date,
-                                                 payment_date__lte=data_to_date)
+        if payment_from_date and payment_to_date:
+            order_details = order_details.filter(payment_date__gte=payment_from_date,
+                                                 payment_date__lte=payment_to_date)
 
         order_detail_map = dict()
         for order_detail in order_details:
