@@ -26,7 +26,22 @@ class FilterReportService(BaseService):
         filters = ['order', 'order_by']
         params = dict(kwargs.get('filter', []))
         orders = []
+        sales = []
         order_detail_map = dict()
+        need_report_null_pic = False
+        report_null_pic = {
+            'pic': 'Chưa chia data',
+            'total_order': 0,
+            'total_confirmed_order': 0,
+            'conversion_rate': 0,
+            'turnover': 0,
+            'debt': 0,
+            'waiting_approved_debt': 0,
+            'total_confirmed_time': 0,
+            'average_confirmed_time': 0,
+            'actual_amount': 0,
+            'top': 0
+        }
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -36,14 +51,20 @@ class FilterReportService(BaseService):
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
+                if value.get('pics', None) is not None:
+                    user_service = FilterSaleUserService()
+                    sales = user_service.serve(request, cookies, *args, **kwargs)
+                    sales = sales.filter(id__in=value.get('pics'))
+                    if None in value.get('pics'):
+                        need_report_null_pic = True
+
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
-                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
+                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'],
+                                                             value['payment_to_date'])
 
         report = dict()
-        user_service = FilterSaleUserService()
-        sales = user_service.serve(request, cookies, *args, **kwargs)
         self.initialize_report(sales, report)
 
         for order in orders:
@@ -51,6 +72,28 @@ class FilterReportService(BaseService):
                 report[order.pic.username]['total_order'] += 1
                 if order.due_date:
                     report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
+
+            if order.pic is None and need_report_null_pic and order.id in order_detail_map:
+                amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
+                debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
+
+                report_null_pic = {
+                    'pic': report_null_pic['pic'],
+                    'total_order': report_null_pic['total_order'] + 1,
+                    'total_confirmed_order': report_null_pic['total_confirmed_order'] + self.confirmed_order(
+                        order),
+                    'conversion_rate': (report_null_pic['total_confirmed_order'] + self.confirmed_order(
+                        order)) / (report_null_pic['total_order'] + 1),
+                    'turnover': report_null_pic['turnover'] + amount,
+                    'debt': report_null_pic['debt'] + debt,
+                    'waiting_approved_debt': report_null_pic[
+                                                 'waiting_approved_debt'] + order.waiting_approval_debt,
+                    'total_confirmed_time': report_null_pic['total_confirmed_time'] + self.confirmed_time(
+                        order),
+                    'average_confirmed_time': 0,
+                    'actual_amount': report_null_pic['actual_amount'] + amount - debt,
+                    'top': 0
+                }
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -62,10 +105,15 @@ class FilterReportService(BaseService):
             for index, report in enumerate(reports[::-1]):
                 report['top'] = index + 1
 
+        if need_report_null_pic:
+            reports.append(report_null_pic)
+
         return reports
 
     def initialize_report(self, sales, report):
         for sale in sales:
+            if sale.username in report:
+                continue
             report[sale.username] = {
                 'pic': sale.username,
                 'total_order': 0,
@@ -148,9 +196,20 @@ class FilterAnnualOrderReportService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
         orders = []
+        sales = []
         filters = ['order']
         params = dict(kwargs.get('filter', []))
         order_detail_map = dict()
+        need_report_null_pic = False
+        report_null_pic = {
+            'pic': 'Chưa chia data',
+            'total_order': 0,
+            'total_debt': 0,
+            'paid_amount': 0,
+            'remaining_debt': 0,
+            'waiting_approved_remaining_debt': 0,
+            'top': 0
+        }
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -160,14 +219,20 @@ class FilterAnnualOrderReportService(BaseService):
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
+
+                if value.get('pics', None) is not None:
+                    user_service = FilterSaleUserService()
+                    sales = user_service.serve(request, cookies, *args, **kwargs)
+                    sales = sales.filter(id__in=value.get('pics'))
+                    if None in value.get('pics'):
+                        need_report_null_pic = True
+
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
                 order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
 
         report = dict()
-        user_service = FilterSaleUserService()
-        sales = user_service.serve(request, cookies, *args, **kwargs)
         self.initialize_report(sales, report)
 
         for order in orders:
@@ -175,6 +240,22 @@ class FilterAnnualOrderReportService(BaseService):
                 report[order.pic.username]['total_order'] += 1
                 if order.annual_due_date:
                     report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
+            if order.pic is None and need_report_null_pic and order.id in order_detail_map:
+                annual_amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
+                annual_debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
+                waiting_approval_annual_debt = sum(
+                    order_detail.waiting_approval_debt for order_detail in order_detail_map[order.id])
+
+                report_null_pic = {
+                    'pic': report_null_pic['pic'],
+                    'total_order': report_null_pic['total_order'] + 1,
+                    'total_debt': report_null_pic['total_debt'] + annual_amount,
+                    'paid_amount': report_null_pic['paid_amount'] + annual_amount - annual_debt,
+                    'remaining_debt': report_null_pic['remaining_debt'] + annual_debt,
+                    'waiting_approved_remaining_debt': report_null_pic[
+                                                           'waiting_approved_remaining_debt'] + waiting_approval_annual_debt,
+                    'top': 0
+                }
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -186,10 +267,15 @@ class FilterAnnualOrderReportService(BaseService):
             for index, report in enumerate(reports.reverse()):
                 report['top'] = index + 1
 
+        if need_report_null_pic:
+            reports.append(report_null_pic)
+
         return reports
 
     def initialize_report(self, sales, report):
         for sale in sales:
+            if sale.username in report:
+                continue
             report[sale.username] = {
                 'pic': sale.username,
                 'total_order': 0,
@@ -206,7 +292,8 @@ class FilterAnnualOrderReportService(BaseService):
 
         annual_amount = sum(order_detail.total_payment_amount for order_detail in order_detail_map[order.id])
         annual_debt = sum(order_detail.debt for order_detail in order_detail_map[order.id])
-        waiting_approval_annual_debt = sum(order_detail.waiting_approval_debt for order_detail in order_detail_map[order.id])
+        waiting_approval_annual_debt = sum(
+            order_detail.waiting_approval_debt for order_detail in order_detail_map[order.id])
 
         return {
             'pic': order.pic.username,
@@ -263,8 +350,6 @@ class FilterBadDebtReportService(BaseService):
                     orders = orders.filter(annual_due_date__lt=from_date)
 
         report = dict()
-        user_service = FilterSaleUserService()
-        sales = user_service.serve(request, cookies, *args, **kwargs)
         self.initialize_report(sales, report)
 
         for order in orders:

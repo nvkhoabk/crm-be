@@ -193,6 +193,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     data_to_date = serializers.DateField(required=False, allow_null=True)
     payment_from_date = serializers.DateField(required=False, allow_null=True)
     payment_to_date = serializers.DateField(required=False, allow_null=True)
+    order_types = serializers.ListField(required=False, allow_null=True, child=serializers.CharField())
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

@@ -86,4 +86,4 @@ class Command(BaseCommand):
 
         self.process_annual_buy(processing_date)
         self.calculate_debt_status_order(processing_date)
-        #self.recalculate_order_17()
+        self.recalculate_order_17()

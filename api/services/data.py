@@ -396,7 +396,8 @@ class FilterOrderService(BaseService):
             )
 
         filters = ['id', 'from_date', 'to_date', 'pics', 'data_status', 'debt_status', 'data_source', 'phone',
-                   'customer_name', 'confirmed_from_date', 'confirmed_to_date', 'data_from_date', 'data_to_date']
+                   'customer_name', 'confirmed_from_date', 'confirmed_to_date', 'data_from_date', 'data_to_date',
+                   'order_types']
         params = dict(kwargs.get('filter', []))
         items = params.items()
 
@@ -484,6 +485,13 @@ class FilterOrderService(BaseService):
             if key == 'debt_status' and value is not None:
                 query_set = query_set.filter(debt_status=value)
 
+            if key == 'order_types' and value is not None and value:
+                if ORDER_DETAIL_TYPE.NEW_BUY in value:
+                    query_set = query_set.filter(due_date__isnull=False)
+
+                if ORDER_DETAIL_TYPE.ANNUAL_BUY in value:
+                    query_set = query_set.filter(annual_due_date__isnull=False)
+
         return query_set.order_by('-created_at')
 
 
@@ -560,7 +568,8 @@ class FilterOrderDetailService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = OrderDetail.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        query_set = OrderDetail.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True,
+                                               product__isnull=False)
 
         filters = ['order_id', 'type']
         params = dict(kwargs.get('filter', []))

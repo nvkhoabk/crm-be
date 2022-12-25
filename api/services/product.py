@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
@@ -106,7 +107,7 @@ class FilterProductService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = Product.objects.filter(company_id=user_roles.first().company_id)
+        query_set = Product.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
         filters = ['name', 'payment_method']
         params = dict(kwargs.get('filter', []))
@@ -135,9 +136,13 @@ class DeleteProductService(BaseService):
             }
             user_roles = UserRole.objects.filter(**filter)
 
-            return Product.objects.get(
+            product = Product.objects.get(
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
-            ).delete()
+            )
+            product.deleted_at = datetime.now()
+            product.save()
+            return product
+
         except Product.DoesNotExist as e:
             raise ProductNotFound()
