@@ -1,11 +1,15 @@
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.db.models import Sum
 from pytz import timezone
 
-from api.const import ORDER_DETAIL_TYPE
-from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order
-from api.services.data import create_order_detail_history, recalculate_order
+from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS
+from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
+    OrderDetailPayment
+from api.models.system_configuration import DataStatus
+from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment
 from api.utils.date import get_last_of_month
 from crm.settings import TIME_ZONE
 import logging
@@ -74,8 +78,92 @@ class Command(BaseCommand):
         for order in orders:
             recalculate_order(order)
 
+    def reset_order_detail(self):
+        order_details = OrderDetail.objects.filter(
+            company_id=17,
+            type=ORDER_DETAIL_TYPE.NEW_BUY,
+            deleted_at__isnull=True
+        )
+
+        for order_detail in order_details:
+            order_detail.remaining_payment_amount = order_detail.total_payment_amount
+            order_detail.save()
+
+        order_details = OrderDetail.objects.filter(
+            company_id=17,
+            type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+            deleted_at__isnull=True
+        )
+
+        for order_detail in order_details:
+            order_detail.annual_remaining_payment_amount = order_detail.total_payment_amount
+            order_detail.save()
+    def migrate_payments(self):
+        payments = Payment.objects.filter(company_id=17).exclude(
+            orderdetailpayment=None,
+            status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
+                        ORDER_PAYMENT_STATUS.DELETED]).order_by('id')
+
+        data_status = DataStatus.objects.filter(company_id=17, name__iexact='Đã hủy',
+                                                deleted_at__isnull=True).first()
+
+        for payment in payments:
+            if payment.order.data_status_id == data_status.id:
+                continue
+
+            with transaction.atomic():
+                if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                    order_details = OrderDetail.objects.filter(
+                        order_id=payment.order_id,
+                        type=ORDER_DETAIL_TYPE.NEW_BUY,
+                        deleted_at__isnull=True
+                    )
+
+                    if len(order_details) == 0:
+                        continue
+
+                    print(str(payment.id) + ', ')
+
+                    payment.order_detail_list = str([item.id for item in order_details])
+                    payment.save()
+
+                    if payment.order_detail_list:
+                        payment_value = payment.value
+                        for order_detail in order_details:
+
+                            if payment_value == 0:
+                                break
+                            paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+                            OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail,
+                                                              value=paid_amount)
+                            recalculate_order_details_by_payment(order_detail)
+                            payment_value -= paid_amount
+                else:
+                    OrderDetailPayment.objects.create(payment=payment, order_detail=payment.order_detail,
+                                                      value=payment.value)
+                    recalculate_order_details_by_payment(payment.order_detail)
+                recalculate_order(payment.order)
+
+    def migrate_payment_date(self):
+        order_details = OrderDetail.objects.filter(
+            company_id=17,
+            type=ORDER_DETAIL_TYPE.NEW_BUY,
+            deleted_at__isnull=True
+        )
+
+        for order_detail in order_details:
+            if order_detail.payment_date is None:
+                print(str(order_detail.order_id) + ',')
+                order_detail.payment_date = order_detail.created_at.date()
+                order_detail.save()
+
+
     def recalculate_order_17(self):
-        orders = Order.objects.filter(company_id=17)
+        order_details = OrderDetail.objects.filter(company_id=17, deleted_at__isnull=True)
+        for order_detail in order_details:
+            recalculate_order_details_by_payment(order_detail)
+
+        orders = Order.objects.filter(company_id=17, deleted_at__isnull=True)
         for order in orders:
             recalculate_order(order)
 
@@ -86,4 +174,7 @@ class Command(BaseCommand):
 
         self.process_annual_buy(processing_date)
         self.calculate_debt_status_order(processing_date)
-        self.recalculate_order_17()
+        # self.recalculate_order_17()
+        # self.reset_order_detail()
+        # self.migrate_payments()
+        # self.migrate_payment_date()

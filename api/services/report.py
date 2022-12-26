@@ -350,6 +350,9 @@ class FilterBadDebtReportService(BaseService):
                     orders = orders.filter(annual_due_date__lt=from_date)
 
         report = dict()
+
+        user_service = FilterSaleUserService()
+        sales = user_service.serve(request, cookies, *args, **kwargs)
         self.initialize_report(sales, report)
 
         for order in orders:
