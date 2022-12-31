@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'groups_manager',
     'guardian',
     'api',
-    # 'api.models',
+    'django_socketio'
 ]
 
 TEMPLATES = [

@@ -33,7 +33,11 @@ import pytz
 from api.utils.date import get_last_of_month
 from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE
+from django_socketio.events import on_connect
 
+@on_connect()
+def test_message(request, socket, context, message):
+    pass
 
 def create_order_detail_history(order_detail):
     OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
@@ -1120,6 +1124,7 @@ class ApprovePaymentService(BaseService):
                     recalculate_order_details_by_payment(order_detail_payment.order_detail)
 
                 recalculate_order(payment.order)
+
 
             return payment
         except Payment.DoesNotExist:

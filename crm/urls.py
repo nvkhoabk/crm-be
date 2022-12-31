@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls import url
 from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from drf_yasg import openapi
@@ -25,6 +26,9 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ] + static('files/', document_root=Const.FILE_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+urlpatterns += [
+     url('', include('django_socketio.urls'))
+]
 
 schema_view = get_schema_view(
     openapi.Info(

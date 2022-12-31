@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime
 
 import json
+from logging.handlers import RotatingFileHandler
+
 from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
 
@@ -13,6 +16,7 @@ from api.models.system_configuration import DataStatus, DataSubStatus
 from api.services.data import FilterOrderService
 
 from api.services.manage import FilterSaleUserService
+from crm.settings import LOG_ROOT, LOG_LEVEL
 
 
 class FilterReportService(BaseService):
@@ -189,11 +193,23 @@ class FilterReportService(BaseService):
 
 
 class FilterAnnualOrderReportService(BaseService):
+    def __init__(self):
+        self.logger = None
+
+    def initializer_logger(self):
+        logging.basicConfig(handlers=[RotatingFileHandler(filename=LOG_ROOT + 'crm.report.log',
+                                                          maxBytes=512000, backupCount=4)], level=LOG_LEVEL,
+                            format='%(levelname)s %(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S %p')
+        self.logger = logging.getLogger(__name__)
+
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         filter = {
             'user': request.user,
             'deleted_at__isnull': True
         }
+        self.initializer_logger()
+
         user_roles = UserRole.objects.filter(**filter)
         orders = []
         sales = []
@@ -210,6 +226,9 @@ class FilterAnnualOrderReportService(BaseService):
             'waiting_approved_remaining_debt': 0,
             'top': 0
         }
+
+        self.logger.info('Start process annual report')
+        self.logger.info('Start collect orders')
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -235,6 +254,9 @@ class FilterAnnualOrderReportService(BaseService):
         report = dict()
         self.initialize_report(sales, report)
 
+        self.logger.info('Complete collect orders')
+        self.logger.info('Start calculate report')
+
         for order in orders:
             if order.pic and order.pic.username in report and order.annual_due_date:
                 report[order.pic.username]['total_order'] += 1
@@ -256,6 +278,8 @@ class FilterAnnualOrderReportService(BaseService):
                                                            'waiting_approved_remaining_debt'] + waiting_approval_annual_debt,
                     'top': 0
                 }
+
+        self.logger.info('Complete calculate report')
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
