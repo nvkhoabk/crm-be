@@ -40,8 +40,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'groups_manager',
     'guardian',
-    'api',
-    'django_socketio'
+    'api'
 ]
 
 TEMPLATES = [

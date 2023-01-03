@@ -33,11 +33,7 @@ import pytz
 from api.utils.date import get_last_of_month
 from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE
-from django_socketio.events import on_connect
 
-@on_connect()
-def test_message(request, socket, context, message):
-    pass
 
 def create_order_detail_history(order_detail):
     OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
@@ -409,6 +405,13 @@ class FilterOrderService(BaseService):
             'data_to_date']:
             order_list = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
                                                     created_at__lte=params['data_to_date']).values_list(
+                'order_id', flat=True)
+            query_set = query_set.filter(id__in=order_list)
+
+        if 'payment_from_date' in params and 'payment_to_date' in params and params['payment_from_date'] and params[
+            'payment_to_date']:
+            order_list = OrderDetail.objects.filter(payment_date__gte=params['payment_from_date'],
+                                                    payment_date__lte=params['payment_to_date']).values_list(
                 'order_id', flat=True)
             query_set = query_set.filter(id__in=order_list)
 

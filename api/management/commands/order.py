@@ -167,6 +167,24 @@ class Command(BaseCommand):
         for order in orders:
             recalculate_order(order)
 
+    def fix_annual_order_generation(self):
+        order_details = OrderDetail.objects.filter(due_date__gt='2023-01-10', deleted_at__isnull=True,
+                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
+
+        for order_detail in order_details:
+            print('Fixing order detail id: ' + str(order_detail.id))
+            ao = AnnualOrder.objects.filter(order_detail_id=order_detail.id)
+            fi = ao.first()
+            if fi:
+                fi.order_detail_id = OrderDetail.objects.filter(order_id=order_detail.order_id,
+                                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                                id__lt=order_detail.id).order_by(
+                    '-id').first().id
+                fi.save()
+            order_detail.deleted_at = datetime.now()
+            order_detail.save()
+            recalculate_order(order_detail.order)
+
     def handle(self, *args, **options):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
@@ -174,6 +192,8 @@ class Command(BaseCommand):
 
         self.process_annual_buy(processing_date)
         self.calculate_debt_status_order(processing_date)
+
+        #self.fix_annual_order_generation()
         # self.recalculate_order_17()
         # self.reset_order_detail()
         # self.migrate_payments()

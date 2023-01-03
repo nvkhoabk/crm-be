@@ -26,10 +26,6 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ] + static('files/', document_root=Const.FILE_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-urlpatterns += [
-     url('', include('django_socketio.urls'))
-]
-
 schema_view = get_schema_view(
     openapi.Info(
         title='CRM',
