@@ -5,7 +5,7 @@ import json
 from logging.handlers import RotatingFileHandler
 
 from dateutil.relativedelta import relativedelta
-from django.db.models import Sum
+from django.db.models import Sum, Count, ExpressionWrapper, F, fields
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
@@ -20,19 +20,7 @@ from crm.settings import LOG_ROOT, LOG_LEVEL
 
 
 class FilterReportService(BaseService):
-    def __init__(self):
-        self.logger = None
-
-    def initializer_logger(self):
-        logging.basicConfig(handlers=[RotatingFileHandler(filename=LOG_ROOT + 'crm.report.log',
-                                                          maxBytes=512000, backupCount=4)], level=LOG_LEVEL,
-                            format='%(levelname)s %(asctime)s %(message)s',
-                            datefmt='%m/%d/%Y %H:%M:%S %p')
-        self.logger = logging.getLogger(__name__)
-
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        self.initializer_logger()
-
         filter = {
             'user': request.user,
             'deleted_at__isnull': True
@@ -43,23 +31,9 @@ class FilterReportService(BaseService):
         params = dict(kwargs.get('filter', []))
         orders = []
         sales = []
-        order_detail_map = dict()
         need_report_null_pic = False
-        report_null_pic = {
-            'pic': 'Chưa chia data',
-            'total_order': 0,
-            'total_confirmed_order': 0,
-            'conversion_rate': 0,
-            'turnover': 0,
-            'debt': 0,
-            'waiting_approved_debt': 0,
-            'total_confirmed_time': 0,
-            'average_confirmed_time': 0,
-            'actual_amount': 0,
-            'top': 0
-        }
+        order_details = []
 
-        self.logger.info('Start collect orders')
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -67,7 +41,6 @@ class FilterReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
-                # orders = orders.filter(due_date__isnull=False)
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
                 if value.get('pics', None) is not None:
@@ -80,46 +53,16 @@ class FilterReportService(BaseService):
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
 
-                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'],
-                                                             value['payment_to_date'])
+                order_details = self.collect_order_details(orders, value['payment_from_date'],
+                                                           value['payment_to_date'])
 
         report = dict()
-        self.initialize_report(sales, report)
 
-        self.logger.info('Complete collect orders')
-        self.logger.info('Start calculate report')
-        self.logger.info('Total orders: ' + str(len(orders)))
-
-        for order in orders:
-            if order.pic and order.pic.username in report:
-                report[order.pic.username]['total_order'] += 1
-                if order.due_date:
-                    report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
-
-            if order.pic is None and need_report_null_pic and order.id in order_detail_map:
-                amount = order_detail_map[order.id]['total_amount']
-                debt = order_detail_map[order.id]['total_debt']
-                waiting_approval_debt = order_detail_map[order.id]['total_waiting_approval_debt']
-
-                report_null_pic = {
-                    'pic': report_null_pic['pic'],
-                    'total_order': report_null_pic['total_order'] + 1,
-                    'total_confirmed_order': report_null_pic['total_confirmed_order'] + self.confirmed_order(
-                        order),
-                    'conversion_rate': (report_null_pic['total_confirmed_order'] + self.confirmed_order(
-                        order)) / (report_null_pic['total_order'] + 1),
-                    'turnover': report_null_pic['turnover'] + amount,
-                    'debt': report_null_pic['debt'] + debt,
-                    'waiting_approved_debt': report_null_pic[
-                                                 'waiting_approved_debt'] + waiting_approval_debt,
-                    'total_confirmed_time': report_null_pic['total_confirmed_time'] + self.confirmed_time(
-                        order),
-                    'average_confirmed_time': 0,
-                    'actual_amount': report_null_pic['actual_amount'] + amount - debt,
-                    'top': 0
-                }
-
-        self.logger.info('Complete calculate orders')
+        order_total_map = self.get_order_total_map(orders)
+        orders = orders.filter(due_date__isnull=False)
+        amount_map = self.get_amount_map(order_details, orders)
+        confirmed_order_map = self.get_confirmed_order_map(orders)
+        report_null_pic = self.calculate_report(sales, report, order_total_map, amount_map, confirmed_order_map, need_report_null_pic)
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -136,23 +79,130 @@ class FilterReportService(BaseService):
 
         return reports
 
-    def initialize_report(self, sales, report):
+    def collect_order_details(self, orders, payment_from_date, payment_to_date):
+        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
+                                                   type=ORDER_DETAIL_TYPE.NEW_BUY)
+
+        if payment_from_date and payment_to_date:
+            order_details = order_details.filter(payment_date__gte=payment_from_date,
+                                                 payment_date__lte=payment_to_date)
+        return order_details
+
+    def get_order_total_map(self, orders):
+        order_total_map = orders.values('pic__username').order_by('pic_id').annotate(
+                total=Count('*'))
+        order_total_map = {order_total['pic__username']: order_total['total'] for order_total in order_total_map}
+        return order_total_map
+
+    def get_amount_map(self, order_details, orders):
+        if len(order_details) == 0:
+            return dict()
+
+        order_details = order_details.filter(order__in=orders)
+        amount_map = order_details.values('order__pic__username').order_by(
+            'order__pic__username').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
+                                             total_waiting_approval_debt=Sum('waiting_approval_debt'))
+
+        return {amount['order__pic__username']: amount for amount in amount_map}
+
+    def get_confirmed_order_map(self, orders):
+        orders = orders.filter(data_status__isnull=False).filter(data_status__name__iexact='đã xác nhận')
+        confirmed_date = ExpressionWrapper(F('confirmed_date') + 1 - F('created_date'),
+                                           output_field=fields.DurationField())
+
+        orders = orders.values('pic__username').order_by(
+            'pic__username')
+
+        confirmed_order_map = orders.annotate(total_confirmed=Count('*'), total_confirmed_time=Sum(confirmed_date))
+        return {order['pic__username']: order for order in confirmed_order_map}
+
+    def get_report_total_order(self, sale_name, order_total_map):
+        if sale_name not in order_total_map:
+            return 0
+        return order_total_map[sale_name]
+
+    def get_report_total_confirmed_order(self, sale_name, confirmed_order_map):
+        if sale_name not in confirmed_order_map:
+            return 0
+        return confirmed_order_map[sale_name]['total_confirmed']
+
+    def get_report_conversion_rate(self, sale_name, order_total_map, confirmed_order_map):
+        if sale_name not in order_total_map or order_total_map[sale_name] == 0 or sale_name not in confirmed_order_map:
+            return 0
+
+        return confirmed_order_map[sale_name]['total_confirmed'] / order_total_map[sale_name]
+
+    def get_report_turnover(self, sale_name, amount_map):
+        if sale_name not in amount_map:
+            return 0
+
+        return amount_map[sale_name]['total_amount']
+
+    def get_report_debt(self, sale_name, amount_map):
+        if sale_name not in amount_map:
+            return 0
+
+        return amount_map[sale_name]['total_debt']
+
+    def get_report_waiting_approved_debt(self, sale_name, amount_map):
+        if sale_name not in amount_map:
+            return 0
+
+        return amount_map[sale_name]['total_waiting_approval_debt']
+
+    def get_report_total_confirmed_time(self, sale_name, confirmed_order_map):
+        if sale_name not in confirmed_order_map:
+            return 0
+
+        return confirmed_order_map[sale_name]['total_confirmed_time'].days
+
+    def get_report_average_confirmed_time(self, sale_name, confirmed_order_map):
+        if sale_name not in confirmed_order_map or confirmed_order_map[sale_name]['total_confirmed'] == 0:
+            return 0
+
+        return confirmed_order_map[sale_name]['total_confirmed_time'].days / confirmed_order_map[sale_name][
+            'total_confirmed']
+
+    def get_report_actual_amount(self, sale_name, amount_map):
+        if sale_name not in amount_map:
+            return 0
+
+        return amount_map[sale_name]['total_amount'] - amount_map[sale_name]['total_debt']
+
+    def calculate_report(self, sales, report, order_total_map, amount_map, confirmed_order_map, need_report_null_pic):
         for sale in sales:
             if sale.username in report:
                 continue
             report[sale.username] = {
                 'pic': sale.username,
-                'total_order': 0,
-                'total_confirmed_order': 0,
-                'conversion_rate': 0,
-                'turnover': 0,
-                'debt': 0,
-                'waiting_approved_debt': 0,
-                'total_confirmed_time': 0,
-                'average_confirmed_time': 0,
-                'actual_amount': 0,
+                'total_order': self.get_report_total_order(sale.username, order_total_map),
+                'total_confirmed_order': self.get_report_total_confirmed_order(sale.username, confirmed_order_map),
+                'conversion_rate': self.get_report_conversion_rate(sale.username, order_total_map, confirmed_order_map),
+                'turnover': self.get_report_turnover(sale.username, amount_map),
+                'debt': self.get_report_debt(sale.username, amount_map),
+                'waiting_approved_debt': self.get_report_waiting_approved_debt(sale.username, amount_map),
+                'total_confirmed_time': self.get_report_total_confirmed_time(sale.username, confirmed_order_map),
+                'average_confirmed_time': self.get_report_average_confirmed_time(sale.username, confirmed_order_map),
+                'actual_amount': self.get_report_actual_amount(sale.username, amount_map),
                 'top': 0
             }
+
+        if need_report_null_pic:
+            return {
+                'pic': 'Chưa chia data',
+                'total_order': self.get_report_total_order(None, order_total_map),
+                'total_confirmed_order': self.get_report_total_confirmed_order(None, confirmed_order_map),
+                'conversion_rate': self.get_report_conversion_rate(None, order_total_map, confirmed_order_map),
+                'turnover': self.get_report_turnover(None, amount_map),
+                'debt': self.get_report_debt(None, amount_map),
+                'waiting_approved_debt': self.get_report_waiting_approved_debt(None, amount_map),
+                'total_confirmed_time': self.get_report_total_confirmed_time(None, confirmed_order_map),
+                'average_confirmed_time': self.get_report_average_confirmed_time(None, confirmed_order_map),
+                'actual_amount': self.get_report_actual_amount(None, amount_map),
+                'top': 0
+            }
+
+        return None
 
     def calculate_report_record(self, report, order, order_detail_map):
         if order.id not in order_detail_map:
@@ -179,14 +229,7 @@ class FilterReportService(BaseService):
             'top': 0
         }
 
-    def get_order_detail_map(self, orders, payment_from_date, payment_to_date):
-        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
-                                                   type=ORDER_DETAIL_TYPE.NEW_BUY)
-
-        if payment_from_date and payment_to_date:
-            order_details = order_details.filter(payment_date__gte=payment_from_date,
-                                                 payment_date__lte=payment_to_date)
-
+    def get_order_detail_map(self, order_details):
         order_details = order_details.values('order').order_by(
                 'order').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
                                   total_waiting_approval_debt=Sum('waiting_approval_debt'))
@@ -262,9 +305,8 @@ class FilterAnnualOrderReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
-                orders = orders.filter(annual_due_date__isnull=False)
-                data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
-                                                        deleted_at__isnull=True).first()
+                orders = orders.filter(annual_due_date__isnull=False, data_status__isnull=False,
+                                       data_status__name__iexact='đã xác nhận')
 
                 if value.get('pics', None) is not None:
                     user_service = FilterSaleUserService()
@@ -272,9 +314,6 @@ class FilterAnnualOrderReportService(BaseService):
                     sales = sales.filter(id__in=value.get('pics'))
                     if None in value.get('pics'):
                         need_report_null_pic = True
-
-                if data_status:
-                    orders = orders.exclude(data_status_id=data_status.id)
 
                 order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
 

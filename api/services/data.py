@@ -441,7 +441,7 @@ class FilterOrderService(BaseService):
 
             if key == 'confirmed_to_date' and value is not None:
                 query_set = query_set.filter(
-                    created_date__lte=value.strftime('%Y-%m-%d'),
+                    confirmed_date__lte=value.strftime('%Y-%m-%d'),
                 )
 
             if key == 'annual_due_date_from_date' and value is not None:
