@@ -25,6 +25,7 @@ class ReportSerializer(serializers.Serializer):
     debt = serializers.FloatField()
     waiting_approved_debt = serializers.FloatField()
     average_confirmed_time = serializers.IntegerField()
+    total_price = serializers.IntegerField()
     top = serializers.IntegerField()
 
 
@@ -52,6 +53,7 @@ class AnnualOrderReportSerializer(serializers.Serializer):
     paid_amount = serializers.FloatField()
     remaining_debt = serializers.FloatField()
     waiting_approved_remaining_debt = serializers.FloatField()
+    total_price = serializers.IntegerField()
     top = serializers.IntegerField()
 
 

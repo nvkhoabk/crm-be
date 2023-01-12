@@ -343,7 +343,7 @@ class UpdateOrderService(BaseService):
 
             if kwargs.get('data_status_id') and kwargs.get('data_status_id') != order.data_status_id:
                 order.data_status_id = kwargs['data_status_id']
-                if order.data_status.name.lower() == 'đã xác nhận':
+                if order.data_status.name.lower() == 'đã xác nhận' and order.confirmed_date is None:
                     order.confirmed_date = datetime.now(timezone(TIME_ZONE)).date()
 
             if kwargs.get('data_sub_status_id'):

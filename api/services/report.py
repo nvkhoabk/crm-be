@@ -101,7 +101,8 @@ class FilterReportService(BaseService):
         order_details = order_details.filter(order__in=orders)
         amount_map = order_details.values('order__pic__username').order_by(
             'order__pic__username').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
-                                             total_waiting_approval_debt=Sum('waiting_approval_debt'))
+                                             total_waiting_approval_debt=Sum('waiting_approval_debt'),
+                                             total_price=Sum('price'))
 
         return {amount['order__pic__username']: amount for amount in amount_map}
 
@@ -169,6 +170,12 @@ class FilterReportService(BaseService):
 
         return amount_map[sale_name]['total_amount'] - amount_map[sale_name]['total_debt']
 
+    def get_report_total_price(self, sale_name, amount_map):
+        if sale_name not in amount_map:
+            return 0
+
+        return amount_map[sale_name]['total_price']
+
     def calculate_report(self, sales, report, order_total_map, amount_map, confirmed_order_map, need_report_null_pic):
         for sale in sales:
             if sale.username in report:
@@ -184,6 +191,7 @@ class FilterReportService(BaseService):
                 'total_confirmed_time': self.get_report_total_confirmed_time(sale.username, confirmed_order_map),
                 'average_confirmed_time': self.get_report_average_confirmed_time(sale.username, confirmed_order_map),
                 'actual_amount': self.get_report_actual_amount(sale.username, amount_map),
+                'total_price': self.get_report_total_price(sale.username, amount_map),
                 'top': 0
             }
 
@@ -199,66 +207,11 @@ class FilterReportService(BaseService):
                 'total_confirmed_time': self.get_report_total_confirmed_time(None, confirmed_order_map),
                 'average_confirmed_time': self.get_report_average_confirmed_time(None, confirmed_order_map),
                 'actual_amount': self.get_report_actual_amount(None, amount_map),
+                'total_price': self.get_report_total_price(None, amount_map),
                 'top': 0
             }
 
         return None
-
-    def calculate_report_record(self, report, order, order_detail_map):
-        if order.id not in order_detail_map:
-            return report[order.pic.username]
-        amount = order_detail_map[order.id]['total_amount']
-        debt = order_detail_map[order.id]['total_debt']
-        waiting_approval_debt = order_detail_map[order.id]['total_waiting_approval_debt']
-
-        return {
-            'pic': order.pic.username,
-            'total_order': report[order.pic.username]['total_order'],
-            'total_confirmed_order': report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                order),
-            'conversion_rate': (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(
-                order)) / (report[order.pic.username]['total_order'] + 1),
-            'turnover': report[order.pic.username]['turnover'] + amount,
-            'debt': report[order.pic.username]['debt'] + debt,
-            'waiting_approved_debt': report[order.pic.username][
-                                         'waiting_approved_debt'] + waiting_approval_debt,
-            'total_confirmed_time': report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
-                order),
-            'average_confirmed_time': self.calculate_average_confirmed_time(report, order),
-            'actual_amount': report[order.pic.username]['actual_amount'] + amount - debt,
-            'top': 0
-        }
-
-    def get_order_detail_map(self, order_details):
-        order_details = order_details.values('order').order_by(
-                'order').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
-                                  total_waiting_approval_debt=Sum('waiting_approval_debt'))
-        order_detail_map = dict()
-        for order_detail in order_details:
-            if order_detail['order'] in order_detail_map:
-                order_detail_map[order_detail['order']].append(order_detail)
-            else:
-                order_detail_map[order_detail['order']] = order_detail
-
-        return order_detail_map
-
-    def confirmed_order(self, order):
-        if order.data_status and order.data_status.name.lower() == 'đã xác nhận':
-            return 1
-
-        return 0
-
-    def confirmed_time(self, order):
-        if self.confirmed_order(order) == 0 or order.confirmed_date is None or order.created_date is None:
-            return 0
-        return (order.confirmed_date - order.created_date).days
-
-    def calculate_average_confirmed_time(self, report, order):
-        if (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(order)) == 0:
-            return 0
-
-        return (report[order.pic.username]['total_confirmed_time'] + self.confirmed_time(
-            order)) / (report[order.pic.username]['total_confirmed_order'] + self.confirmed_order(order))
 
 
 class FilterAnnualOrderReportService(BaseService):
@@ -293,6 +246,7 @@ class FilterAnnualOrderReportService(BaseService):
             'paid_amount': 0,
             'remaining_debt': 0,
             'waiting_approved_remaining_debt': 0,
+            'total_price': 0,
             'top': 0
         }
 
@@ -333,6 +287,7 @@ class FilterAnnualOrderReportService(BaseService):
                 annual_amount = order_detail_map[order.id]['total_amount']
                 annual_debt = order_detail_map[order.id]['total_debt']
                 waiting_approval_annual_debt = order_detail_map[order.id]['total_waiting_approval_debt']
+                total_price = order_detail_map[order.id]['total_price']
 
                 report_null_pic = {
                     'pic': report_null_pic['pic'],
@@ -342,6 +297,7 @@ class FilterAnnualOrderReportService(BaseService):
                     'remaining_debt': report_null_pic['remaining_debt'] + annual_debt,
                     'waiting_approved_remaining_debt': report_null_pic[
                                                            'waiting_approved_remaining_debt'] + waiting_approval_annual_debt,
+                    'total_price': total_price,
                     'top': 0
                 }
 
@@ -373,6 +329,7 @@ class FilterAnnualOrderReportService(BaseService):
                 'paid_amount': 0,
                 'remaining_debt': 0,
                 'waiting_approved_remaining_debt': 0,
+                'total_price': 0,
                 'top': 0
             }
 
@@ -383,6 +340,7 @@ class FilterAnnualOrderReportService(BaseService):
         annual_amount = order_detail_map[order.id]['total_amount']
         annual_debt = order_detail_map[order.id]['total_debt']
         waiting_approval_annual_debt = order_detail_map[order.id]['total_waiting_approval_debt']
+        total_price = order_detail_map[order.id]['total_price']
 
         return {
             'pic': order.pic.username,
@@ -392,6 +350,7 @@ class FilterAnnualOrderReportService(BaseService):
             'remaining_debt': report[order.pic.username]['remaining_debt'] + annual_debt,
             'waiting_approved_remaining_debt': report[order.pic.username][
                                                    'waiting_approved_remaining_debt'] + waiting_approval_annual_debt,
+            'total_price': total_price,
             'top': 0
         }
 
@@ -405,7 +364,7 @@ class FilterAnnualOrderReportService(BaseService):
 
         order_details = order_details.values('order').order_by(
             'order').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
-                              total_waiting_approval_debt=Sum('waiting_approval_debt'))
+                              total_waiting_approval_debt=Sum('waiting_approval_debt'), total_price=Sum('price'))
         order_detail_map = dict()
         for order_detail in order_details:
             if order_detail['order'] in order_detail_map:
