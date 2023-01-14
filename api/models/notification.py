@@ -14,5 +14,5 @@ class Notification(BaseModel):
     unread = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'notification'
+        db_table = 'notifications'
         index_together = ('company', 'user', 'deleted_at')
