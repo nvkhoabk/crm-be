@@ -34,7 +34,7 @@ class FilterNotificationView(BaseAPIView):
 
 class UpdateUnreadNotificationView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, ProductEditPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = notification_serializer.UpdateUnreadNotificationRequestSerializer
 
     @swagger_auto_schema(
