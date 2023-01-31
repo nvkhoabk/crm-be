@@ -404,14 +404,15 @@ class FilterOrderService(BaseService):
         if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params[
             'data_to_date']:
             order_list = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
-                                                    created_at__lte=params['data_to_date']).values_list(
-                'order_id', flat=True)
+                                                    created_at__lte=params['data_to_date'],
+                                                    deleted_at__isnull=True).values_list('order_id', flat=True)
             query_set = query_set.filter(id__in=order_list)
 
         if 'payment_from_date' in params and 'payment_to_date' in params and params['payment_from_date'] and params[
             'payment_to_date']:
             order_list = OrderDetail.objects.filter(payment_date__gte=params['payment_from_date'],
-                                                    payment_date__lte=params['payment_to_date']).values_list(
+                                                    payment_date__lte=params['payment_to_date'],
+                                                    deleted_at__isnull=True).values_list(
                 'order_id', flat=True)
             query_set = query_set.filter(id__in=order_list)
 
