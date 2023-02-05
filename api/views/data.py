@@ -807,3 +807,26 @@ class ConfirmImportOrderDataView(BaseAPIView):
         results = service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=data_serializer.ImportOrderResponseSerializer)
+
+
+class ExportOrderView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.ExportOrderRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='Export order',
+        operation_description='Export order api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.ExportOrderResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.ExportOrderService()
+        record = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=record, request=serializer.validated_data,
+                                 serializer=data_serializer.ExportOrderResponseSerializer)

@@ -17,7 +17,7 @@ from api.common.common import Common
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment
+    User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
 from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
@@ -29,10 +29,11 @@ import api.services.validate_error_code as vec
 import operator
 import functools
 import pytz
+import pandas as pd
 
 from api.utils.date import get_last_of_month
 from api.utils.phone import extract_phone
-from crm.settings import TIME_ZONE
+from crm.settings import TIME_ZONE, MEDIA_ROOT
 
 
 def create_order_detail_history(order_detail):
@@ -129,7 +130,8 @@ def recalculate_order(order):
     waiting_approval_debt = order_details.aggregate(Sum('waiting_approval_debt'))['waiting_approval_debt__sum']
     order.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
 
-    waiting_approval_annual_debt = annual_order_details.aggregate(Sum('waiting_approval_debt'))['waiting_approval_debt__sum']
+    waiting_approval_annual_debt = annual_order_details.aggregate(Sum('waiting_approval_debt'))[
+        'waiting_approval_debt__sum']
     order.waiting_approval_annual_debt = 0 if waiting_approval_annual_debt is None else waiting_approval_annual_debt
 
     paid_amount = order_details.aggregate(Sum('paid_payment_amount'))['paid_payment_amount__sum']
@@ -1129,7 +1131,6 @@ class ApprovePaymentService(BaseService):
 
                 recalculate_order(payment.order)
 
-
             return payment
         except Payment.DoesNotExist:
             raise PaymentNotFound()
@@ -1644,3 +1645,63 @@ class ConfirmImportOrderDataService(ImportOrderDataService):
 
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
+
+
+class ExportOrderService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        order_service = FilterOrderService()
+        orders = order_service.serve(request, cookies, *args, **{'filter': kwargs})
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                   order_id__in=orders.values_list('id', flat=True)).order_by(
+            'order_id')
+        export_request = ExportOrderRequest.objects.create()
+        file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(export_request.created_at.timestamp()) + '.xls'
+
+
+        export_data = []
+        for order_detail in order_details:
+            export_data.append(self.normalize_row(order_detail))
+
+        df = pd.DataFrame(export_data, columns=['Mã đơn hàng',
+                                                'Ngày tạo data',
+                                                'Ngày chốt hợp đồng',
+                                                'Ngày psinh doanh số',
+                                                'SDT khách hàng',
+                                                'tên khách hàng',
+                                                'nguồn đơn',
+                                                'Kênh nguồn',
+                                                'Trạng thái cha',
+                                                'trạng thái con',
+                                                'Nv qly',
+                                                'Loại sản phẩm',
+                                                'trạng thái nợ',
+                                                'thời gian tạo sp',
+                                                'tên SP',
+                                                'Số lượng',
+                                                'Giá tiền',
+                                                'Giảm giá',
+                                                'Thu thêm',
+                                                'Số tiền đã thanh toán (VNĐ)',
+                                                'Tổng tiền cần thanh toán (VNĐ)',
+                                                'Ngày thanh toán',
+                                                'Hạn thanh toán',
+                                                'Ngày tái tục'])
+        df.to_excel(file_path, index=False, header=True)
+        export_request.file.name = file_path[len(MEDIA_ROOT):]
+        export_request.save()
+
+        return export_request
+
+    def normalize_row(self, order_detail):
+        return [
+            order_detail.order_id, order_detail.order.created_date.__str__(),
+            order_detail.order.confirmed_date.__str__(),
+            order_detail.payment_date.__str__(), order_detail.order.customer.phone, order_detail.order.customer_name,
+            order_detail.order.data_source.name,
+            order_detail.order.data_channel.name, order_detail.order.data_status.name,
+            order_detail.order.data_sub_status.name, order_detail.order.pic.username, order_detail.product.payment_method,
+            order_detail.order.debt_status, order_detail.created_at.__str__(),
+            order_detail.product.name, order_detail.quantity, order_detail.price, order_detail.discount_value,
+            order_detail.addition_fee, order_detail.paid_payment_amount + order_detail.annual_paid_payment_amount,
+            order_detail.total_payment_amount, order_detail.payment_date.__str__(),
+            order_detail.due_date.__str__(), order_detail.renew_date.__str__()]

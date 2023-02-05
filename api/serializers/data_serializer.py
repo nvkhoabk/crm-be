@@ -1,7 +1,8 @@
 import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD
-from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment, AnnualOrder
+from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment, AnnualOrder, \
+    ExportOrderRequest
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
@@ -609,3 +610,15 @@ class ConfirmImportOrderRequestSerializer(serializers.Serializer):
 
 class ConfirmImportOrderResponseSerializer(BaseResponseSerializer):
     pass
+
+
+class ExportOrderRequestRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportOrderRequest
+        fields = ['id', 'file']
+
+
+class ExportOrderRequestSerializer(FilterOrderRequestParamSerializer):
+    pass
+class ExportOrderResponseSerializer(BaseResponseSerializer):
+    data = ExportOrderRequestRecordSerializer()

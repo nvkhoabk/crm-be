@@ -365,3 +365,7 @@ class OrderDetailPayment(BaseModel):
     
     class Meta:
         db_table = 'order_detail_payment'
+
+
+class ExportOrderRequest(BaseModel):
+    file = models.FileField(upload_to='export_data', null=True)
