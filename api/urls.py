@@ -261,6 +261,7 @@ urlpatterns = [
 
     path('notification/filter_notification/', notification.FilterNotificationView.as_view(), name='notification.filter_notification'),
     path('notification/update_unread_notification/', notification.UpdateUnreadNotificationView.as_view(), name='notification.update_unread_notification'),
+    path('notification/mark_all_as_read/', notification.MarkAllAsReadView.as_view(), name='notification.mark_all_as_read'),
 
 
 ] + static('files/', document_root=Const.FILE_ROOT)

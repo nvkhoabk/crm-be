@@ -29,7 +29,15 @@ class FilterNotificationResponseSerializer(BaseResponseSerializer):
 
 class UpdateUnreadNotificationRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Notification id')
+    unread = serializers.BooleanField(default=False)
 
 
 class UpdateUnreadNotificationResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class MarkAllAsReadRequestSerializer(serializers.Serializer):
+    pass
+
+class MarkAllAsReadResponseSerializer(BaseResponseSerializer):
     pass

@@ -1,3 +1,5 @@
+import json
+
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from django.core.management.base import BaseCommand
@@ -5,9 +7,10 @@ from django.db import transaction
 from django.db.models import Sum
 from pytz import timezone
 
-from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS
+from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
+from api.models.notification import Notification
 from api.models.system_configuration import DataStatus
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment
 from api.utils.date import get_last_of_month
@@ -68,6 +71,15 @@ class Command(BaseCommand):
                 annual_order.save()
                 AnnualOrderHistory.objects.create(annual_order_id=annual_order.id, order_detail_id=new_order_detail.id)
 
+                if new_order_detail.order.pic_id:
+                    Notification.objects.create(company=new_order_detail.order.company,
+                                                user_id=new_order_detail.order.pic_id,
+                                                type=NOTIFICATION_TYPE.ANNUAL_BUY,
+                                                content=json.dumps({
+                                                    'phone': str(new_order_detail.order.customer.phone),
+                                                    'customer_name': new_order_detail.order.customer_name
+                                                }))
+
     def calculate_debt_status_order(self, processing_date):
         yesterday = processing_date - relativedelta(days=1)
         self.logger.info('Calculating debt status, yesterday: ' + str(yesterday))
@@ -76,7 +88,15 @@ class Command(BaseCommand):
         orders = Order.objects.filter(id__in=order_id_list, deleted_at__isnull=True)
         self.logger.info('Number of orders: ' + str(len(orders)))
         for order in orders:
+            old_debt_status = order.debt_status
             recalculate_order(order)
+            if order.debt_status == DEBT_STATUS.UNPAID and order.debt_status != old_debt_status and order.pic_id:
+                Notification.objects.create(company=order.company, user_id=order.pic_id, type=NOTIFICATION_TYPE.DEBT,
+                                            content=json.dumps({
+                                                'phone': str(order.customer.phone),
+                                                'customer_name': order.customer_name,
+                                                'debt': order.debt + order.annual_debt
+                                            }))
 
     def reset_order_detail(self):
         order_details = OrderDetail.objects.filter(
@@ -184,6 +204,22 @@ class Command(BaseCommand):
             order_detail.deleted_at = datetime.now()
             order_detail.save()
             recalculate_order(order_detail.order)
+
+    def notify_renew_date(self, processing_date):
+        month_end = get_last_of_month(processing_date)
+        self.logger.info('Notify renew date, month_end: ' + str(month_end))
+
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, renew_date=processing_date)
+
+        for order_detail in order_details:
+            if order_detail.order.pic_id:
+                Notification.objects.create(company=order_detail.order.company,
+                                            user_id=order_detail.order.pic_id,
+                                            type=NOTIFICATION_TYPE.RENEW,
+                                            content=json.dumps({
+                                                'phone': str(order_detail.order.customer.phone),
+                                                'customer_name': order_detail.order.customer_name
+                                            }))
 
     def handle(self, *args, **options):
         self.initializer_logger()

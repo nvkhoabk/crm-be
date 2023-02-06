@@ -39,7 +39,7 @@ class UpdateUnreadNotificationView(BaseAPIView):
 
     @swagger_auto_schema(
         tags=['Notification'],
-        operation_id='Delete product',
+        operation_id='Update unread',
         operation_description='Update unread notification api',
         request_body=serializer_class,
         responses={
@@ -54,3 +54,27 @@ class UpdateUnreadNotificationView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=product, request=request,
                                  serializer=notification_serializer.UpdateUnreadNotificationResponseSerializer)
+
+
+class MarkAllAsReadView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = notification_serializer.MarkAllAsReadRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Notification'],
+        operation_id='Mark all as read',
+        operation_description='Mark all as read',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: notification_serializer.MarkAllAsReadResponseSerializer,
+            exceptions.NotificationNotFound.code: exceptions.NotificationNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = notification_service.MarkAllAsReadService()
+        product = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=product, request=request,
+                                 serializer=notification_serializer.MarkAllAsReadResponseSerializer)

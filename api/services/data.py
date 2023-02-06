@@ -15,9 +15,11 @@ from django.db.models.aggregates import Sum
 from api.common.base_service import BaseService
 from api.common.common import Common
 from api.common.cookies import Cookies
-from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD
+from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD, \
+    NOTIFICATION_TYPE
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest
+from api.models.notification import Notification
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
 from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
@@ -1130,6 +1132,15 @@ class ApprovePaymentService(BaseService):
                     recalculate_order_details_by_payment(order_detail_payment.order_detail)
 
                 recalculate_order(payment.order)
+                if payment.order.pic_id:
+                    Notification.objects.create(company=payment.order.company,
+                                                user_id=payment.order.pic_id,
+                                                type=NOTIFICATION_TYPE.APPROVE_PAYMENT,
+                                                content=json.dumps({
+                                                    'phone': str(payment.order.customer.phone),
+                                                    'customer_name': payment.order.customer_name,
+                                                    'amount': payment.value
+                                                }))
 
             return payment
         except Payment.DoesNotExist:
@@ -1166,6 +1177,15 @@ class CancelApprovedPaymentService(BaseService):
                     recalculate_order_details_by_payment(order_detail_payment.order_detail)
 
                 recalculate_order(payment.order)
+                if payment.order.pic_id:
+                    Notification.objects.create(company=payment.order.company,
+                                                user_id=payment.order.pic_id,
+                                                type=NOTIFICATION_TYPE.UNAPPROVE_PAYMENT,
+                                                content=json.dumps({
+                                                    'phone': str(payment.order.customer.phone),
+                                                    'customer_name': payment.order.customer_name,
+                                                    'amount': payment.value
+                                                }))
 
                 return payment
         except Payment.DoesNotExist:
@@ -1202,6 +1222,15 @@ class DisapprovePaymentService(BaseService):
                     recalculate_order_details_by_payment(order_detail_payment.order_detail)
 
                 recalculate_order(payment.order)
+                if payment.order.pic_id:
+                    Notification.objects.create(company=payment.order.company,
+                                                user_id=payment.order.pic_id,
+                                                type=NOTIFICATION_TYPE.UNAPPROVE_PAYMENT,
+                                                content=json.dumps({
+                                                    'phone': str(payment.order.customer.phone),
+                                                    'customer_name': payment.order.customer_name,
+                                                    'amount': payment.value
+                                                }))
 
                 return payment
         except Payment.DoesNotExist:

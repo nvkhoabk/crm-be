@@ -30,7 +30,7 @@ class FilterNotificationService(BaseService):
             if key == 'unread' and value is not None:
                 query_set = query_set.filter(unread=value)
 
-        return query_set
+        return query_set.order_by('-id')
 
 
 class UpdateUnreadNotificationService(BaseService):
@@ -47,9 +47,26 @@ class UpdateUnreadNotificationService(BaseService):
                 company_id=user_roles.first().company_id,
                 user=request.user
             )
-            notification.unread = True
+            notification.unread = kwargs['unread']
             notification.save()
             return notification
 
         except Notification.DoesNotExist as e:
             raise NotificationNotFound()
+
+
+class MarkAllAsReadService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        notifications = Notification.objects.filter(
+            company_id=user_roles.first().company_id,
+            user=request.user,
+            unread=True,
+            deleted_at__isnull=True
+        )
+        notifications.update(unread=False)
