@@ -1683,13 +1683,15 @@ class ExportOrderService(BaseService):
         order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
                                                    order_id__in=orders.values_list('id', flat=True)).order_by(
             'order_id')
+        orders = orders.filter(due_date__isnull=True, annual_due_date__isnull=True, deleted_at__isnull=True).order_by('id')
         export_request = ExportOrderRequest.objects.create()
         file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(export_request.created_at.timestamp()) + '.xls'
 
-
         export_data = []
         for order_detail in order_details:
-            export_data.append(self.normalize_row(order_detail))
+            export_data.append(self.normalize_detail_row(order_detail))
+        for order in orders:
+            export_data.append(self.normalize_order_row(order))
 
         df = pd.DataFrame(export_data, columns=['Mã đơn hàng',
                                                 'Ngày tạo data',
@@ -1721,16 +1723,35 @@ class ExportOrderService(BaseService):
 
         return export_request
 
-    def normalize_row(self, order_detail):
+    def normalize_detail_row(self, order_detail):
         return [
             order_detail.order_id, order_detail.order.created_date.__str__(),
             order_detail.order.confirmed_date.__str__(),
-            order_detail.payment_date.__str__(), order_detail.order.customer.phone, order_detail.order.customer_name,
-            order_detail.order.data_source.name,
-            order_detail.order.data_channel.name, order_detail.order.data_status.name,
-            order_detail.order.data_sub_status.name, order_detail.order.pic.username, order_detail.product.payment_method,
-            order_detail.order.debt_status, order_detail.created_at.__str__(),
-            order_detail.product.name, order_detail.quantity, order_detail.price, order_detail.discount_value,
+            order_detail.payment_date.__str__(),
+            order_detail.order.customer.phone if order_detail.order.customer is not None else '',
+            order_detail.order.customer_name,
+            order_detail.order.data_source.name if order_detail.order.data_source is not None else '',
+            order_detail.order.data_channel.name if order_detail.order.data_channel is not None else '',
+            order_detail.order.data_status.name if order_detail.order.data_status is not None else '',
+            order_detail.order.data_sub_status.name if order_detail.order.data_sub_status is not None else '',
+            order_detail.order.pic.username if order_detail.order.pic is not None else '',
+            order_detail.product.payment_method,
+            order_detail.order.debt_status,
+            order_detail.created_at.__str__(),
+            order_detail.product.name,
+            order_detail.quantity, order_detail.price, order_detail.discount_value,
             order_detail.addition_fee, order_detail.paid_payment_amount + order_detail.annual_paid_payment_amount,
             order_detail.total_payment_amount, order_detail.payment_date.__str__(),
             order_detail.due_date.__str__(), order_detail.renew_date.__str__()]
+
+    def normalize_order_row(self, order):
+        return [
+            order.id, order.created_date.__str__(),
+            order.confirmed_date.__str__() if order.confirmed_date is not None else '',
+            '', order.customer.phone if order.customer is not None else '', order.customer_name,
+            order.data_source.name if order.data_source is not None else '',
+            order.data_channel.name if order.data_channel is not None else '',
+            order.data_status.name if order.data_status is not None else '',
+            order.data_sub_status.name if order.data_sub_status is not None else '',
+            order.pic.username if order.pic is not None else '',
+            '', order.debt_status, '', '', '', '', '', '', '', '', '', '', '']
