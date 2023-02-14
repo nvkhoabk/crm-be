@@ -44,9 +44,8 @@ class Command(BaseCommand):
         annual_orders = AnnualOrder.objects.filter(is_active=True, deleted_at__isnull=True)
         for annual_order in annual_orders:
             date_in_month_payment = min(annual_order.product.date_in_month_payment, month_end.day)
-            if date_in_month_payment + 1 - annual_order.product.number_of_date_notify == processing_date.day \
-                    and annual_order.order_detail.due_date == processing_date + relativedelta(
-                days=annual_order.product.number_of_date_notify - 1):
+            if date_in_month_payment == (processing_date + relativedelta(
+                days=annual_order.product.number_of_date_notify - 1)).day:
                 self.logger.info('Creating new order detail for annual_order_id: ' + str(annual_order.id))
 
                 new_order_detail = OrderDetail.objects.create(order_id=annual_order.order_detail.order_id,
@@ -228,6 +227,7 @@ class Command(BaseCommand):
 
         self.process_annual_buy(processing_date)
         self.calculate_debt_status_order(processing_date)
+        self.notify_renew_date(processing_date)
 
         #self.fix_annual_order_generation()
         # self.recalculate_order_17()
