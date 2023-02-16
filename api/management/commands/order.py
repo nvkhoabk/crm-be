@@ -61,8 +61,7 @@ class Command(BaseCommand):
                                                               annual_paid_payment_amount=0,
                                                               paid_payment_amount=0,
                                                               debt=annual_order.product.period_fee,
-                                                              due_date=annual_order.order_detail.due_date + relativedelta(
-                                                                  months=1))
+                                                              due_date=(processing_date + relativedelta(days=annual_order.product.number_of_date_notify - 1)))
                 create_order_detail_history(new_order_detail)
                 recalculate_order(new_order_detail.order)
 

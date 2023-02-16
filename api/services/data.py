@@ -147,40 +147,42 @@ def recalculate_order(order):
 
 
 def recalculate_order_details_by_payment(order_detail):
-    payment_amount = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
-                                                       deleted_at__isnull=True).exclude(
-        payment__status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
-                             ORDER_PAYMENT_STATUS.DELETED]).aggregate(
-        Sum('value'))['value__sum']
-    payment_amount = 0 if payment_amount is None else payment_amount
+    if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
+        payment_amount = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
+                                                           deleted_at__isnull=True).exclude(
+            payment__status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
+                                 ORDER_PAYMENT_STATUS.DELETED]).aggregate(
+            Sum('value'))['value__sum']
+        payment_amount = 0 if payment_amount is None else payment_amount
 
-    order_detail.paid_payment_amount = payment_amount
-    order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.paid_payment_amount
-    order_detail.debt = max(0, order_detail.remaining_payment_amount)
+        order_detail.paid_payment_amount = payment_amount
+        order_detail.remaining_payment_amount = order_detail.total_payment_amount - order_detail.paid_payment_amount
+        order_detail.debt = max(0, order_detail.remaining_payment_amount)
 
-    waiting_approval_debt = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
-                                                              payment__status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
-                                                              deleted_at__isnull=True).aggregate(
-        Sum('value'))['value__sum']
-    order_detail.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
+        waiting_approval_debt = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
+                                                                  payment__status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                                  deleted_at__isnull=True).aggregate(
+            Sum('value'))['value__sum']
+        order_detail.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
 
     if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-        annual_order_history = AnnualOrderHistory.objects.filter(order_detail_id=order_detail.id).first()
-        if annual_order_history:
-            annual_order_history_query = AnnualOrderHistory.objects.filter(
-                annual_order_id=annual_order_history.annual_order_id, deleted_at__isnull=True,
-                id__lte=annual_order_history.id)
-            paid_amount = OrderDetailPayment.objects.filter(
-                order_detail_id__in=annual_order_history_query.values_list('order_detail_id', flat=True),
-                deleted_at__isnull=True).exclude(
-                payment__status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
-                                     ORDER_PAYMENT_STATUS.DELETED]).aggregate(
-                Sum('value'))['value__sum']
-            paid_amount = 0 if paid_amount is None else paid_amount
-            order_detail.annual_paid_payment_amount = paid_amount
-            order_detail.annual_remaining_payment_amount = order_detail.price * order_detail.quantity - \
-                                                           order_detail.discount_value + order_detail.addition_fee - \
-                                                           paid_amount
+        payment_amount = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
+                                                           deleted_at__isnull=True).exclude(
+            payment__status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
+                                 ORDER_PAYMENT_STATUS.DELETED]).aggregate(
+            Sum('value'))['value__sum']
+        payment_amount = 0 if payment_amount is None else payment_amount
+
+        order_detail.annual_paid_payment_amount = payment_amount
+        order_detail.annual_remaining_payment_amount = order_detail.total_payment_amount \
+                                                       - order_detail.annual_paid_payment_amount
+        order_detail.debt = max(0, order_detail.annual_remaining_payment_amount)
+
+        waiting_approval_debt = OrderDetailPayment.objects.filter(order_detail_id=order_detail.id,
+                                                                  payment__status=ORDER_PAYMENT_STATUS.WAITING_APPROVAL,
+                                                                  deleted_at__isnull=True).aggregate(
+            Sum('value'))['value__sum']
+        order_detail.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
 
     order_detail.save()
 
@@ -1683,9 +1685,11 @@ class ExportOrderService(BaseService):
         order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
                                                    order_id__in=orders.values_list('id', flat=True)).order_by(
             'order_id')
-        orders = orders.filter(due_date__isnull=True, annual_due_date__isnull=True, deleted_at__isnull=True).order_by('id')
+        orders = orders.filter(due_date__isnull=True, annual_due_date__isnull=True, deleted_at__isnull=True).order_by(
+            'id')
         export_request = ExportOrderRequest.objects.create()
-        file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(export_request.created_at.timestamp()) + '.xls'
+        file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(
+            export_request.created_at.timestamp()) + '.xls'
 
         export_data = []
         for order_detail in order_details:
