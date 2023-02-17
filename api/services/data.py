@@ -1536,7 +1536,7 @@ class ImportOrderService(BaseService):
                 error_codes.append(vec.DataSourceNotFound.code)
 
         if data_channel != '':
-            data_channel = DataChannel.objects.filter(data_status_id=data_source.id, company_id=company_id,
+            data_channel = DataChannel.objects.filter(data_source_id=data_source.id, company_id=company_id,
                                                       name__iexact=data_channel)
             if data_channel is None:
                 error_codes.append(vec.DataChannelNotFound.code)
