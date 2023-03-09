@@ -994,33 +994,22 @@ class CreatePaymentService(BaseService):
                                              order_detail_list=None if payment.order_detail_list is None else
                                              json.dumps(payment.order_detail_list))
 
-            if payment.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                if payment.order_detail_list:
-                    order_details = self.collect_order_details(payment, kwargs.get('order_detail_list', []))
-                    if order_details.first() is None:
-                        raise PaymentForNoProductOrder()
-
-                    payment_value = payment.value
-                    for order_detail in order_details:
-                        if payment_value == 0:
-                            break
-                        paid_amount = min(payment_value, order_detail.remaining_payment_amount)
-                        OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
-                        recalculate_order_details_by_payment(order_detail)
-                        payment_value -= paid_amount
-
-                    # if payment_value > 0:
-                    #     raise PaymentForNoProductOrder()
-
-                    # recalculate_order_details_by_payment(order_details.first())
-
-                else:
+            if payment.order_detail_list:
+                order_details = self.collect_order_details(payment, kwargs.get('order_detail_list', []))
+                if order_details.first() is None:
                     raise PaymentForNoProductOrder()
+
+                payment_value = payment.value
+                for order_detail in order_details:
+                    if payment_value == 0:
+                        break
+                    paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+                    OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
+                    recalculate_order_details_by_payment(order_detail)
+                    payment_value -= paid_amount
+
             else:
-                OrderDetailPayment.objects.create(payment=payment, order_detail=payment.order_detail,
-                                                  value=min(payment.value,
-                                                            payment.order_detail.annual_remaining_payment_amount))
-                recalculate_order_details_by_payment(payment.order_detail)
+                raise PaymentForNoProductOrder()
             recalculate_order(payment.order)
 
             return payment
