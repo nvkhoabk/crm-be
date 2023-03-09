@@ -1018,13 +1018,11 @@ class CreatePaymentService(BaseService):
         if 0 in order_detail_list:
             return OrderDetail.objects.filter(
                 order_id=payment.order.id,
-                type=ORDER_DETAIL_TYPE.NEW_BUY,
                 deleted_at__isnull=True
             )
         else:
             return OrderDetail.objects.filter(
                 id__in=order_detail_list,
-                type=ORDER_DETAIL_TYPE.NEW_BUY,
                 deleted_at__isnull=True
             )
 
