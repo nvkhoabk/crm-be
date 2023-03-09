@@ -185,23 +185,19 @@ class Command(BaseCommand):
         for order in orders:
             recalculate_order(order)
 
-    def fix_annual_order_generation(self):
-        order_details = OrderDetail.objects.filter(due_date__gt='2023-01-10', deleted_at__isnull=True,
-                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
-
-        for order_detail in order_details:
-            print('Fixing order detail id: ' + str(order_detail.id))
-            ao = AnnualOrder.objects.filter(order_detail_id=order_detail.id)
-            fi = ao.first()
-            if fi:
-                fi.order_detail_id = OrderDetail.objects.filter(order_id=order_detail.order_id,
-                                                                type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
-                                                                id__lt=order_detail.id).order_by(
-                    '-id').first().id
-                fi.save()
-            order_detail.deleted_at = datetime.now()
-            order_detail.save()
-            recalculate_order(order_detail.order)
+    def fix_annual_order_generation(self, processing_date):
+        annual_orders = AnnualOrder.objects.filter(is_active=True, deleted_at__isnull=True)
+        for annual_order in annual_orders:
+            date_in_month_payment = annual_order.product.date_in_month_payment
+            if date_in_month_payment == (processing_date + relativedelta(
+                    days=annual_order.product.number_of_date_notify - 1)).day:
+                self.logger.info('Fixing AnnualOrder id: ' + str(annual_order.id))
+                ao = AnnualOrderHistory.objects.filter(annual_order_id=annual_order.id).order_by('-id')
+                fi = ao.first()
+                if fi:
+                    annual_order.order_detail_id = fi.order_detail_id
+                    annual_order.save()
+                    recalculate_order(annual_order.order_detail.order)
 
     def notify_renew_date(self, processing_date):
         month_end = get_last_of_month(processing_date)
