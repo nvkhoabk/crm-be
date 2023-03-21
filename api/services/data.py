@@ -16,11 +16,11 @@ from api.common.base_service import BaseService
 from api.common.common import Common
 from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD, \
-    NOTIFICATION_TYPE
+    NOTIFICATION_TYPE, MODULES
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest
 from api.models.notification import Notification
-from api.models.organization import UserRole
+from api.models.organization import UserRole, Permission, Role
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
 from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
 from api.services import utils
@@ -1012,7 +1012,29 @@ class CreatePaymentService(BaseService):
                 raise PaymentForNoProductOrder()
             recalculate_order(payment.order)
 
+            self.notify_accountants(payment)
+
             return payment
+
+    def notify_accountants(self, payment):
+        permissions = Permission.objects.filter(
+            edit_permissions__icontains=MODULES.ACCOUNTING) | Permission.objects.filter(
+            read_permissions__icontains=MODULES.ACCOUNTING)
+        roles = Role.objects.filter(id__in=permissions.values_list('role__id', flat=True))
+        user_roles = UserRole.objects.filter(company_id=payment.company_id,
+                                             role_id__in=roles.values_list('id', flat=True))
+
+        users = User.objects.filter(id__in=user_roles.values_list('user__id', flat=True))
+
+        for user in users:
+            Notification.objects.create(company=payment.order.company,
+                                        user_id=user.id,
+                                        type=NOTIFICATION_TYPE.NEW_PAYMENT,
+                                        content=json.dumps({
+                                            'phone': str(payment.order.customer.phone),
+                                            'customer_name': payment.order.customer_name,
+                                            'amount': payment.value
+                                        }))
 
     def collect_order_details(self, payment, order_detail_list):
         if 0 in order_detail_list:
