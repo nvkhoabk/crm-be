@@ -18,7 +18,8 @@ from api.common.cookies import Cookies
 from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE, DEBT_STATUS, PAYMENT_METHOD, \
     NOTIFICATION_TYPE, MODULES
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
-    User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest
+    User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest, \
+    RemainingPayment
 from api.models.notification import Notification
 from api.models.organization import UserRole, Permission, Role
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
@@ -707,11 +708,11 @@ class DeleteOrderDetailService(BaseService):
                 pk=kwargs['id'],
                 company_id=user_roles.first().company_id
             )
-            if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                payments = Payment.objects.filter(order_detail_id=order_detail.id)
-                for payment in payments:
-                    if payment.status == ORDER_PAYMENT_STATUS.APPROVED:
-                        raise DeleteApprovedOrderDetail()
+
+            order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, order_detail_id=order_detail.id)
+            for order_detail_payment in order_detail_payments:
+                if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                    raise DeleteApprovedOrderDetail()
 
             order_detail.deleted_at = datetime.now(timezone(TIME_ZONE))
             order_detail.save()
@@ -995,8 +996,11 @@ class CreatePaymentService(BaseService):
                                              json.dumps(payment.order_detail_list))
 
             if payment.order_detail_list:
-                order_details = self.collect_order_details(payment, kwargs.get('order_detail_list', []))
-                if order_details.first() is None:
+                auto_picked_order_details = []
+                order_details, debt_order_details = self.collect_order_details(payment,
+                                                                                      kwargs.get('order_detail_list',
+                                                                                                 []))
+                if len(order_details) == 0:
                     raise PaymentForNoProductOrder()
 
                 payment_value = payment.value
@@ -1007,6 +1011,12 @@ class CreatePaymentService(BaseService):
                     OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
                     recalculate_order_details_by_payment(order_detail)
                     payment_value -= paid_amount
+                    if order_detail.id in debt_order_details:
+                        auto_picked_order_details.append(order_detail.id)
+
+                payment.remaining_value = payment_value
+                payment.auto_picked_order_details = json.dumps(auto_picked_order_details)
+                payment.save()
 
             else:
                 raise PaymentForNoProductOrder()
@@ -1043,10 +1053,18 @@ class CreatePaymentService(BaseService):
                 deleted_at__isnull=True
             )
         else:
-            return OrderDetail.objects.filter(
+            order_details = list(OrderDetail.objects.filter(
                 id__in=order_detail_list,
                 deleted_at__isnull=True
-            )
+            ))
+
+            debt_order_details = OrderDetail.objects.filter(deleted_at__isnull=True, debt__gt=0).exclude(
+                id__in=order_detail_list).order_by('id')
+            id_list = debt_order_details.values_list('id', flat=True)
+
+            order_details.extend(list(debt_order_details))
+
+            return order_details, id_list
 
 
 class GetPaymentService(BaseService):

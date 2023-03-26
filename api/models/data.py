@@ -332,6 +332,8 @@ class Payment(BaseModel):
     payment_method = models.CharField(max_length=128, null=True)
     invoice_no = models.CharField(max_length=128, null=True)
     order_detail_list = models.CharField(max_length=1024, default='')
+    remaining_value = models.BigIntegerField(default=0)
+    auto_picked_order_details = models.CharField(max_length=1024, default='')
 
     class Meta:
         db_table = 'payments'
@@ -362,10 +364,19 @@ class OrderDetailPayment(BaseModel):
     order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE)
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE)
     value = models.BigIntegerField(default=0)
-    
+
     class Meta:
         db_table = 'order_detail_payment'
 
 
 class ExportOrderRequest(BaseModel):
     file = models.FileField(upload_to='export_data', null=True)
+
+
+class RemainingPayment(BaseModel):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_index=True)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, db_index=True)
+    value = models.BigIntegerField(default=0)
+
+    class Meta:
+        db_table = 'remaining_payments'
