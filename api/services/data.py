@@ -1007,7 +1007,10 @@ class CreatePaymentService(BaseService):
                 for order_detail in order_details:
                     if payment_value == 0:
                         break
-                    paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+                    if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                        paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+                    else:
+                        paid_amount = min(payment_value, order_detail.annual_remaining_payment_amount)
                     OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
                     recalculate_order_details_by_payment(order_detail)
                     payment_value -= paid_amount
@@ -1058,7 +1061,8 @@ class CreatePaymentService(BaseService):
                 deleted_at__isnull=True
             ))
 
-            debt_order_details = OrderDetail.objects.filter(deleted_at__isnull=True, debt__gt=0).exclude(
+            debt_order_details = OrderDetail.objects.filter(deleted_at__isnull=True, order_id=payment.order.id,
+                                                            debt__gt=0).exclude(
                 id__in=order_detail_list).order_by('id')
             id_list = debt_order_details.values_list('id', flat=True)
 
