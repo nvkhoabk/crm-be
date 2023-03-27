@@ -188,6 +188,30 @@ def recalculate_order_details_by_payment(order_detail):
     order_detail.save()
 
 
+def pay_from_remaining_payments(order):
+    remaining_payments = Payment.objects.filter(deleted_at__isnull=True, order_id=order.id).order_by('id')
+
+    for payment in remaining_payments:
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, order_id=order.id,
+                                                   debt__gt=0)
+        payment_value = payment.remaining_value
+        auto_picked_order_details = json.loads(payment.auto_picked_order_details)
+        for order_detail in order_details:
+            if payment_value == 0:
+                break
+            if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
+                paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+            else:
+                paid_amount = min(payment_value, order_detail.annual_remaining_payment_amount)
+            OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
+            recalculate_order_details_by_payment(order_detail)
+            payment_value -= paid_amount
+            auto_picked_order_details.append(order_detail.id)
+        payment.remaining_value = payment_value
+        payment.auto_picked_order_details = json.dumps(auto_picked_order_details)
+        payment.save()
+
+
 class FilterCrawlDataService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = CrawlData.objects.all()
@@ -536,17 +560,19 @@ class CreateOrderDetailService(BaseService):
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
 
-            order_detail = OrderDetail.objects.create(
-                **kwargs
-            )
+            with transaction.atomic():
+                order_detail = OrderDetail.objects.create(
+                    **kwargs
+                )
 
-            recalculate_order(order_detail.order)
-            if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
-                self.create_annual_buy(order_detail)
+                recalculate_order(order_detail.order)
+                if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
+                    self.create_annual_buy(order_detail)
 
-            create_order_detail_history(order_detail)
+                create_order_detail_history(order_detail)
+                pay_from_remaining_payments(order_detail.order)
 
-            return order_detail
+                return order_detail
         except IntegrityError as e:
             raise OrderDetailDuplicated()
 
@@ -709,15 +735,35 @@ class DeleteOrderDetailService(BaseService):
                 company_id=user_roles.first().company_id
             )
 
-            order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, order_detail_id=order_detail.id)
-            for order_detail_payment in order_detail_payments:
-                if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
-                    raise DeleteApprovedOrderDetail()
+            with transaction.atomic():
+                order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
+                                                                          order_detail_id=order_detail.id)
+                for order_detail_payment in order_detail_payments:
+                    if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                        raise DeleteApprovedOrderDetail()
+                    else:
+                        payment = order_detail_payment.payment
+                        payment.remaining_value += order_detail_payment.value
 
-            order_detail.deleted_at = datetime.now(timezone(TIME_ZONE))
-            order_detail.save()
+                        correct_list = json.loads(payment.auto_picked_order_details)
+                        if order_detail.id in correct_list:
+                            correct_list.remove(order_detail.id)
+                        payment.auto_picked_order_details = json.dumps(correct_list)
 
-            recalculate_order(order_detail.order)
+                        correct_list = json.loads(payment.order_detail_list)
+                        if order_detail.id in correct_list:
+                            correct_list.remove(order_detail.id)
+                        payment.order_detail_list = json.dumps(correct_list)
+                        payment.save()
+
+                        order_detail_payment.deleted_at = datetime.now(timezone(TIME_ZONE))
+                        order_detail_payment.value = 0
+                        order_detail_payment.save()
+
+                order_detail.deleted_at = datetime.now(timezone(TIME_ZONE))
+                order_detail.save()
+                pay_from_remaining_payments(order_detail.order)
+                recalculate_order(order_detail.order)
 
             return order_detail
         except OrderDetail.DoesNotExist as e:
@@ -998,8 +1044,8 @@ class CreatePaymentService(BaseService):
             if payment.order_detail_list:
                 auto_picked_order_details = []
                 order_details, debt_order_details = self.collect_order_details(payment,
-                                                                                      kwargs.get('order_detail_list',
-                                                                                                 []))
+                                                                               kwargs.get('order_detail_list',
+                                                                                          []))
                 if len(order_details) == 0:
                     raise PaymentForNoProductOrder()
 
@@ -1054,7 +1100,7 @@ class CreatePaymentService(BaseService):
             return OrderDetail.objects.filter(
                 order_id=payment.order.id,
                 deleted_at__isnull=True
-            )
+            ), []
         else:
             order_details = list(OrderDetail.objects.filter(
                 id__in=order_detail_list,
