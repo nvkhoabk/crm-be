@@ -189,7 +189,8 @@ def recalculate_order_details_by_payment(order_detail):
 
 
 def pay_from_remaining_payments(order):
-    remaining_payments = Payment.objects.filter(deleted_at__isnull=True, order_id=order.id).order_by('id')
+    remaining_payments = Payment.objects.filter(deleted_at__isnull=True, order_id=order.id,
+                                                remaining_value__gt=0).order_by('id')
 
     for payment in remaining_payments:
         order_details = OrderDetail.objects.filter(deleted_at__isnull=True, order_id=order.id,
@@ -651,9 +652,10 @@ class UpdateOrderDetailService(BaseService):
                 )
 
             if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                payments = Payment.objects.filter(order_detail_id=order_detail.id)
-                for payment in payments:
-                    if payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
+                                                                          order_detail_id=order_detail.id)
+                for order_detail_payment in order_detail_payments:
+                    if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
                         raise DeleteApprovedOrderDetail()
 
             if kwargs.get('product_id'):
