@@ -143,6 +143,20 @@ def recalculate_order(order):
     annual_paid_amount = annual_order_details.aggregate(Sum('paid_payment_amount'))['paid_payment_amount__sum']
     order.annual_paid_amount = 0 if annual_paid_amount is None else annual_paid_amount
 
+    payments = Payment.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.NEW_BUY,
+                                      deleted_at__isnull=True).exclude(
+        status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
+                    ORDER_PAYMENT_STATUS.DELETED])
+    change_amount = payments.aggregate(Sum('value'))['value__sum']
+    order.change_amount = 0 if change_amount is None else change_amount
+
+    payments = Payment.objects.filter(order_id=order.id, type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                      deleted_at__isnull=True).exclude(
+        status__in=[ORDER_PAYMENT_STATUS.DISAPPROVED, ORDER_PAYMENT_STATUS.CANCELLED,
+                    ORDER_PAYMENT_STATUS.DELETED])
+    change_amount = payments.aggregate(Sum('value'))['value__sum']
+    order.annual_change_amount = 0 if change_amount is None else change_amount
+
     order.debt_status = calculate_debt_status(order, today)
     order.save()
 

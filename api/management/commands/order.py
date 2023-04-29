@@ -57,10 +57,10 @@ class Command(BaseCommand):
                                                               annual_price=annual_order.order_detail.annual_price,
                                                               total_payment_amount=annual_order.order_detail.total_payment_amount,
                                                               remaining_payment_amount=annual_order.order_detail.remaining_payment_amount,
-                                                              annual_remaining_payment_amount=annual_order.order_detail.price * annual_order.order_detail.quantity - annual_order.order_detail.discount_value,
+                                                              annual_remaining_payment_amount=annual_order.order_detail.product.period_fee * annual_order.order_detail.quantity - annual_order.order_detail.discount_value,
                                                               annual_paid_payment_amount=0,
                                                               paid_payment_amount=0,
-                                                              debt=annual_order.product.period_fee,
+                                                              debt=annual_order.order_detail.product.period_fee * annual_order.order_detail.quantity - annual_order.order_detail.discount_value,
                                                               due_date=(processing_date + relativedelta(days=annual_order.product.number_of_date_notify - 1)))
                 create_order_detail_history(new_order_detail)
                 recalculate_order(new_order_detail.order)
