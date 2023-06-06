@@ -1093,8 +1093,7 @@ class CreatePaymentService(BaseService):
 
     def notify_accountants(self, payment):
         permissions = Permission.objects.filter(
-            edit_permissions__icontains=MODULES.ACCOUNTING) | Permission.objects.filter(
-            read_permissions__icontains=MODULES.ACCOUNTING)
+            edit_permissions__icontains=MODULES.ACCOUNTING)
         roles = Role.objects.filter(id__in=permissions.values_list('role__id', flat=True))
         user_roles = UserRole.objects.filter(company_id=payment.company_id,
                                              role_id__in=roles.values_list('id', flat=True))
