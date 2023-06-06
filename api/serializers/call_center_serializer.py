@@ -216,8 +216,8 @@ class CallHistorySerializer(serializers.Serializer):
 
 
 class GetCompanyCallHistoryRequestParam(serializers.Serializer):
-    from_date = serializers.DateField(required=True)
-    to_date = serializers.DateField(required=True)
+    from_date = serializers.DateField(required=False)
+    to_date = serializers.DateField(required=False)
     number = serializers.CharField(required=False)
     user_id = serializers.IntegerField(required=False, allow_null=True)
 

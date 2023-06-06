@@ -3,6 +3,7 @@ import json
 import math
 import mimetypes
 from wsgiref.util import FileWrapper
+from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
@@ -248,7 +249,8 @@ class GetAgentsService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        return CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        return CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True,
+                                        status=CALL_AGENT_STATUS.ACTIVE)
 
 
 class UpdateAgentService(BaseService):
@@ -418,7 +420,9 @@ class CreateAgentRegisterService(BaseService):
 class DeleteAgentRegisterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            AgentRegister.objects.get(pk=kwargs['id']).delete()
+            agent_register = AgentRegister.objects.get(pk=kwargs['id'])
+            agent_register.deleted_at = datetime.now()
+            agent_register.save()
         except AgentRegister.DoesNotExist:
             raise AgentRegisterNotFound()
 
@@ -616,7 +620,6 @@ class DownloadExtFileService(BaseService):
         response = HttpResponse(csv_file, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s"' % csv_file.name
         return response
-
 
 
 class UploadExtFileService(BaseService):
