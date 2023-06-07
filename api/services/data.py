@@ -34,6 +34,7 @@ import functools
 import pytz
 import pandas as pd
 
+from api.services.manage import FilterSaleUserService
 from api.utils.date import get_last_of_month
 from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE, MEDIA_ROOT
@@ -1656,6 +1657,10 @@ class ConfirmImportOrderService(ImportOrderService):
                 raise PermissionDenied()
 
         try:
+            user_service = FilterSaleUserService()
+            sales = user_service.serve(request, cookies, *args, **kwargs)
+            is_sale = True if sales else False
+
             record = ImportOrderRecords.objects.get(
                 pk=kwargs.get('id')
             )
@@ -1698,6 +1703,8 @@ class ConfirmImportOrderService(ImportOrderService):
                                       customer_email=data_record['email'], customer=customer,
                                       company_id=kwargs['company_id'])
                         order.created_date = datetime.today().date()
+                        if is_sale:
+                            order.pic = request.user
                         create_order_service.serve(request, cookies, *args, **CreateOrderRequestSerializer(order).data)
 
         except ImportOrderRecords.DoesNotExist:
