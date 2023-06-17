@@ -5,6 +5,13 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class TokenUserStatus(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    current_token = models.CharField(max_length=1024, default='')
+    class Meta:
+        db_table = 'token_user_status'
+
+
 class Company(BaseModel):
     name = models.CharField(max_length=255, db_index=True, unique=True)
     type = models.CharField(max_length=255)

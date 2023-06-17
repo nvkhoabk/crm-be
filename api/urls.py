@@ -17,6 +17,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
+from api.views.auth import AuthLoginView
 
 urlpatterns = [
     path('manage/create_param/', manage.CreateParamView.as_view(), name='manage.create_param'),
@@ -209,7 +210,7 @@ urlpatterns = [
     # Auth
     path('auth/get_user_info/', auth.AuthGetUserInfoView.as_view(), name='auth.get_user_info'),
 
-    path('auth/login/', TokenObtainPairView.as_view(), name='auth.login'),
+    path('auth/login/', AuthLoginView.as_view(), name='auth.login'),
     path('auth/token/refresh/', TokenRefreshView.as_view()),
 
     # FB crawler

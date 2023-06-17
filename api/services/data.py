@@ -1659,7 +1659,7 @@ class ConfirmImportOrderService(ImportOrderService):
         try:
             user_service = FilterSaleUserService()
             sales = user_service.serve(request, cookies, *args, **kwargs)
-            is_sale = True if sales else False
+            is_sale = True if request.user.id in list(map(lambda sale: sale.id, sales)) else False
 
             record = ImportOrderRecords.objects.get(
                 pk=kwargs.get('id')

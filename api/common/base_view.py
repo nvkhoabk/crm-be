@@ -8,6 +8,7 @@ from django.utils.functional import SimpleLazyObject
 from .authenticate_config import authentication_staff
 from .cookies_serializer import CookiesSerializer
 from .cookies import Cookies
+from ..models.organization import TokenUserStatus
 
 
 class BaseAPIView(APIView):
@@ -18,6 +19,13 @@ class BaseAPIView(APIView):
     serializer_many = False
     forward_pagination = False
 
+    def check_token_status(self, user_id, token):
+        current_token = TokenUserStatus.objects.filter(user_id=user_id, current_token=token)
+        if current_token:
+            return True
+
+        return False
+
     def check_permissions(self, request):
         pass
         
@@ -26,13 +34,16 @@ class BaseAPIView(APIView):
         auth = JWTAuthentication()
         auth = auth.authenticate(request)
         if auth:
-            request.user = auth[0]
+            if self.check_token_status(auth[0].id, auth[1]):
+                request.user = auth[0]
         else:
             # Extract token from cookie
             if request.COOKIES.get('Token'): 
                 auth = JWTAuthentication()
                 validated_token = auth.get_validated_token(request.COOKIES.get('Token'))
-                request.user = auth.get_user(validated_token)
+                user = auth.get_user(validated_token)
+                if self.check_token_status(user.id, validated_token):
+                    request.user = user
                 
     def get_response(self, request=None, results=None, serializer=None, many=False):
         if serializer is not None:

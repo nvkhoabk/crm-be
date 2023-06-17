@@ -5,17 +5,19 @@ from django.contrib.auth import authenticate, login, logout
 
 from api.models.call_center import CallAgent, CallCenter
 from api.services import exceptions
-from api.models.organization import UserRole, Permission
+from api.models.organization import UserRole, Permission, TokenUserStatus
 from api.const import MODULES, Const, CALL_AGENT_STATUS
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class AuthLoginService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        user = authenticate(**kwargs)
-        if user is None:
-            raise exceptions.AuthLoginInvalid()
-        login(request, user)
-        return user
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        auth = JWTAuthentication()
+        validated_token = auth.get_validated_token(args[0])
+        user = auth.get_user(validated_token)
+        TokenUserStatus.objects.filter(user=user).delete()
+        TokenUserStatus.objects.create(user=user, current_token=args[0])
 
 
 class AuthLogoutService(BaseService):
