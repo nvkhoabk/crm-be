@@ -2,7 +2,7 @@ import json
 
 from api.const import ORDER_DETAIL_TYPE, DEBT_STATUS, ORDER_PAYMENT_STATUS, PAYMENT_METHOD
 from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBUser, Payment, AnnualOrder, \
-    ExportOrderRequest
+    ExportOrderRequest, OrderDetailPayment
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from api.serializers.manage_serializer import CustomerSerializer
@@ -445,6 +445,15 @@ class PaymentSerializer(serializers.ModelSerializer):
                   'payment_method', 'order_detail_id', 'created_at', 'order_detail_list']
 
 
+class OrderDetailPaymentSerializer(serializers.ModelSerializer):
+    payment = PaymentSerializer()
+    order_detail = OrderDetailSerializer()
+
+    class Meta:
+        model = OrderDetailPayment
+        fields = ['id', 'value', 'payment', 'order_detail']
+
+
 class CreatePaymentRequestSerializer(serializers.Serializer):
     TYPE_CHOICES = (
         (ORDER_DETAIL_TYPE.NEW_BUY, ORDER_DETAIL_TYPE.NEW_BUY),
@@ -542,6 +551,13 @@ class FilterPaymentRequestSerializer(BasePagingSerializer):
 class FilterPaymentResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=PaymentSerializer())
 
+
+class FilterOrderDetailPaymentRequestSerializer(BasePagingSerializer):
+    filter = FilterPaymentRequestParamSerializer()
+    sum_field = serializers.CharField(max_length=128, default='value')
+
+class FilterOrderDetailPaymentResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=OrderDetailPaymentSerializer())
 
 class DeletePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id')

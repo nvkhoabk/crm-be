@@ -1074,11 +1074,13 @@ class CreatePaymentService(BaseService):
                         paid_amount = min(payment_value, order_detail.remaining_payment_amount)
                     else:
                         paid_amount = min(payment_value, order_detail.annual_remaining_payment_amount)
-                    OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
-                    recalculate_order_details_by_payment(order_detail)
-                    payment_value -= paid_amount
-                    if order_detail.id in debt_order_details:
-                        auto_picked_order_details.append(order_detail.id)
+
+                    if paid_amount > 0:
+                        OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
+                        recalculate_order_details_by_payment(order_detail)
+                        payment_value -= paid_amount
+                        if order_detail.id in debt_order_details:
+                            auto_picked_order_details.append(order_detail.id)
 
                 payment.remaining_value = payment_value
                 payment.auto_picked_order_details = json.dumps(auto_picked_order_details)
@@ -1396,6 +1398,51 @@ class DeletePaymentService(BaseService):
 
         except Payment.DoesNotExist as e:
             raise PaymentNotFound()
+
+
+class FilterOrderDetailPaymentService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        # Filter order detail
+        params = dict(kwargs.get('filter', []))
+
+        order_filter = params.get('order', {})
+        order_service = FilterOrderService()
+        orders = order_service.serve(request, cookies, *args,
+                                     **{'filter': order_filter})
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                   order_id__in=orders.values_list('id', flat=True))
+
+        if 'data_from_date' in order_filter and 'data_to_date' in order_filter and order_filter['data_from_date'] and \
+                order_filter[
+                    'data_to_date']:
+            order_details = order_details.filter(created_at__gte=order_filter['data_from_date'],
+                                                 created_at__lte=order_filter['data_to_date'])
+
+        if 'payment_from_date' in order_filter and 'payment_to_date' in order_filter and order_filter[
+            'payment_from_date'] and order_filter[
+            'payment_to_date']:
+            order_details = order_details.filter(payment_date__gte=order_filter['payment_from_date'],
+                                                 payment_date__lte=order_filter['payment_to_date'])
+
+        # Filter order
+        # payment_service = FilterPaymentService()
+        # payments = payment_service.serve(request, cookies, *args, **kwargs.pop('order'))
+
+        # query_set = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
+        #                                               order_detail_id__in=order_details.values_list('id', flat=True),
+        #                                               payment_id__in=payments.values_list('id', flat=True)).order_by(
+        #     '-payment_id', '-id').distinct()
+
+        query_set = OrderDetailPayment.objects.filter(
+            deleted_at__isnull=True,
+            order_detail_id__in=order_details.values_list('id', flat=True),
+            value__gt=0).order_by('-payment_id', '-id').distinct()
+
+        return query_set
 
 
 class ImportOrderDataService(BaseService):

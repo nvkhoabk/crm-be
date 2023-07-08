@@ -56,6 +56,13 @@ class BaseAPIView(APIView):
             if self.pagination_class:
                 page = request['page']
                 page_size = request['page_size']
+                sum_field = request['sum_field']
+
+                sum_value = 0
+                if sum_field is not None:
+                    for res in results:
+                        if hasattr(res, sum_field):
+                            sum_value += getattr(res, sum_field)
         
                 offset = page * page_size
                 limit = page_size
@@ -71,7 +78,8 @@ class BaseAPIView(APIView):
                         'records': serializer.data['data'],
                         'page': page,
                         'page_size': page_size,
-                        'total': total
+                        'total': total,
+                        'sum_value': sum_value
                     }
                 }
             else:

@@ -724,6 +724,29 @@ class DeletePaymentView(BaseAPIView):
         return self.get_response(results=payment, request=request,
                                  serializer=data_serializer.DeletePaymentResponseSerializer)
 
+class FilterOrderDetailPaymentView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, DataReadPermission]
+    serializer_class = data_serializer.FilterOrderDetailPaymentRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Payment'],
+        operation_id='Filter Order Detail Payment',
+        operation_description='Filter Order Detail Payment api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: data_serializer.FilterOrderDetailPaymentResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = data_service.FilterOrderDetailPaymentService()
+        results = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=serializer.validated_data,
+                                 serializer=data_serializer.FilterOrderDetailPaymentResponseSerializer)
+
 
 class ImportOrderDataView(BaseAPIView):
     authentication_classes = []
