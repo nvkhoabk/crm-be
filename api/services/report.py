@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import json
 from logging.handlers import RotatingFileHandler
@@ -108,7 +108,7 @@ class FilterReportService(BaseService):
 
     def get_confirmed_order_map(self, orders):
         orders = orders.filter(data_status__isnull=False).filter(data_status__name__iexact='đã xác nhận')
-        confirmed_date = ExpressionWrapper(F('confirmed_date') + 1 - F('created_date'),
+        confirmed_date = ExpressionWrapper(F('confirmed_date') + timedelta(days=1) - F('created_date'),
                                            output_field=fields.DurationField())
 
         orders = orders.values('pic__username').order_by(
