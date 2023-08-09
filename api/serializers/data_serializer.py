@@ -442,7 +442,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ['id', 'company', 'order', 'type', 'value', 'status', 'sale_note',
                   'invoice_no', 'accountant_note', 'approved_at', 'approver_id',
-                  'payment_method', 'order_detail_id', 'created_at', 'order_detail_list']
+                  'payment_method', 'order_detail_id', 'created_at', 'order_detail_list', 'auto_picked_order_details']
 
 
 class OrderDetailPaymentSerializer(serializers.ModelSerializer):
@@ -541,6 +541,7 @@ class FilterPaymentRequestParamSerializer(serializers.Serializer):
     )
     order_id = serializers.IntegerField(required=False)
     type = serializers.ChoiceField(choices=TYPE_CHOICES, required=False)
+    status = serializers.ListField(child=serializers.CharField(max_length=512), default=[])
     order = FilterOrderRequestParamSerializer(required=False)
 
 

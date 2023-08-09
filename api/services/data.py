@@ -228,6 +228,49 @@ def pay_from_remaining_payments(order):
         payment.save()
 
 
+def collect_order_details(payment, order_detail_list):
+    debt_order_details = OrderDetail.objects.filter(deleted_at__isnull=True, order_id=payment.order.id,
+                                                    debt__gt=0).order_by('id')
+
+    if 0 in order_detail_list:
+        return debt_order_details, debt_order_details.values_list('id', flat=True)
+    else:
+        order_details = list()
+        order_details.extend(list(debt_order_details.filter(id__in=order_detail_list).order_by('id')))
+        auto_picked = debt_order_details.exclude(id__in=order_detail_list)
+        order_details.extend(list(auto_picked.filter(type=payment.type).order_by('id')))
+        order_details.extend(list(auto_picked.exclude(type=payment.type).order_by('id')))
+
+        return order_details, auto_picked.values_list('id', flat=True)
+
+
+def recalculate_payment_order_detail(payment, order_detail_list):
+    auto_picked_order_detail_ids = []
+    order_details, auto_picked_details = collect_order_details(payment, order_detail_list)
+    if len(order_details) == 0:
+        raise PaymentForNoProductOrder()
+
+    payment_value = payment.value
+    for order_detail in order_details:
+        if payment_value == 0:
+            break
+        if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
+            paid_amount = min(payment_value, order_detail.remaining_payment_amount)
+        else:
+            paid_amount = min(payment_value, order_detail.annual_remaining_payment_amount)
+
+        if paid_amount > 0:
+            OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
+            recalculate_order_details_by_payment(order_detail)
+            payment_value -= paid_amount
+            if order_detail.id in auto_picked_details:
+                auto_picked_order_detail_ids.append(order_detail.id)
+
+    payment.remaining_value = payment_value
+    payment.auto_picked_order_details = json.dumps(auto_picked_order_detail_ids)
+    return payment
+
+
 class FilterCrawlDataService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = CrawlData.objects.all()
@@ -1059,33 +1102,8 @@ class CreatePaymentService(BaseService):
                                              json.dumps(payment.order_detail_list))
 
             if payment.order_detail_list:
-                auto_picked_order_details = []
-                order_details, debt_order_details = self.collect_order_details(payment,
-                                                                               kwargs.get('order_detail_list',
-                                                                                          []))
-                if len(order_details) == 0:
-                    raise PaymentForNoProductOrder()
-
-                payment_value = payment.value
-                for order_detail in order_details:
-                    if payment_value == 0:
-                        break
-                    if order_detail.type == ORDER_DETAIL_TYPE.NEW_BUY:
-                        paid_amount = min(payment_value, order_detail.remaining_payment_amount)
-                    else:
-                        paid_amount = min(payment_value, order_detail.annual_remaining_payment_amount)
-
-                    if paid_amount > 0:
-                        OrderDetailPayment.objects.create(payment=payment, order_detail=order_detail, value=paid_amount)
-                        recalculate_order_details_by_payment(order_detail)
-                        payment_value -= paid_amount
-                        if order_detail.id in debt_order_details:
-                            auto_picked_order_details.append(order_detail.id)
-
-                payment.remaining_value = payment_value
-                payment.auto_picked_order_details = json.dumps(auto_picked_order_details)
+                payment = recalculate_payment_order_detail(payment, kwargs.get('order_detail_list', []))
                 payment.save()
-
             else:
                 raise PaymentForNoProductOrder()
             recalculate_order(payment.order)
@@ -1112,27 +1130,6 @@ class CreatePaymentService(BaseService):
                                             'customer_name': payment.order.customer_name,
                                             'amount': payment.value
                                         }))
-
-    def collect_order_details(self, payment, order_detail_list):
-        if 0 in order_detail_list:
-            return OrderDetail.objects.filter(
-                order_id=payment.order.id,
-                deleted_at__isnull=True
-            ), []
-        else:
-            order_details = list(OrderDetail.objects.filter(
-                id__in=order_detail_list,
-                deleted_at__isnull=True
-            ))
-
-            debt_order_details = OrderDetail.objects.filter(deleted_at__isnull=True, order_id=payment.order.id,
-                                                            debt__gt=0).exclude(
-                id__in=order_detail_list).order_by('id')
-            id_list = debt_order_details.values_list('id', flat=True)
-
-            order_details.extend(list(debt_order_details))
-
-            return order_details, id_list
 
 
 class GetPaymentService(BaseService):
@@ -1172,9 +1169,10 @@ class UpdatePaymentService(BaseService):
                         pk=kwargs.get('id'),
                         company_id=user_roles.first().company_id
                     )
-
-                if kwargs.get('value'):
+                value_changed = False
+                if kwargs.get('value') and payment.value != kwargs['value']:
                     payment.value = kwargs['value']
+                    value_changed = True
 
                 if kwargs.get('invoice_no'):
                     payment.invoice_no = kwargs['invoice_no']
@@ -1186,11 +1184,20 @@ class UpdatePaymentService(BaseService):
                     payment.sale_note = kwargs['sale_note']
 
                 payment.save()
-                if 'value' in kwargs:
-                    order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)
 
-                    for order_detail_payment in order_detail_payments:
-                        recalculate_order_details_by_payment(order_detail_payment.order_detail)
+                value_changed = True
+                if value_changed:
+                    order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)
+                    recalculate_order_details = [odp.order_detail for odp in order_detail_payments]
+                    order_detail_payments.update(deleted_at=datetime.now())
+
+                    for order_detail in recalculate_order_details:
+                        recalculate_order_details_by_payment(order_detail)
+
+                    order_detail_list = json.loads(payment.order_detail_list)
+                    payment = recalculate_payment_order_detail(payment,
+                                                               order_detail_list if order_detail_list else [])
+                    payment.save()
 
                     recalculate_order(payment.order)
 
@@ -1365,9 +1372,6 @@ class FilterPaymentService(BaseService):
             if key == 'type' and value is not None:
                 query_set = query_set.filter(type=value)
 
-            if key == 'status' and value is not None:
-                query_set = query_set.filter(status=value)
-
         return query_set.order_by('-id')
 
 
@@ -1440,7 +1444,13 @@ class FilterOrderDetailPaymentService(BaseService):
         query_set = OrderDetailPayment.objects.filter(
             deleted_at__isnull=True,
             order_detail_id__in=order_details.values_list('id', flat=True),
-            value__gt=0).order_by('-payment_id', '-id').distinct()
+            value__gt=0, payment__status__in=params['status']).order_by('-payment_id', '-id').distinct()
+
+        if 'status' in params:
+            query_set = query_set.filter(payment__status__in=params['status'])
+
+        if 'type' in params:
+            query_set = query_set.filter(payment__type=params['type'])
 
         return query_set
 

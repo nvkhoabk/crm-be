@@ -215,6 +215,27 @@ class Command(BaseCommand):
                                                 'customer_name': order_detail.order.customer_name
                                             }))
 
+    def migrate_order_detail_payment(self):
+        with transaction.atomic():
+            payments = Payment.objects.filter(deleted_at__isnull=True)
+            for payment in payments:
+                print('Update payment id: ', payment.id)
+                details = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment).order_by('id')
+                payment.auto_picked_order_details = json.dumps([x.order_detail_id for x in details])
+                payment.save()
+
+    def fix_order_detail_list_in_payment(self):
+        with transaction.atomic():
+            payments = Payment.objects.filter(deleted_at__isnull=True, order_detail_list='')
+            for payment in payments:
+                print('Update payment id: ', payment.id)
+                if payment.order_detail_id:
+                    payment.order_detail_list = json.dumps([payment.order_detail_id])
+                else:
+                    payment.order_detail_list = json.dumps([0])
+                payment.save()
+
+
     def handle(self, *args, **options):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
@@ -229,3 +250,5 @@ class Command(BaseCommand):
         # self.reset_order_detail()
         # self.migrate_payments()
         # self.migrate_payment_date()
+        # self.migrate_order_detail_payment()
+        #s elf.fix_order_detail_list_in_payment()
