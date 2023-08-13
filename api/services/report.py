@@ -41,6 +41,12 @@ class FilterReportService(BaseService):
             if key == 'order' and value is not None:
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                if 0 not in params['product_id_list']:
+                    filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                                   product_id__in=params['product_id_list']).values_list(
+                        'order_id', flat=True)
+                    orders = orders.filter(id__in=filter_by_product)
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
                 if value.get('pics', None) is not None:
@@ -54,7 +60,7 @@ class FilterReportService(BaseService):
                     orders = orders.exclude(data_status_id=data_status.id)
 
                 order_details = self.collect_order_details(orders, value['payment_from_date'],
-                                                           value['payment_to_date'])
+                                                           value['payment_to_date'], params['product_id_list'])
 
         report = dict()
 
@@ -62,7 +68,8 @@ class FilterReportService(BaseService):
         orders = orders.filter(due_date__isnull=False)
         amount_map = self.get_amount_map(order_details, orders)
         confirmed_order_map = self.get_confirmed_order_map(orders)
-        report_null_pic = self.calculate_report(sales, report, order_total_map, amount_map, confirmed_order_map, need_report_null_pic)
+        report_null_pic = self.calculate_report(sales, report, order_total_map, amount_map, confirmed_order_map,
+                                                need_report_null_pic)
 
         reports = list(report.values())
         if params.get('order_by', None) and params.get('order_by', None) == 'desc':
@@ -79,9 +86,12 @@ class FilterReportService(BaseService):
 
         return reports
 
-    def collect_order_details(self, orders, payment_from_date, payment_to_date):
+    def collect_order_details(self, orders, payment_from_date, payment_to_date, product_id_list):
         order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
                                                    type=ORDER_DETAIL_TYPE.NEW_BUY)
+
+        if 0 not in product_id_list:
+            order_details = order_details.filter(product_id__in=product_id_list)
 
         if payment_from_date and payment_to_date:
             order_details = order_details.filter(payment_date__gte=payment_from_date,
@@ -261,6 +271,12 @@ class FilterAnnualOrderReportService(BaseService):
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 orders = orders.filter(annual_due_date__isnull=False, data_status__isnull=False,
                                        data_status__name__iexact='đã xác nhận')
+                if 0 not in params['product_id_list']:
+                    filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                                   product_id__in=params['product_id_list']).values_list(
+                        'order_id', flat=True)
+                    orders = orders.filter(id__in=filter_by_product)
 
                 if value.get('pics', None) is not None:
                     user_service = FilterSaleUserService()
@@ -269,7 +285,8 @@ class FilterAnnualOrderReportService(BaseService):
                     if None in value.get('pics'):
                         need_report_null_pic = True
 
-                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'], value['payment_to_date'])
+                order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'],
+                                                             value['payment_to_date'], params['product_id_list'])
 
         report = dict()
         self.initialize_report(sales, report)
@@ -354,9 +371,12 @@ class FilterAnnualOrderReportService(BaseService):
             'top': 0
         }
 
-    def get_order_detail_map(self, orders, payment_from_date, payment_to_date):
+    def get_order_detail_map(self, orders, payment_from_date, payment_to_date, product_list_id):
         order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
                                                    type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
+
+        if 0 not in product_list_id:
+            order_details = order_details.filter(product_id__in=product_list_id)
 
         if payment_from_date and payment_to_date:
             order_details = order_details.filter(payment_date__gte=payment_from_date,
@@ -368,7 +388,7 @@ class FilterAnnualOrderReportService(BaseService):
         order_detail_map = dict()
         for order_detail in order_details:
             if order_detail['order'] in order_detail_map:
-                order_detail_map[order_detail['order']].append(order_detail)
+                order_detail_map[order_detail['order']].append(order_detail)   # May have error if code run here
             else:
                 order_detail_map[order_detail['order']] = order_detail
 
@@ -394,6 +414,14 @@ class FilterBadDebtReportService(BaseService):
                                               annual_due_date__isnull=False, annual_debt__gt=0)
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
+
+                if 0 not in params['product_id_list']:
+                    filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                                   product_id__in=params[
+                                                                       'product_id_list']).values_list(
+                        'order_id', flat=True)
+                    orders = orders.filter(id__in=filter_by_product)
                 if data_status:
                     orders = orders.exclude(data_status_id=data_status.id)
                 if params.get('months', None):
@@ -405,17 +433,20 @@ class FilterBadDebtReportService(BaseService):
         user_service = FilterSaleUserService()
         sales = user_service.serve(request, cookies, *args, **kwargs)
         self.initialize_report(sales, report)
+        order_detail_map = self.get_order_detail_map(orders, params['product_id_list'])
 
         for order in orders:
-            if order.pic and order.pic.username in report:
+            if order.pic and order.pic.username in report and order.id in order_detail_map:
                 report[order.pic.username] = {
                     'pic': order.pic.username,
                     'total_order': report[order.pic.username]['total_order'] + 1,
-                    'total_debt': report[order.pic.username]['total_debt'] + order.annual_amount,
-                    'paid_amount': report[order.pic.username]['paid_amount'] + order.annual_amount - order.annual_debt,
-                    'remaining_debt': report[order.pic.username]['remaining_debt'] + order.annual_debt,
+                    'total_debt': report[order.pic.username]['total_debt'] + order_detail_map[order.id]['total_debt'],
+                    'paid_amount': report[order.pic.username]['paid_amount'] + order_detail_map[order.id][
+                        'total_amount'] - order_detail_map[order.id]['total_debt'],
+                    'remaining_debt': report[order.pic.username]['remaining_debt'] + order_detail_map[order.id]['total_debt'],
                     'waiting_approved_remaining_debt': report[order.pic.username][
-                                                           'waiting_approved_remaining_debt'] + order.waiting_approval_annual_debt,
+                                                           'waiting_approved_remaining_debt'] +
+                                                       order_detail_map[order.id]['total_waiting_approval_debt'],
                     'top': 0
                 }
 
@@ -430,6 +461,22 @@ class FilterBadDebtReportService(BaseService):
                 report['top'] = index + 1
 
         return reports
+
+    def get_order_detail_map(self, orders, product_list_id):
+        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
+                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
+
+        if 0 not in product_list_id:
+            order_details = order_details.filter(product_id__in=product_list_id)
+
+        order_details = order_details.values('order').order_by(
+            'order').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
+                              total_waiting_approval_debt=Sum('waiting_approval_debt'))
+        order_detail_map = dict()
+        for order_detail in order_details:
+            order_detail_map[order_detail['order']] = order_detail
+
+        return order_detail_map
 
     def initialize_report(self, sales, report):
         for sale in sales:

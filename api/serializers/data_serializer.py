@@ -543,6 +543,7 @@ class FilterPaymentRequestParamSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=TYPE_CHOICES, required=False)
     status = serializers.ListField(child=serializers.CharField(max_length=512), default=[])
     order = FilterOrderRequestParamSerializer(required=False)
+    product_id_list = serializers.ListField(child=serializers.IntegerField(), default=[0])
 
 
 class FilterPaymentRequestSerializer(BasePagingSerializer):

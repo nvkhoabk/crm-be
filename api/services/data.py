@@ -247,8 +247,6 @@ def collect_order_details(payment, order_detail_list):
 def recalculate_payment_order_detail(payment, order_detail_list):
     auto_picked_order_detail_ids = []
     order_details, auto_picked_details = collect_order_details(payment, order_detail_list)
-    if len(order_details) == 0:
-        raise PaymentForNoProductOrder()
 
     payment_value = payment.value
     for order_detail in order_details:
@@ -1185,7 +1183,6 @@ class UpdatePaymentService(BaseService):
 
                 payment.save()
 
-                value_changed = True
                 if value_changed:
                     order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)
                     recalculate_order_details = [odp.order_detail for odp in order_detail_payments]
@@ -1276,9 +1273,11 @@ class CancelApprovedPaymentService(BaseService):
                 payment.save()
 
                 order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)
+                recalculate_order_details = [odp.order_detail for odp in order_detail_payments]
+                order_detail_payments.update(deleted_at=datetime.now())
 
-                for order_detail_payment in order_detail_payments:
-                    recalculate_order_details_by_payment(order_detail_payment.order_detail)
+                for order_detail in recalculate_order_details:
+                    recalculate_order_details_by_payment(order_detail)
 
                 recalculate_order(payment.order)
                 if payment.order.pic_id:
@@ -1321,9 +1320,11 @@ class DisapprovePaymentService(BaseService):
                 payment.save()
 
                 order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)
+                recalculate_order_details = [odp.order_detail for odp in order_detail_payments]
+                order_detail_payments.update(deleted_at=datetime.now())
 
-                for order_detail_payment in order_detail_payments:
-                    recalculate_order_details_by_payment(order_detail_payment.order_detail)
+                for order_detail in recalculate_order_details:
+                    recalculate_order_details_by_payment(order_detail)
 
                 recalculate_order(payment.order)
                 if payment.order.pic_id:
@@ -1419,6 +1420,8 @@ class FilterOrderDetailPaymentService(BaseService):
                                      **{'filter': order_filter})
         order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
                                                    order_id__in=orders.values_list('id', flat=True))
+        if 0 not in params['product_id_list']:
+            order_details = order_details.filter(product_id__in=params['product_id_list'])
 
         if 'data_from_date' in order_filter and 'data_to_date' in order_filter and order_filter['data_from_date'] and \
                 order_filter[
@@ -1431,15 +1434,6 @@ class FilterOrderDetailPaymentService(BaseService):
             'payment_to_date']:
             order_details = order_details.filter(payment_date__gte=order_filter['payment_from_date'],
                                                  payment_date__lte=order_filter['payment_to_date'])
-
-        # Filter order
-        # payment_service = FilterPaymentService()
-        # payments = payment_service.serve(request, cookies, *args, **kwargs.pop('order'))
-
-        # query_set = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
-        #                                               order_detail_id__in=order_details.values_list('id', flat=True),
-        #                                               payment_id__in=payments.values_list('id', flat=True)).order_by(
-        #     '-payment_id', '-id').distinct()
 
         query_set = OrderDetailPayment.objects.filter(
             deleted_at__isnull=True,

@@ -35,6 +35,7 @@ class FilterReportParamRequestSerializer(serializers.Serializer):
         ('asc', 'asc'),
     )
     order = FilterOrderRequestParamSerializer(required=False)
+    product_id_list = serializers.ListField(child=serializers.IntegerField(), default=[0])
     order_by = serializers.ChoiceField(choices=ORDER_BY_CHOICES, default='asc')
 
 
@@ -63,6 +64,7 @@ class FilterAnnualOrderReportParamRequestSerializer(serializers.Serializer):
         ('asc', 'asc'),
     )
     order = FilterOrderRequestParamSerializer(required=False)
+    product_id_list = serializers.ListField(child=serializers.IntegerField(), default=[0])
     order_by = serializers.ChoiceField(choices=ORDER_BY_CHOICES, default='asc')
 
 
@@ -91,6 +93,7 @@ class FilterBadDebtReportParamRequestSerializer(serializers.Serializer):
     )
     months = serializers.IntegerField()
     order_by = serializers.ChoiceField(choices=ORDER_BY_CHOICES, default='asc')
+    product_id_list = serializers.ListField(child=serializers.IntegerField(), default=[0])
 
 
 class FilterBadDebtReportRequestSerializer(BasePagingSerializer):
