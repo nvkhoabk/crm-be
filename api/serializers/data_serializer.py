@@ -73,7 +73,7 @@ class OrderSerializer(serializers.ModelSerializer):
                   'data_source', 'data_channel', 'pic_name', 'discount_value', 'discount_type', 'amount',
                   'annual_amount', 'care_notes', 'duplicated_with', 'crawl_data', 'customer_name', 'customer_address',
                   'customer_email', 'created_at', 'updated_by', 'created_by', 'paid_amount', 'annual_paid_amount',
-                  'change_amount', 'annual_change_amount']
+                  'change_amount', 'annual_change_amount', 'confirmed_date']
 
 
 class CreateOrderRequestSerializer(serializers.Serializer):
