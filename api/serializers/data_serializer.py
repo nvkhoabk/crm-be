@@ -196,6 +196,8 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     payment_from_date = serializers.DateField(required=False, allow_null=True)
     payment_to_date = serializers.DateField(required=False, allow_null=True)
     order_types = serializers.ListField(required=False, allow_null=True, child=serializers.CharField())
+    charge_from_date = serializers.DateField(required=False, allow_null=True)
+    charge_to_date = serializers.DateField(required=False, allow_null=True)
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):
@@ -232,7 +234,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                   'total_payment_amount',
                   'paid_payment_amount', 'debt', 'due_date', 'file_attach', 'invoice', 'discount_type', 'created_at',
                   'annual_paid_payment_amount', 'annual_remaining_payment_amount',
-                  'annual_order', 'renew_date', 'payment_date', 'addition_fee']
+                  'annual_order', 'renew_date', 'payment_date', 'addition_fee', 'charge_from_date', 'charge_to_date']
 
 
 class CreateOrderDetailRequestSerializer(serializers.Serializer):
@@ -262,6 +264,8 @@ class CreateOrderDetailRequestSerializer(serializers.Serializer):
     renew_date = serializers.DateField(required=False, allow_null=True)
     payment_date = serializers.DateField(required=False, allow_null=True)
     addition_fee = serializers.IntegerField(required=False, allow_null=True)
+    charge_from_date = serializers.DateField(required=True)
+    charge_to_date = serializers.DateField(required=True)
 
 
 class CreateOrderDetailResponseSerializer(BaseResponseSerializer):
@@ -296,6 +300,8 @@ class UpdateOrderDetailRequestSerializer(serializers.Serializer):
     renew_date = serializers.DateField(required=False, allow_null=True)
     payment_date = serializers.DateField(required=False, allow_null=True)
     addition_fee = serializers.IntegerField(required=False, allow_null=True)
+    charge_from_date = serializers.DateField(required=True)
+    charge_to_date = serializers.DateField(required=True)
 
 
 class UpdateOrderDetailResponseSerializer(BaseResponseSerializer):

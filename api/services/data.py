@@ -19,7 +19,7 @@ from api.const import PRODUCT_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, ORDER_DETAIL
     NOTIFICATION_TYPE, MODULES
 from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistory, OrderDetailHistory, AnnualOrder, \
     User, FBPage, FBUser, Payment, AnnualOrderHistory, ImportOrderRecords, OrderDetailPayment, ExportOrderRequest, \
-    RemainingPayment
+    RemainingPayment, MonthlyOrderDetail
 from api.models.notification import Notification
 from api.models.organization import UserRole, Permission, Role
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
@@ -35,7 +35,8 @@ import pytz
 import pandas as pd
 
 from api.services.manage import FilterSaleUserService
-from api.utils.date import get_last_of_month
+from api.utils.date import get_last_of_month, get_first_of_month
+from api.utils.order_detail import update_charge_date_order_detail, recalcuate_monthly_order_detail_by_payment
 from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
@@ -201,6 +202,7 @@ def recalculate_order_details_by_payment(order_detail):
         order_detail.waiting_approval_debt = 0 if waiting_approval_debt is None else waiting_approval_debt
 
     order_detail.save()
+    recalcuate_monthly_order_detail_by_payment(order_detail)
 
 
 def pay_from_remaining_payments(order):
@@ -622,6 +624,9 @@ class CreateOrderDetailService(BaseService):
                     **kwargs
                 )
 
+                if order_detail.charge_from_date and order_detail.charge_to_date:
+                    update_charge_date_order_detail(order_detail)
+
                 recalculate_order(order_detail.order)
                 if order_detail.product.payment_method == PRODUCT_PAYMENT_METHOD.CREDIT:
                     self.create_annual_buy(order_detail)
@@ -767,6 +772,12 @@ class UpdateOrderDetailService(BaseService):
 
             if kwargs.get('addition_fee'):
                 order_detail.addition_fee = kwargs['addition_fee']
+
+            if kwargs.get('charge_from_date') != order_detail.charge_from_date or kwargs.get(
+                    'charge_to_date') != order_detail.charge_to_date:
+                order_detail.charge_from_date = kwargs['charge_from_date']
+                order_detail.charge_to_date = kwargs['charge_to_date']
+                update_charge_date_order_detail(order_detail)
 
             order_detail.save()
 
@@ -1496,7 +1507,7 @@ class ImportOrderDataService(BaseService):
     def validate_data(self, data, company_id):
         error_codes = []
         error_codes.extend(self.validate_id(data))
-        error_codes.extend(self.validate_phone(data))
+        #error_codes.extend(self.validate_phone(data))
         error_codes.extend(self.validate_order_id(data, company_id))
         error_codes.extend(self.validate_payment_amount(data, company_id))
         return error_codes

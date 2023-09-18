@@ -10,7 +10,7 @@ from django.db.models import Sum, Count, ExpressionWrapper, F, fields
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE
-from api.models.data import OrderDetail, Payment, Order
+from api.models.data import OrderDetail, Payment, Order, MonthlyOrderDetail
 from api.models.organization import UserRole
 from api.models.system_configuration import DataStatus, DataSubStatus
 from api.services.data import FilterOrderService
@@ -33,6 +33,8 @@ class FilterReportService(BaseService):
         sales = []
         need_report_null_pic = False
         order_details = []
+        charge_from_date = None
+        charge_to_date = None
 
         for key, value in params.items():
             if key not in filters:
@@ -43,7 +45,7 @@ class FilterReportService(BaseService):
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 if 0 not in params['product_id_list']:
                     filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
-                                                                   type=ORDER_DETAIL_TYPE.ANNUAL_BUY,
+                                                                   type=ORDER_DETAIL_TYPE.NEW_BUY,
                                                                    product_id__in=params['product_id_list']).values_list(
                         'order_id', flat=True)
                     orders = orders.filter(id__in=filter_by_product)
@@ -62,11 +64,14 @@ class FilterReportService(BaseService):
                 order_details = self.collect_order_details(orders, value['payment_from_date'],
                                                            value['payment_to_date'], params['product_id_list'])
 
+                charge_from_date = value['charge_from_date']
+                charge_to_date = value['charge_to_date']
+
         report = dict()
 
         order_total_map = self.get_order_total_map(orders)
         orders = orders.filter(due_date__isnull=False)
-        amount_map = self.get_amount_map(order_details, orders)
+        amount_map = self.get_amount_map(order_details, orders, charge_from_date, charge_to_date)
         confirmed_order_map = self.get_confirmed_order_map(orders)
         report_null_pic = self.calculate_report(sales, report, order_total_map, amount_map, confirmed_order_map,
                                                 need_report_null_pic)
@@ -104,17 +109,40 @@ class FilterReportService(BaseService):
         order_total_map = {order_total['pic__username']: order_total['total'] for order_total in order_total_map}
         return order_total_map
 
-    def get_amount_map(self, order_details, orders):
+    def get_amount_map(self, order_details, orders, charge_from_date, charge_to_date):
         if len(order_details) == 0:
             return dict()
 
         order_details = order_details.filter(order__in=orders)
-        amount_map = order_details.values('order__pic__username').order_by(
-            'order__pic__username').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
-                                             total_waiting_approval_debt=Sum('waiting_approval_debt'),
-                                             total_price=Sum('price'))
 
-        return {amount['order__pic__username']: amount for amount in amount_map}
+        monthly_order_details = MonthlyOrderDetail.objects.filter(
+            deleted_at__isnull=True,
+            order_detail_id__in=order_details.values_list('id',
+                                                          flat=True))
+
+        if charge_from_date and charge_to_date:
+            monthly_order_details = monthly_order_details.filter(month__gte=charge_from_date, month__lte=charge_to_date)
+
+        monthly_order_details = monthly_order_details.values('order_detail__order__pic__username').order_by(
+            'order_detail__order__pic__username').annotate(
+            charged_amount=Sum('charged_amount'), total_amount=Sum('amount'),
+            total_waiting_approval_debt=Sum('waiting_approval_amount'))
+
+        for monthly_order_detail in monthly_order_details:
+            monthly_order_detail['total_debt'] = monthly_order_detail['total_amount'] - monthly_order_detail[
+                'charged_amount']
+            monthly_order_detail['total_price'] = 0
+
+        amount_map = {amount['order_detail__order__pic__username']: amount for amount in monthly_order_details}
+        total_price_map = order_details.values('order__pic__username').order_by(
+            'order__pic__username').annotate(
+            total_price=Sum('price'))
+
+        for price in total_price_map:
+            if price['order__pic__username'] in amount_map:
+                amount_map[price['order__pic__username']]['total_price'] += price['total_price']
+
+        return amount_map
 
     def get_confirmed_order_map(self, orders):
         orders = orders.filter(data_status__isnull=False).filter(data_status__name__iexact='đã xác nhận')
@@ -286,7 +314,8 @@ class FilterAnnualOrderReportService(BaseService):
                         need_report_null_pic = True
 
                 order_detail_map = self.get_order_detail_map(orders, value['payment_from_date'],
-                                                             value['payment_to_date'], params['product_id_list'])
+                                                             value['payment_to_date'], value['charge_from_date'],
+                                                             value['charge_to_date'], params['product_id_list'])
 
         report = dict()
         self.initialize_report(sales, report)
@@ -302,7 +331,7 @@ class FilterAnnualOrderReportService(BaseService):
                     report[order.pic.username] = self.calculate_report_record(report, order, order_detail_map)
             if order.pic is None and need_report_null_pic and order.id in order_detail_map:
                 annual_amount = order_detail_map[order.id]['total_amount']
-                annual_debt = order_detail_map[order.id]['total_debt']
+                annual_debt = annual_amount - order_detail_map[order.id]['charged_amount']
                 waiting_approval_annual_debt = order_detail_map[order.id]['total_waiting_approval_debt']
                 total_price = order_detail_map[order.id]['total_price']
 
@@ -355,7 +384,7 @@ class FilterAnnualOrderReportService(BaseService):
             return report[order.pic.username]
 
         annual_amount = order_detail_map[order.id]['total_amount']
-        annual_debt = order_detail_map[order.id]['total_debt']
+        annual_debt = annual_amount - order_detail_map[order.id]['charged_amount']
         waiting_approval_annual_debt = order_detail_map[order.id]['total_waiting_approval_debt']
         total_price = order_detail_map[order.id]['total_price']
 
@@ -371,7 +400,8 @@ class FilterAnnualOrderReportService(BaseService):
             'top': 0
         }
 
-    def get_order_detail_map(self, orders, payment_from_date, payment_to_date, product_list_id):
+    def get_order_detail_map(self, orders, payment_from_date, payment_to_date, charge_from_date, charge_to_date,
+                             product_list_id):
         order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
                                                    type=ORDER_DETAIL_TYPE.ANNUAL_BUY)
 
@@ -382,15 +412,26 @@ class FilterAnnualOrderReportService(BaseService):
             order_details = order_details.filter(payment_date__gte=payment_from_date,
                                                  payment_date__lte=payment_to_date)
 
-        order_details = order_details.values('order').order_by(
-            'order').annotate(total_debt=Sum('debt'), total_amount=Sum('total_payment_amount'),
-                              total_waiting_approval_debt=Sum('waiting_approval_debt'), total_price=Sum('price'))
+        monthly_order_details = MonthlyOrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                  order_detail_id__in=order_details.values_list('id',
+                                                                                                                flat=True))
+
+        if charge_from_date and charge_to_date:
+            monthly_order_details = monthly_order_details.filter(month__gte=charge_from_date, month__lte=charge_to_date)
+
+        monthly_order_details = monthly_order_details.values('order_detail__order').order_by('order_detail__order').annotate(
+            charged_amount=Sum('charged_amount'), total_amount=Sum('amount'),
+            total_waiting_approval_debt=Sum('waiting_approval_amount'))
         order_detail_map = dict()
+
+        for monthly_order_detail in monthly_order_details:
+            monthly_order_detail['order'] = monthly_order_detail['order_detail__order']
+            monthly_order_detail['total_price'] = 0
+            order_detail_map[monthly_order_detail['order']] = monthly_order_detail
+
         for order_detail in order_details:
-            if order_detail['order'] in order_detail_map:
-                order_detail_map[order_detail['order']].append(order_detail)   # May have error if code run here
-            else:
-                order_detail_map[order_detail['order']] = order_detail
+            if order_detail.order.id in order_detail_map:
+                order_detail_map[order_detail.order.id]['total_price'] += order_detail.price
 
         return order_detail_map
 

@@ -239,6 +239,8 @@ class OrderDetail(BaseModel):
     payment_date = models.DateField(null=True)
     addition_fee = models.BigIntegerField(default=0, null=True)
     waiting_approval_debt = models.BigIntegerField(default=0, null=True)
+    charge_from_date = models.DateField(null=True)
+    charge_to_date = models.DateField(null=True)
 
     class Meta:
         db_table = 'order_details'
@@ -309,6 +311,17 @@ class OrderDetailHistory(BaseModel):
     class Meta:
         db_table = 'order_detail_histories'
 
+class MonthlyOrderDetail(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE, db_index=True)
+    month = models.DateField()
+    amount = models.IntegerField(default=0)
+    charged_amount = models.IntegerField(default=0)
+    approved_amount = models.IntegerField(default=0)
+    waiting_approval_amount = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'monthly_order_details'
 
 class AnnualOrder(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)
