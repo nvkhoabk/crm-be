@@ -63,14 +63,18 @@ class FilterParamResponseSerializer(BaseResponseSerializer):
 
 
 class CreatePackageRequestSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    price = serializers.IntegerField(min_value=1)
+    company_id = serializers.IntegerField(help_text='Company id')
+    use_default = serializers.BooleanField(default=True)
+    viettel = serializers.CharField()
+    vnpt = serializers.CharField()
+    mobi = serializers.CharField()
+    other = serializers.CharField()
 
 
 class PackageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Package
-        fields = ['id', 'name', 'price']
+        fields = ['id', 'company_id', 'use_default', 'viettel', 'vnpt', 'mobi']
 
 
 class CreatePackageResponseSerializer(BaseResponseSerializer):
@@ -87,8 +91,12 @@ class GetPackageResponseSerializer(BaseResponseSerializer):
 
 class UpdatePackageRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Package id')
-    name = serializers.CharField()
-    price = serializers.IntegerField(min_value=1)
+    company_id = serializers.IntegerField(help_text='Company id')
+    use_default = serializers.BooleanField(default=True)
+    viettel = serializers.CharField()
+    vnpt = serializers.CharField()
+    mobi = serializers.CharField()
+    other = serializers.CharField()
 
 
 class UpdatePackageResponseSerializer(BaseResponseSerializer):
@@ -96,7 +104,7 @@ class UpdatePackageResponseSerializer(BaseResponseSerializer):
 
 
 class FilterPackageRequestParamSerializer(serializers.Serializer):
-    name = serializers.CharField(required=False, allow_blank=True)
+    company_name = serializers.CharField(required=False, allow_blank=True)
 
 
 class FilterPackageRequestSerializer(BasePagingSerializer):

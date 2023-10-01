@@ -440,7 +440,7 @@ class FilterAgentRegisterService(BaseService):
 
             if key == 'company_id':
                 query_set = query_set.filter(
-                    company_id=value,
+                    company_id=value, deleted_at__isnull=True
                 )
 
         return query_set
@@ -464,15 +464,20 @@ class GetExternalPaymentReportService(BaseService):
             call_center = None
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
-                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
-                from_date = call_center.payment_date - relativedelta(months=1)
+                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+                from_date = call_center.payment_start_date
                 to_date = call_center.payment_date
+                # from_date = get_first_of_month(timezone.now())
+                # to_date = get_last_of_month(timezone.now())
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
                 call_center = CallCenterPaymentHistory.objects.filter(
-                    company_id=user_roles.first().company_id).order_by('-id').first()
-                from_date = call_center.payment_date - relativedelta(months=1)
+                    company_id=user_roles.first().company_id, deleted_at__isnull=True).order_by('-id').first()
+                from_date = call_center.payment_start_date
                 to_date = call_center.payment_date
+
+                # from_date = get_first_of_month(timezone.now() - relativedelta(months=1))
+                # to_date = get_last_of_month(timezone.now() - relativedelta(months=1))
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
             call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),

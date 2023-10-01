@@ -11,6 +11,10 @@ from api.utils.date import get_last_of_month, get_first_of_month
 from crm.settings import TIME_ZONE
 
 
+def zero_if_none(number):
+    return 0 if number is None else number
+
+
 def update_charge_date_order_detail(order_detail: OrderDetail):
     MonthlyOrderDetail.objects.filter(deleted_at__isnull=True, order_detail=order_detail).update(
         deleted_at=datetime.now(timezone(TIME_ZONE)))
@@ -24,8 +28,8 @@ def recalcuate_monthly_order_detail_by_payment(order_detail):
 
 
 def recalculate_monthly_order_detail(order_detail, monthly_order_details):
-    paid_amount = order_detail.paid_payment_amount + order_detail.annual_paid_payment_amount
-    waiting_approval_amount = order_detail.waiting_approval_debt
+    paid_amount = zero_if_none(order_detail.paid_payment_amount) + zero_if_none(order_detail.annual_paid_payment_amount)
+    waiting_approval_amount = zero_if_none(order_detail.waiting_approval_debt)
     approved_amount = paid_amount - waiting_approval_amount
     for month in monthly_order_details:
         if paid_amount == 0:

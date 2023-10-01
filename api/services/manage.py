@@ -96,8 +96,12 @@ class CreatePackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             return Package.objects.create(
-                name=kwargs['name'],
-                price=kwargs['price'],
+                company_id=kwargs['company_id'],
+                use_default=kwargs['use_default'],
+                viettel=kwargs['viettel'],
+                vnpt=kwargs['vnpt'],
+                mobi=kwargs['mobi'],
+                other=kwargs['other']
             )
         except IntegrityError as e:
             raise ManagePackageDuplicated()
@@ -120,8 +124,12 @@ class UpdatePackageService(BaseService):
                 pk=kwargs.get('id'),
             )
 
-            package.name = kwargs['name']
-            package.price = kwargs['price']
+            package.company_id = kwargs['company_id'],
+            package.use_default = kwargs['use_default'],
+            package.viettel = kwargs['viettel'],
+            package.vnpt = kwargs['vnpt'],
+            package.mobi = kwargs['mobi'],
+            package.other = kwargs['other']
             package.save()
 
             return package
@@ -135,7 +143,7 @@ class FilterPackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = Package.objects.all()
 
-        filters = ['name', ]
+        filters = ['company_name', ]
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if value is None:
@@ -143,9 +151,10 @@ class FilterPackageService(BaseService):
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'company_name':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    company__name__icontains=value,
+                    deleted_at__isnull=True
                 )
 
         return query_set
@@ -158,7 +167,7 @@ class DeletePackageService(BaseService):
                 pk=kwargs['id'],
             ).delete()
         except Package.DoesNotExist as e:
-            raise ManageDeletePackageNotFound()
+            raise ManagePackageNotFound()
 
 
 class CreateCompanyService(BaseService):

@@ -14,6 +14,7 @@ from api.models.notification import Notification
 from api.models.system_configuration import DataStatus
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment
 from api.utils.date import get_last_of_month
+from api.utils.order_detail import update_charge_date_order_detail
 from crm.settings import TIME_ZONE
 import logging
 from logging.handlers import RotatingFileHandler
@@ -235,6 +236,16 @@ class Command(BaseCommand):
                     payment.order_detail_list = json.dumps([0])
                 payment.save()
 
+    def initialize_charge_date(self):
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, charge_to_date__isnull=True)
+        for order_detail in order_details:
+            print("Processing: ", order_detail.id)
+            order_detail.charge_from_date = datetime(year=2023, month=8, day=1)
+            order_detail.charge_to_date = datetime(year=2023, month=8, day=31)
+            order_detail.save()
+            update_charge_date_order_detail(order_detail)
+            recalculate_order_details_by_payment(order_detail)
+
 
     def handle(self, *args, **options):
         self.initializer_logger()
@@ -245,7 +256,8 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
-        #self.fix_annual_order_generation()
+        # self.initialize_charge_date()
+        # self.fix_annual_order_generation()
         # self.recalculate_order_17()
         # self.reset_order_detail()
         # self.migrate_payments()
