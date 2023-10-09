@@ -63,18 +63,25 @@ class FilterParamResponseSerializer(BaseResponseSerializer):
 
 
 class CreatePackageRequestSerializer(serializers.Serializer):
-    company_id = serializers.IntegerField(help_text='Company id')
-    use_default = serializers.BooleanField(default=True)
+    company_id = serializers.IntegerField(help_text='Company id', default=0)
     viettel = serializers.CharField()
-    vnpt = serializers.CharField()
-    mobi = serializers.CharField()
+    vinaphone = serializers.CharField()
+    mobiphone = serializers.CharField()
     other = serializers.CharField()
 
 
 class PackageSerializer(serializers.ModelSerializer):
+    company_name = serializers.SerializerMethodField()
+
+    def get_company_name(self, package):
+        if package.company_id is None or package.company_id == 0:
+            return ''
+
+        return package.company.name
+
     class Meta:
         model = Package
-        fields = ['id', 'company_id', 'use_default', 'viettel', 'vnpt', 'mobi']
+        fields = ['id', 'company_name', 'viettel', 'vinaphone', 'mobiphone']
 
 
 class CreatePackageResponseSerializer(BaseResponseSerializer):
@@ -91,12 +98,11 @@ class GetPackageResponseSerializer(BaseResponseSerializer):
 
 class UpdatePackageRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Package id')
-    company_id = serializers.IntegerField(help_text='Company id')
-    use_default = serializers.BooleanField(default=True)
-    viettel = serializers.CharField()
-    vnpt = serializers.CharField()
-    mobi = serializers.CharField()
-    other = serializers.CharField()
+    company_id = serializers.IntegerField(help_text='Company id', required=False)
+    viettel = serializers.CharField(required=False)
+    vnpt = serializers.CharField(required=False)
+    mobi = serializers.CharField(required=False)
+    other = serializers.CharField(required=False)
 
 
 class UpdatePackageResponseSerializer(BaseResponseSerializer):
@@ -104,7 +110,7 @@ class UpdatePackageResponseSerializer(BaseResponseSerializer):
 
 
 class FilterPackageRequestParamSerializer(serializers.Serializer):
-    company_name = serializers.CharField(required=False, allow_blank=True)
+    company_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 
 class FilterPackageRequestSerializer(BasePagingSerializer):
@@ -135,6 +141,7 @@ class CreateCompanyRequestSerializer(serializers.Serializer):
 
 class CompanySerializer(serializers.ModelSerializer):
     call_center = serializers.SerializerMethodField()
+    use_package = serializers.SerializerMethodField()
 
     def get_call_center(self, company):
         call_center = CallCenter.objects.filter(company_id=company.id)
@@ -143,9 +150,14 @@ class CompanySerializer(serializers.ModelSerializer):
 
         return None
 
+    def get_use_package(self, company):
+        if Package.objects.filter(deleted_at__isnull=True, company_id=company.id):
+            return True
+        return False
+
     class Meta:
         model = Company
-        fields = ['id', 'name', 'type', 'owner', 'phone', 'call_center']
+        fields = ['id', 'name', 'type', 'owner', 'phone', 'use_package', 'call_center']
 
 
 class CreateCompanyResponseSerializer(BaseResponseSerializer):
