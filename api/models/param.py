@@ -4,9 +4,9 @@ from django.db import models
 
 class Param(BaseModel):
     key = models.CharField(max_length=255, db_index=True, unique=True)
-    value = models.CharField(max_length=255, db_index=True, unique=True)
-    description = models.CharField(max_length=512, db_index=True, unique=False)
-    group = models.CharField(max_length=512, db_index=True, unique=False)
+    value = models.CharField(max_length=2048)
+    description = models.CharField(max_length=512, unique=False)
+    group = models.CharField(max_length=512, unique=False)
 
     class Meta:
         db_table = 'params'

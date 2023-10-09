@@ -89,7 +89,7 @@ class CreatePackageResponseSerializer(BaseResponseSerializer):
 
 
 class GetPackageRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField(help_text='Package id')
+    id = serializers.IntegerField(help_text='Package id', allow_null=True)
 
 
 class GetPackageResponseSerializer(BaseResponseSerializer):
@@ -97,8 +97,8 @@ class GetPackageResponseSerializer(BaseResponseSerializer):
 
 
 class UpdatePackageRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField(help_text='Package id')
-    company_id = serializers.IntegerField(help_text='Company id', required=False)
+    id = serializers.IntegerField(help_text='Package id', allow_null=True)
+    company_id = serializers.IntegerField(help_text='Company id', allow_null=True, required=False)
     viettel = serializers.CharField(required=False)
     vnpt = serializers.CharField(required=False)
     mobi = serializers.CharField(required=False)

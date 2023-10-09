@@ -4,7 +4,7 @@ import xlrd
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import MODULES
+from api.const import MODULES, PARAM_KEY
 from api.models.data import Customer, ImportOrderRecords
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
@@ -70,7 +70,7 @@ class UpdateParamService(BaseService):
 
 class FilterParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        query_set = Param.objects.all()
+        query_set = Param.objects.filter(deleted_at__isnull=True)
         filters = ['key', 'value', 'group']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
@@ -110,9 +110,26 @@ class CreatePackageService(BaseService):
 class GetPackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            return Package.objects.get(
-                pk=kwargs['id'],
-            )
+            if kwargs.get('id') is not None:
+                return Package.objects.get(
+                    pk=kwargs['id'], deleted_at__isnull=True
+                )
+            else:
+                try:
+                    general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
+                except Param.DoesNotExist:
+                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobiphone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+
+                    general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
+                                                           value=data,
+                                                           group='GENERAL_PACKAGE',
+                                                           description='GENERAL_PACKAGE')
+                config_price = json.loads(general_package.value)
+                package = Package(viettel=json.dumps(config_price['viettel']),
+                                  vinaphone=json.dumps(config_price['vinaphone']),
+                                  mobiphone=json.dumps(config_price['mobiphone']),
+                                  other=json.dumps(config_price['other']))
+                return package
         except Package as e:
             raise ManagePackageNotFound()
 
@@ -120,20 +137,40 @@ class GetPackageService(BaseService):
 class UpdatePackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            package = Package.objects.get(
-                pk=kwargs.get('id'),
-            )
+            if kwargs.get('id') is not None:
+                package = Package.objects.get(
+                    pk=kwargs.get('id'),
+                )
 
-            package.company_id = kwargs['company_id'],
-            package.use_default = kwargs['use_default'],
-            package.viettel = kwargs['viettel'],
-            package.vnpt = kwargs['vnpt'],
-            package.mobi = kwargs['mobi'],
-            package.other = kwargs['other']
-            package.save()
+                package.company_id = kwargs['company_id'],
+                package.use_default = kwargs['use_default'],
+                package.viettel = kwargs['viettel'],
+                package.vnpt = kwargs['vinaphone'],
+                package.mobi = kwargs['mobiphone'],
+                package.other = kwargs['other']
+                package.save()
 
-            return package
-        except Package.DoesNotExists:
+                return package
+            else:
+                try:
+                    general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
+                except Param.DoesNotExist:
+                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobiphone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+
+                    general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
+                                                           value=data,
+                                                           group='GENERAL_PACKAGE',
+                                                           description='GENERAL_PACKAGE')
+                config_price = json.loads(general_package.value)
+                config_price['viettel'], = json.loads(kwargs['viettel']),
+                config_price['vinaphone'] = json.loads(kwargs['vinaphone']),
+                config_price['mobiphone'] = json.loads(kwargs['mobiphone']),
+                config_price['other'] = json.loads(kwargs['other'])
+
+                general_package.value = json.dumps(config_price)
+                general_package.save()
+
+        except Package.DoesNotExist:
             raise ManagePackageNotFound()
         except IntegrityError as e:
             raise ManagePackageDuplicated()

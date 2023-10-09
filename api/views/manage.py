@@ -125,7 +125,7 @@ class CreatePackageView(BaseAPIView):
 
 class GetPackageView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [SuperAdminPermission, ]
+    #permission_classes = [SuperAdminPermission, ]
     serializer_class = manage_serializer.GetPackageRequestSerializer
 
     @swagger_auto_schema(
