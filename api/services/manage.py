@@ -118,7 +118,7 @@ class GetPackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobiphone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobifone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
@@ -127,7 +127,7 @@ class GetPackageService(BaseService):
                 config_price = json.loads(general_package.value)
                 package = Package(viettel=json.dumps(config_price['viettel']),
                                   vinaphone=json.dumps(config_price['vinaphone']),
-                                  mobiphone=json.dumps(config_price['mobiphone']),
+                                  mobifone=json.dumps(config_price['mobifone']),
                                   other=json.dumps(config_price['other']))
                 return package
         except Package as e:
@@ -146,7 +146,7 @@ class UpdatePackageService(BaseService):
                 package.use_default = kwargs['use_default'],
                 package.viettel = kwargs['viettel'],
                 package.vnpt = kwargs['vinaphone'],
-                package.mobi = kwargs['mobiphone'],
+                package.mobi = kwargs['mobifone'],
                 package.other = kwargs['other']
                 package.save()
 
@@ -155,7 +155,7 @@ class UpdatePackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobiphone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobifone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
@@ -164,7 +164,7 @@ class UpdatePackageService(BaseService):
                 config_price = json.loads(general_package.value)
                 config_price['viettel'], = json.loads(kwargs['viettel']),
                 config_price['vinaphone'] = json.loads(kwargs['vinaphone']),
-                config_price['mobiphone'] = json.loads(kwargs['mobiphone']),
+                config_price['mobifone'] = json.loads(kwargs['mobifone']),
                 config_price['other'] = json.loads(kwargs['other'])
 
                 general_package.value = json.dumps(config_price)

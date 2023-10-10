@@ -66,7 +66,7 @@ class CreatePackageRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(help_text='Company id', default=0)
     viettel = serializers.CharField()
     vinaphone = serializers.CharField()
-    mobiphone = serializers.CharField()
+    mobifone = serializers.CharField()
     other = serializers.CharField()
 
 
@@ -81,7 +81,7 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['id', 'company_name', 'viettel', 'vinaphone', 'mobiphone']
+        fields = ['id', 'company_name', 'viettel', 'vinaphone', 'mobifone', 'other']
 
 
 class CreatePackageResponseSerializer(BaseResponseSerializer):
