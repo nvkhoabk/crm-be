@@ -97,10 +97,9 @@ class CreatePackageService(BaseService):
         try:
             return Package.objects.create(
                 company_id=kwargs['company_id'],
-                use_default=kwargs['use_default'],
                 viettel=kwargs['viettel'],
-                vnpt=kwargs['vnpt'],
-                mobi=kwargs['mobi'],
+                vinaphone=kwargs['vinaphone'],
+                mobifone=kwargs['mobifone'],
                 other=kwargs['other']
             )
         except IntegrityError as e:
@@ -143,10 +142,9 @@ class UpdatePackageService(BaseService):
                 )
 
                 package.company_id = kwargs['company_id'],
-                package.use_default = kwargs['use_default'],
                 package.viettel = kwargs['viettel'],
-                package.vnpt = kwargs['vinaphone'],
-                package.mobi = kwargs['mobifone'],
+                package.vinaphone = kwargs['vinaphone'],
+                package.mobifone = kwargs['mobifone'],
                 package.other = kwargs['other']
                 package.save()
 

@@ -100,8 +100,8 @@ class UpdatePackageRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Package id', allow_null=True)
     company_id = serializers.IntegerField(help_text='Company id', allow_null=True, required=False)
     viettel = serializers.CharField(required=False)
-    vnpt = serializers.CharField(required=False)
-    mobi = serializers.CharField(required=False)
+    vinaphone = serializers.CharField(required=False)
+    mobifone = serializers.CharField(required=False)
     other = serializers.CharField(required=False)
 
 
