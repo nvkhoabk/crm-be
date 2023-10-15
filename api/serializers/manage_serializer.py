@@ -81,7 +81,7 @@ class PackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ['id', 'company_name', 'viettel', 'vinaphone', 'mobifone', 'other']
+        fields = ['id', 'company_name', 'viettel', 'vinaphone', 'mobifone', 'other', 'company_id']
 
 
 class CreatePackageResponseSerializer(BaseResponseSerializer):

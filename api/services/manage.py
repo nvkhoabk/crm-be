@@ -160,9 +160,9 @@ class UpdatePackageService(BaseService):
                                                            group='GENERAL_PACKAGE',
                                                            description='GENERAL_PACKAGE')
                 config_price = json.loads(general_package.value)
-                config_price['viettel'], = json.loads(kwargs['viettel']),
-                config_price['vinaphone'] = json.loads(kwargs['vinaphone']),
-                config_price['mobifone'] = json.loads(kwargs['mobifone']),
+                config_price['viettel'] = json.loads(kwargs['viettel'])
+                config_price['vinaphone'] = json.loads(kwargs['vinaphone'])
+                config_price['mobifone'] = json.loads(kwargs['mobifone'])
                 config_price['other'] = json.loads(kwargs['other'])
 
                 general_package.value = json.dumps(config_price)
