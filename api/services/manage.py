@@ -141,10 +141,10 @@ class UpdatePackageService(BaseService):
                     pk=kwargs.get('id'),
                 )
 
-                package.company_id = kwargs['company_id'],
-                package.viettel = kwargs['viettel'],
-                package.vinaphone = kwargs['vinaphone'],
-                package.mobifone = kwargs['mobifone'],
+                package.company_id = kwargs['company_id']
+                package.viettel = kwargs['viettel']
+                package.vinaphone = kwargs['vinaphone']
+                package.mobifone = kwargs['mobifone']
                 package.other = kwargs['other']
                 package.save()
 
