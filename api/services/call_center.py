@@ -644,7 +644,7 @@ class UploadExtFileService(BaseService):
                 error_call_agents = []
                 existed_call_agents = CallAgent.objects.filter(company_id=serializer_class.data['company_id'])
                 for row in csv_reader:
-                    if len(row) == 3:
+                    if len(row) >= 3 and row[1] != '' and row[2] != '':
                         call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
                                   agent_register_id=serializer_class.data['agent_register_id'],
                                   status=CALL_AGENT_STATUS.ACTIVE)
