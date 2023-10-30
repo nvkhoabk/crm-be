@@ -53,7 +53,7 @@ class GetParamService(BaseService):
             )
         except Param.DoesNotExist:
             raise ManageParamNotFound()
-    
+
 
 class UpdateParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -117,7 +117,7 @@ class GetPackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobifone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"endAt": 0, "unitPrice": 0}], "vinaphone": [{"endAt": 0, "unitPrice": 0}], "mobifone": [{"endAt": 0, "unitPrice": 0}], "other": [{"endAt": 0, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
@@ -153,7 +153,7 @@ class UpdatePackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"startAt": 0, "unitPrice": 0}], "vinaphone": [{"startAt": 0, "unitPrice": 0}], "mobifone": [{"startAt": 0, "unitPrice": 0}], "other": [{"startAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"endAt": 0, "unitPrice": 0}], "vinaphone": [{"endAt": 0, "unitPrice": 0}], "mobifone": [{"endAt": 0, "unitPrice": 0}], "other": [{"endAt": 0, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
@@ -172,7 +172,7 @@ class UpdatePackageService(BaseService):
             raise ManagePackageNotFound()
         except IntegrityError as e:
             raise ManagePackageDuplicated()
-    
+
 
 class FilterPackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -275,7 +275,7 @@ class GetCompanyService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             return Company.objects.get(
-                pk=kwargs['id'] 
+                pk=kwargs['id']
             )
         except Company.DoesNotExists:
             raise ManageCompanyNotFound()
@@ -344,7 +344,7 @@ class CreateDepartmentService(BaseService):
         department_name = kwargs['department_name']
 
         utils.has_company_permisison(request.user, company_id=company_id)
-            
+
         try:
             company = Company.objects.get(pk=company_id)
         except Company.DoesNotExist:
@@ -429,7 +429,7 @@ class CreateRoleService(BaseService):
         company_id = kwargs['company_id']
         department_id = kwargs['department_id']
         role_name = kwargs['role_name']
-        
+
         utils.has_company_permisison(request.user, company_id=company_id)
 
         if Role.objects.filter(
@@ -483,13 +483,13 @@ class FilterRoleService(BaseService):
         for key, value in params.items():
             if key not in filters:
                 continue
-            
+
             if key == 'company_id':
                 utils.has_company_permisison(request.user, company_id=value)
                 query_set = query_set.filter(
                     company__id=value,
                 )
-         
+
             if key == 'department_id' and value is not None:
                 query_set = query_set.filter(
                     department__id=value,
@@ -508,7 +508,7 @@ class FilterRoleService(BaseService):
 
 class DeleteRoleService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        utils.has_company_permisison(request.user, role_id=kwargs['id']) 
+        utils.has_company_permisison(request.user, role_id=kwargs['id'])
         try:
             return Role.objects.get(
                 id=kwargs['id'],
@@ -615,9 +615,9 @@ class CreateUserService(BaseService):
             group_admins = Group.objects.get(name=utils.get_company_admins_group(kwargs['company_id']))
         except Company.DoesNotExist:
             raise ManageCompanyNotFound()
-    
+
         if not request.user.is_superuser and kwargs.get('roles'):
-            # Check if user has company permission 
+            # Check if user has company permission
             try:
                 member = Member.objects.get(django_user=request.user)
             except Member.DoesNotExist:
@@ -625,8 +625,8 @@ class CreateUserService(BaseService):
             if not member.has_perm('change_company', company):
                 raise PermissionDenied()
         elif not request.user.is_superuser:
-            raise PermissionDenied() 
-            
+            raise PermissionDenied()
+
         with transaction.atomic():
             if User.objects.filter(username=kwargs['username']).first():
                 raise ManageUserDuplicated()
@@ -639,7 +639,7 @@ class CreateUserService(BaseService):
                 # Add admin user to group admin
                 member = Member.objects.create(username=user.username, django_user=user)
                 group_admins.add_member(member)
-            
+
             for roles in kwargs.get('roles', []):
                 try:
                     if roles.get('department_id'):
@@ -651,7 +651,7 @@ class CreateUserService(BaseService):
                     raise ManageDepartmentNotFound()
                 except Role.DoesNotExist:
                     raise ManageRoleNotFound()
-        
+
                 # Role
                 UserRole.objects.create(
                     company=company,
@@ -665,14 +665,14 @@ class CreateUserService(BaseService):
                     company=company,
                     user=user,
                 )
-             
+
             return user
 
 
 class GetUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            user = User.objects.get(pk=kwargs['id']) 
+            user = User.objects.get(pk=kwargs['id'])
         except User.DoesNotExists:
             raise ManageUserNotFound()
 
@@ -711,7 +711,7 @@ class GetUserService(BaseService):
                     'id': department.id,
                     'department_name': department.department_name,
                 }
-                
+
             role = position.role
             if role:
                 data['role'] = {
@@ -731,10 +731,10 @@ class GetUserService(BaseService):
                     pass
 
             roles.append(data)
-        
+
         response['roles'] = roles
         return response
-    
+
 
 class FilterUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -768,7 +768,7 @@ class FilterUserService(BaseService):
         query_set = query_set.filter(
             id__in=user_role_query.values_list('user__id', flat=True),
         )
-        
+
         return query_set
 
 
@@ -799,7 +799,7 @@ class UpdateUserService(BaseService):
                 raise ManageUserNotFound()
 
             utils.has_company_permisison(request.user, target_user=user)
-    
+
             if kwargs.get('username'):
                 user.username = kwargs['username']
 
@@ -809,7 +809,7 @@ class UpdateUserService(BaseService):
             if kwargs.get('status') is not None:
                 user.is_active = kwargs['status']
 
-            if kwargs.get('roles', []):   
+            if kwargs.get('roles', []):
                 UserRole.objects.filter(
                     user=user,
                 ).delete()
@@ -830,7 +830,7 @@ class UpdateUserService(BaseService):
                     raise ManageDepartmentNotFound()
                 except Role.DoesNotExist:
                     raise ManageRoleNotFound()
-        
+
                 # Role
                 UserRole.objects.create(
                     company=company,
@@ -838,7 +838,7 @@ class UpdateUserService(BaseService):
                     role=role if roles.get('role_id') else None,
                     user=user,
                 )
-    
+
             user.save()
             return user
 
