@@ -117,7 +117,7 @@ class GetPackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"endAt": 0, "unitPrice": 0}], "vinaphone": [{"endAt": 0, "unitPrice": 0}], "mobifone": [{"endAt": 0, "unitPrice": 0}], "other": [{"endAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"endAt": null, "unitPrice": 0}], "vinaphone": [{"endAt": null, "unitPrice": 0}], "mobifone": [{"endAt": null, "unitPrice": 0}], "other": [{"endAt": null, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
@@ -153,7 +153,7 @@ class UpdatePackageService(BaseService):
                 try:
                     general_package = Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE)
                 except Param.DoesNotExist:
-                    data = '{"viettel": [{"endAt": 0, "unitPrice": 0}], "vinaphone": [{"endAt": 0, "unitPrice": 0}], "mobifone": [{"endAt": 0, "unitPrice": 0}], "other": [{"endAt": 0, "unitPrice": 0}]}'
+                    data = '{"viettel": [{"endAt": null, "unitPrice": 0}], "vinaphone": [{"endAt": null, "unitPrice": 0}], "mobifone": [{"endAt": null, "unitPrice": 0}], "other": [{"endAt": null, "unitPrice": 0}]}'
 
                     general_package = Param.objects.create(key=PARAM_KEY.GENERAL_PACKAGE,
                                                            value=data,
