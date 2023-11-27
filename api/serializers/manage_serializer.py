@@ -420,6 +420,7 @@ class UpdatePermissionRequestSerializer(serializers.Serializer):
         ('ACCOUNTING', 'ACCOUNTING'),
         ('SYSTEM_CONFIGURATION', 'SYSTEM_CONFIGURATION'),
         ('REPORT', 'REPORT'),
+        ('USER_CALL_CENTER_MANAGEMENT', 'USER_CALL_CENTER_MANAGEMENT')
     )
     id = serializers.IntegerField()
     edit_permissions = serializers.ListField(

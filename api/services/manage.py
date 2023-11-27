@@ -129,7 +129,14 @@ class GetPackageService(BaseService):
                                   mobifone=json.dumps(config_price['mobifone']),
                                   other=json.dumps(config_price['other']))
                 return package
-        except Package as e:
+        except Package.DoesNotExist as e:
+            raise ManagePackageNotFound()
+
+class GetCompanyPackageService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            return Package.objects.get(company_id=kwargs['company_id'], deleted_at__isnull=True)
+        except Package.DoesNotExist:
             raise ManagePackageNotFound()
 
 

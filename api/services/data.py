@@ -1507,7 +1507,7 @@ class ImportOrderDataService(BaseService):
     def validate_data(self, data, company_id):
         error_codes = []
         error_codes.extend(self.validate_id(data))
-        #error_codes.extend(self.validate_phone(data))
+        # error_codes.extend(self.validate_phone(data))
         error_codes.extend(self.validate_order_id(data, company_id))
         error_codes.extend(self.validate_payment_amount(data, company_id))
         return error_codes
@@ -1755,10 +1755,20 @@ class ConfirmImportOrderService(ImportOrderService):
                                                                                  'email'] != '' else customer.email
                                     customer.save()
 
-                        data_source = DataSource.objects.filter(name=data_record['data_source']).first()
-                        data_channel = DataChannel.objects.filter(name=data_record['data_channel']).first()
-                        data_status = DataStatus.objects.filter(name=data_record['data_status']).first()
-                        data_sub_status = DataSubStatus.objects.filter(name=data_record['data_sub_status']).first()
+                        data_source = DataSource.objects.filter(name=data_record['data_source'],
+                                                                deleted_at__isnull=True,
+                                                                company_id=kwargs['company_id']).first()
+                        data_channel = DataChannel.objects.filter(name=data_record['data_channel'],
+                                                                  deleted_at__isnull=True,
+                                                                  company_id=kwargs['company_id'],
+                                                                  data_source=data_source).first()
+                        data_status = DataStatus.objects.filter(name=data_record['data_status'],
+                                                                deleted_at__isnull=True,
+                                                                company_id=kwargs['company_id']).first()
+                        data_sub_status = DataSubStatus.objects.filter(name=data_record['data_sub_status'],
+                                                                       deleted_at__isnull=True,
+                                                                       company_id=kwargs['company_id'],
+                                                                       data_status=data_status).first()
                         order = Order(customer_name=data_record['name'], data_source=data_source,
                                       data_channel=data_channel, data_status=data_status,
                                       data_sub_status=data_sub_status, care_notes=data_record['care_note'],

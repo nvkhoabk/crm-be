@@ -28,6 +28,8 @@ class CallCenter(BaseModel):
     credit_payment_amount = models.IntegerField(default=0)
     external_payment_amount = models.IntegerField(default=0)
     discount_amount = models.IntegerField(default=0)
+    deposit = models.IntegerField(default=0)
+    deposit_warning_threshold = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'call_center'

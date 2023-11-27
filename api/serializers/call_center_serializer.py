@@ -22,7 +22,8 @@ class CallCenterSerializer(serializers.ModelSerializer):
         fields = ['id', 'company_id', 'charge_by', 'payment_method', 'payment_date', 'payment_notify', 'agent_fee',
                   'minute_fee', 'external_fee', 'sip_fee_calculation', 'is_enable', 'discount_type', 'discount_value',
                   'company_name', 'payment_start_date', 'payment_status', 'total_payment_amount',
-                  'credit_payment_amount', 'external_payment_amount', 'discount_amount']
+                  'credit_payment_amount', 'external_payment_amount', 'discount_amount', 'deposit',
+                  'deposit_warning_threshold']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -72,6 +73,8 @@ class CreateCallCenterRequestSerializer(serializers.Serializer):
     discount_type = serializers.ChoiceField(choices=DISCOUNT_TYPE_CHOICES, allow_blank=False, required=False)
     discount_value = serializers.IntegerField(required=False)
     payment_start_date = serializers.DateField(required=True)
+    deposit = serializers.IntegerField(required=False)
+    deposit_warning_threshold = serializers.IntegerField(required=False)
 
 
 class CreateCallCenterResponseSerializer(BaseResponseSerializer):
@@ -113,6 +116,8 @@ class UpdateCallCenterRequestSerializer(serializers.Serializer):
     discount_value = serializers.IntegerField(required=False)
     payment_start_date = serializers.DateField(required=False)
     payment_status = serializers.ChoiceField(choices=PAYMENT_STATUS_CHOICES)
+    deposit = serializers.IntegerField(required=False)
+    deposit_warning_threshold = serializers.IntegerField(required=False)
 
 
 class FilterCallCenterParamSerializer(serializers.Serializer):
@@ -325,6 +330,14 @@ class GetCreditPaymentRequestSerializer(serializers.Serializer):
         ('PREVIOUS_MONTH', 'PREVIOUS_MONTH')
     )
     report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
+    company_id = serializers.IntegerField(required=False, default=0)
+
+
+class CallCenterPriceSerializer(serializers.Serializer):
+    viettel = serializers.IntegerField()
+    vinaphone = serializers.IntegerField()
+    mobifone = serializers.IntegerField()
+    other = serializers.IntegerField()
 
 
 class CreditPaymentReportSerializer(serializers.Serializer):
@@ -337,6 +350,8 @@ class CreditPaymentReportSerializer(serializers.Serializer):
     discount_value = serializers.IntegerField()
     discount_amount = serializers.IntegerField()
     total_payment_amount = serializers.IntegerField()
+    current_prices = CallCenterPriceSerializer()
+    current_minutes = CallCenterPriceSerializer()
 
 
 class GetCreditPaymentResponseSerializer(BaseResponseSerializer):

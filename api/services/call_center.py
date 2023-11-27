@@ -15,10 +15,13 @@ from django.utils import timezone
 from api.common.common import Common
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS
+from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS, PARAM_KEY, \
+    PRICE_TYPE
 from api.models.call_center import CallCenter, CallAgent, AgentRegister, CallCenterPaymentHistory, \
     CallLog, ExtFileHistory
 from api.models.organization import Company, UserRole
+from api.models.package import Package
+from api.models.param import Param
 from api.serializers.call_center_serializer import UploadExtFileRequestSerializer, DownloadExtFileRequestSerializer
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
@@ -210,6 +213,12 @@ class UpdateCallCenterService(BaseService):
             if kwargs.get('payment_start_date'):
                 call_center.payment_start_date = kwargs.get('payment_start_date')
 
+            if kwargs.get('deposit_warning_threshold'):
+                call_center.deposit_warning_threshold = kwargs.get('deposit_warning_threshold')
+
+            if kwargs.get('deposit'):
+                call_center.deposit = kwargs.get('deposit')
+
             if kwargs.get('payment_status') and kwargs.get('payment_status') == PAYMENT_STATUS.PAID:
                 self.pay_call_center(call_center, old_call_center)
 
@@ -325,7 +334,8 @@ class GetUserCallHistoryService(BaseService):
         phone_number = kwargs['phone_number']
         user_roles = UserRole.objects.filter(**filter)
 
-        call_agent = CallAgent.objects.filter(user_id=user_roles.first().user_id, deleted_at__isnull=True)
+        call_agent = CallAgent.objects.filter(user_id=user_roles.first().user_id, deleted_at__isnull=True,
+                                              status=CALL_AGENT_STATUS.ACTIVE)
         if not call_agent:
             raise CallAgentNotFound()
 
@@ -510,22 +520,31 @@ class GetCreditPaymentReportService(BaseService):
 
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            filter = {
-                'user': request.user,
-                'deleted_at__isnull': True
-            }
-            user_roles = UserRole.objects.filter(**filter)
-            call_center = None
+            if not request.user.is_superuser:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+                company_id = user_roles.first().company_id
+            else:
+                company_id = kwargs.get('company_id', 0)
+
+            start_date = None
+            end_date = None
+            call_center = CallCenter.objects.get(company_id=company_id, deleted_at__isnull=True)
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
-                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
+                start_date = get_first_of_month(datetime.now())
+                end_date = datetime.now()
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
-                call_center = CallCenterPaymentHistory.objects.filter(
-                    company_id=user_roles.first().company_id).order_by('-id').first()
+                start_date = get_first_of_month(datetime.now() - relativedelta(months=1))
+                end_date = get_last_of_month(start_date)
+
             if call_center is None:
                 raise ReportNotFound()
-            payment_calculator = CallCenterPaymentCalculatorService(call_center)
+            payment_calculator = CallCenterPaymentCalculatorService(call_center, start_date, end_date)
             payment_calculator.calculate()
 
             return {
@@ -537,6 +556,9 @@ class GetCreditPaymentReportService(BaseService):
                 'discount_type': call_center.discount_type,
                 'discount_value': call_center.discount_value,
                 'total_payment_amount': payment_calculator.get_total_payment_amount(),
+                'charge_type': call_center.charge_by,
+                'current_prices': payment_calculator.get_current_prices(),
+                'current_minutes': payment_calculator.get_current_minutes(),
                 'status': 'UNPAID'
             }
 
@@ -679,12 +701,26 @@ class UploadExtFileService(BaseService):
 
 
 class CallCenterPaymentCalculatorService:
-    def __init__(self, call_center):
+    def __init__(self, call_center, start_date, end_date):
         self.call_center = call_center
         self.total_payment_amount = 0
         self.credit_payment_amount = 0
         self.external_payment_amount = 0
         self.discount_amount = 0
+        self.start_date = start_date
+        self.end_date = end_date
+        self.current_prices = {
+            PRICE_TYPE.VIETTEL: 0,
+            PRICE_TYPE.VINAPHONE: 0,
+            PRICE_TYPE.MOBIFONE: 0,
+            PRICE_TYPE.OTHER: 0
+        }
+        self.current_minutes = {
+            PRICE_TYPE.VIETTEL: 0,
+            PRICE_TYPE.VINAPHONE: 0,
+            PRICE_TYPE.MOBIFONE: 0,
+            PRICE_TYPE.OTHER: 0
+        }
 
     def get_credit_payment_amount(self):
         return self.credit_payment_amount
@@ -697,6 +733,12 @@ class CallCenterPaymentCalculatorService:
 
     def get_discount_amount(self):
         return self.discount_amount
+
+    def get_current_prices(self):
+        return self.current_prices
+
+    def get_current_minutes(self):
+        return self.current_minutes
 
     def calculate(self):
         if self.call_center.payment_method == 'CREDIT':
@@ -722,10 +764,9 @@ class CallCenterPaymentCalculatorService:
         return 0
 
     def calculate_by_sip_minute(self):
-        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
         call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=self.call_center.payment_start_date, calldate__lte=due_date,
+                                           calldate__gte=self.start_date, calldate__lte=self.end_date,
                                            is_telco=False, direction=CALL_DIRECTION.OUTGOING)
 
         total_viettel_duration = 0
@@ -744,11 +785,17 @@ class CallCenterPaymentCalculatorService:
         viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
         mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
         vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
-        minute_fee = json.loads(self.call_center.minute_fee)
 
-        viettel_fee = minute_fee.get(TELECOM_NUMBER.VIETTEL, 0)
-        mobi_fee = minute_fee.get(TELECOM_NUMBER.MOBI, 0)
-        vina_fee = minute_fee.get(TELECOM_NUMBER.VINA, 0)
+        viettel_fee = self.get_current_fee(PRICE_TYPE.VIETTEL, viettel_minute)
+        mobi_fee = self.get_current_fee(PRICE_TYPE.MOBIFONE, mobi_minute)
+        vina_fee = self.get_current_fee(PRICE_TYPE.VINAPHONE, vina_minute)
+        self.current_prices[PRICE_TYPE.VIETTEL] = viettel_fee
+        self.current_prices[PRICE_TYPE.MOBIFONE] = mobi_fee
+        self.current_prices[PRICE_TYPE.VINAPHONE] = vina_fee
+        self.current_minutes[PRICE_TYPE.VIETTEL] = viettel_minute
+        self.current_minutes[PRICE_TYPE.MOBIFONE] = mobi_minute
+        self.current_minutes[PRICE_TYPE.VINAPHONE] = vina_minute
+
         return viettel_fee * viettel_minute + mobi_fee * mobi_minute + vina_fee * vina_minute
 
     def calculate_by_agent(self):
@@ -776,10 +823,9 @@ class CallCenterPaymentCalculatorService:
         return total
 
     def calculate_external_payment_amount(self):
-        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
         call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=self.call_center.payment_start_date, calldate__lte=due_date,
+                                           calldate__gte=self.start_date, calldate__lte=self.end_date,
                                            is_telco=True, direction=CALL_DIRECTION.OUTGOING)
 
         total_duration = 0
@@ -787,4 +833,43 @@ class CallCenterPaymentCalculatorService:
             total_duration += call_log.chargeable_time
 
         total_minute = math.floor((total_duration - 1) / 60) + 1
-        return self.call_center.external_fee * total_minute
+
+        self.current_prices[PRICE_TYPE.OTHER] = self.get_current_fee(PRICE_TYPE.OTHER, total_minute)
+        self.current_minutes[PRICE_TYPE.OTHER] = total_minute
+        return self.current_prices[PRICE_TYPE.OTHER] * total_minute
+
+    def get_current_fee(self, type, total_minutes):
+        prices = {"viettel": [{"endAt": "", "unitPrice": 0}],
+                 "vinaphone": [{"endAt": "", "unitPrice": 0}],
+                 "mobifone": [{"endAt": "", "unitPrice": 0}],
+                 "other": [{"endAt": "", "unitPrice": 0}]}
+        try:
+            package = Package.objects.get(pk=self.call_center.company_id, deleted_at__isnull=True)
+            prices[PRICE_TYPE.VIETTEL] = json.loads(package.viettel)
+            prices[PRICE_TYPE.VINAPHONE] = json.loads(package.vinaphone)
+            prices[PRICE_TYPE.MOBIFONE] = json.loads(package.mobifone)
+            prices[PRICE_TYPE.OTHER] = json.loads(package.other)
+        except Package.DoesNotExist:
+            try:
+                prices = json.loads(Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE, deleted_at__isnull=True).value)
+            except Param.DoesNotExist:
+                print('Not found default price config')
+
+        price = prices[type]
+        if not price:
+            return 0
+
+        if len(price) == 1:
+            return price[0]['unitPrice']
+
+        index = 0
+        while True:
+            if price[index]['endAt'] < total_minutes:
+                index += 1
+                if price[index]['endAt'] == "":
+                    return price[index]['unitPrice']
+            else:
+                break
+
+        return price[index]['unitPrice']
+

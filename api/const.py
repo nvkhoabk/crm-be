@@ -115,3 +115,9 @@ class NOTIFICATION_TYPE:
 
 class PARAM_KEY:
     GENERAL_PACKAGE = 'GENERAL_PACKAGE'
+
+class PRICE_TYPE:
+    VIETTEL = 'viettel'
+    VINAPHONE = 'vinaphone'
+    MOBIFONE = 'mobifone'
+    OTHER = 'other'

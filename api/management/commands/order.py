@@ -4,15 +4,16 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, Q, F
 from pytz import timezone
 
 from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
 from api.models.notification import Notification
-from api.models.system_configuration import DataStatus
-from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment
+from api.models.system_configuration import DataStatus, DataChannel
+from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment, \
+    recalculate_payment_order_detail
 from api.utils.date import get_last_of_month
 from api.utils.order_detail import update_charge_date_order_detail
 from crm.settings import TIME_ZONE
@@ -46,7 +47,7 @@ class Command(BaseCommand):
         for annual_order in annual_orders:
             date_in_month_payment = min(annual_order.product.date_in_month_payment, month_end.day)
             if date_in_month_payment == (processing_date + relativedelta(
-                days=annual_order.product.number_of_date_notify - 1)).day:
+                    days=annual_order.product.number_of_date_notify - 1)).day:
                 self.logger.info('Creating new order detail for annual_order_id: ' + str(annual_order.id))
 
                 new_order_detail = OrderDetail.objects.create(order_id=annual_order.order_detail.order_id,
@@ -62,7 +63,8 @@ class Command(BaseCommand):
                                                               annual_paid_payment_amount=0,
                                                               paid_payment_amount=0,
                                                               debt=annual_order.order_detail.product.period_fee * annual_order.order_detail.quantity - annual_order.order_detail.discount_value,
-                                                              due_date=(processing_date + relativedelta(days=annual_order.product.number_of_date_notify - 1)))
+                                                              due_date=(processing_date + relativedelta(
+                                                                  days=annual_order.product.number_of_date_notify - 1)))
                 create_order_detail_history(new_order_detail)
                 recalculate_order(new_order_detail.order)
 
@@ -117,6 +119,7 @@ class Command(BaseCommand):
         for order_detail in order_details:
             order_detail.annual_remaining_payment_amount = order_detail.total_payment_amount
             order_detail.save()
+
     def migrate_payments(self):
         payments = Payment.objects.filter(company_id=17).exclude(
             orderdetailpayment=None,
@@ -175,7 +178,6 @@ class Command(BaseCommand):
                 print(str(order_detail.order_id) + ',')
                 order_detail.payment_date = order_detail.created_at.date()
                 order_detail.save()
-
 
     def recalculate_order_17(self):
         order_details = OrderDetail.objects.filter(company_id=17, deleted_at__isnull=True)
@@ -246,6 +248,16 @@ class Command(BaseCommand):
             update_charge_date_order_detail(order_detail)
             recalculate_order_details_by_payment(order_detail)
 
+    def fix_data_channels(self):
+        orders = Order.objects.filter(deleted_at__isnull=True, company_id=26)
+        for order in orders:
+            if order.data_channel and order.data_source and order.data_channel.data_source.id != order.data_source_id:
+                print('Found: ', order.id)
+                new_data_channel = DataChannel.objects.filter(data_source_id=order.data_source_id, name=order.data_channel.name).first()
+                if new_data_channel:
+                    order.data_channel_id = new_data_channel.id
+                    print('New channel id: ', new_data_channel.id)
+                    order.save()
 
     def handle(self, *args, **options):
         self.initializer_logger()

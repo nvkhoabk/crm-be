@@ -96,8 +96,8 @@ def floor_rate(rate):
     if rate <= 0.33:
         return 0.33
 
-    if 0.34 <= rate <= 0.5:
+    if 0.33 < rate <= 0.5:
         return 0.5
 
-    if rate >= 0.51:
+    if rate > 0.5:
         return 1
