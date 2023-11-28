@@ -113,3 +113,10 @@ class CallLog(BaseModel):
     class Meta:
         db_table = 'call_log'
         index_together = [['extension', 'phone', 'status']]
+
+class ExportCallLogsHistory(BaseModel):
+    file = models.FileField(upload_to='export_call_logs', null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'export_call_log_histories'

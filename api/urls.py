@@ -108,6 +108,7 @@ urlpatterns = [
          name='callcenter.calculate_payment'),
     path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),
     path('callcenter/download_ext_file/', call_center.DownloadExtFile.as_view(), name='download_ext_file'),
+    path('callcenter/export_call_logs/', call_center.ExportCallLogsView.as_view(), name='callcenter.export_call_logs'),
 
     path('callcenter/incoming_call', call_center.IncomingCallView.as_view(), name='callcenter.incoming_call'),
     path('callcenter/outgoing_call', call_center.OutgoingCallView.as_view(), name='callcenter.outgoing_call'),

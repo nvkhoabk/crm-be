@@ -1,7 +1,7 @@
 import json
 
 from api.const import PAYMENT_STATUS
-from api.models.call_center import CallCenter, CallAgent, AgentRegister
+from api.models.call_center import CallCenter, CallAgent, AgentRegister, ExportCallLogsHistory
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 
@@ -333,6 +333,14 @@ class GetCreditPaymentRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(required=False, default=0)
 
 
+class ExportCallLogsRequestSerializer(serializers.Serializer):
+    REPORT_TYPE_CHOICES = (
+        ('CURRENT_MONTH', 'CURRENT_MONTH'),
+        ('PREVIOUS_MONTH', 'PREVIOUS_MONTH')
+    )
+    report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
+    company_id = serializers.IntegerField(required=False, default=0)
+
 class CallCenterPriceSerializer(serializers.Serializer):
     viettel = serializers.IntegerField()
     vinaphone = serializers.IntegerField()
@@ -384,3 +392,11 @@ class UploadExtFileRequestSerializer(serializers.Serializer):
 
 class DownloadExtFileRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField(required=True)
+
+class ExportCallLogsHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportCallLogsHistory
+        fields = ['id', 'file']
+
+class ExportCallLogsResponseSerializer(BaseResponseSerializer):
+    data = ExportCallLogsHistorySerializer()

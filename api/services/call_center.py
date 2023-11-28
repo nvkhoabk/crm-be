@@ -4,6 +4,7 @@ import math
 import mimetypes
 from wsgiref.util import FileWrapper
 from datetime import datetime
+import pandas as pd
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
@@ -18,7 +19,7 @@ from api.common.cookies import Cookies
 from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS, PARAM_KEY, \
     PRICE_TYPE
 from api.models.call_center import CallCenter, CallAgent, AgentRegister, CallCenterPaymentHistory, \
-    CallLog, ExtFileHistory
+    CallLog, ExtFileHistory, ExportCallLogsHistory
 from api.models.organization import Company, UserRole
 from api.models.package import Package
 from api.models.param import Param
@@ -28,6 +29,7 @@ from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, M
                                      ReportNotFound, NumberAgentRegisterNotMatch)
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.phone import classify_telecom_number
+from crm.settings import MEDIA_ROOT
 
 User = get_user_model()
 
@@ -872,4 +874,81 @@ class CallCenterPaymentCalculatorService:
                 break
 
         return price[index]['unitPrice']
+
+
+class ExportCallLogsService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            if not request.user.is_superuser:
+                filter = {
+                    'user': request.user,
+                    'deleted_at__isnull': True
+                }
+                user_roles = UserRole.objects.filter(**filter)
+                company_id = user_roles.first().company_id
+            else:
+                company_id = kwargs.get('company_id', 0)
+
+            start_date = None
+            end_date = None
+            call_center = CallCenter.objects.get(company_id=company_id, deleted_at__isnull=True)
+
+            if kwargs['report_type'] == 'CURRENT_MONTH':
+                start_date = get_first_of_month(datetime.now())
+                end_date = datetime.now()
+
+            if kwargs['report_type'] == 'PREVIOUS_MONTH':
+                start_date = get_first_of_month(datetime.now() - relativedelta(months=1))
+                end_date = get_last_of_month(start_date)
+
+            if call_center is None:
+                raise ReportNotFound()
+
+            call_agents = CallAgent.objects.filter(company_id=call_center.company_id, deleted_at__isnull=True)
+            call_logs = CallLog.objects.filter(deleted_at__isnull=True,
+                                               extension__in=call_agents.values_list('name', flat=True),
+                                               calldate__gte=start_date, calldate__lte=end_date,
+                                               direction=CALL_DIRECTION.OUTGOING).order_by('id')
+
+            export_request = ExportCallLogsHistory.objects.create(company_id=company_id)
+            file_path = MEDIA_ROOT + '/' + 'export_call_logs' + '/' + str(export_request.id) + '_' + str(
+                export_request.created_at.timestamp()) + '.xls'
+
+            export_data = []
+            for call_log in call_logs:
+                export_data.append(self.normalize_call_log_row(call_log))
+
+            df = pd.DataFrame(export_data, columns=['Mã cuộc gọi',
+                                                    'Thời gian',
+                                                    'Extension',
+                                                    'Số gọi đi',
+                                                    'Thời lượng',
+                                                    'Trạng thái',
+                                                    'File ghi âm',
+                                                    'Loại cuộc gọi',
+                                                    'Thời gian tính phí'])
+            df.to_excel(file_path, index=False, header=True)
+            export_request.file.name = file_path[len(MEDIA_ROOT):]
+            export_request.save()
+
+            return export_request
+
+        except CallAgent.DoesNotExist:
+            raise CallAgentNotFound()
+        except CallCenter.DoesNotExist:
+            raise CallCenterNotFound()
+        except CallCenterPaymentHistory.DoesNotExist:
+            raise CallCenterNotFound()
+
+    def normalize_call_log_row(self, call_log):
+        return [
+            call_log.callid.__str__(),
+            call_log.calldate.__str__() if call_log.calldate is not None else '',
+            call_log.extension if call_log.extension is not None else '',
+            call_log.phone if call_log.phone is not None else '',
+            call_log.duration.__str__() if call_log.duration is not None else '',
+            call_log.status if call_log.status is not None else '',
+            call_log.recording if call_log.recording is not None else '',
+            'Ngoại mạng' if call_log.is_telco else 'Nội mạng',
+            call_log.chargeable_time.__str__() if call_log.chargeable_time is not None else '']
 

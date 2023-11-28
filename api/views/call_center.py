@@ -544,3 +544,25 @@ class DownloadExtFile(BaseAPIView):
         service = call_center_service.DownloadExtFileService()
         response = service.serve(request, cookies, *args, **serializer.validated_data)
         return response
+
+
+class ExportCallLogsView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = call_center_serializer.ExportCallLogsRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='Export call logs',
+        operation_description='Export call logs api',
+        request_body=serializer_class,
+        responses={
+            0: call_center_serializer.ExportCallLogsResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.ExportCallLogsService()
+        record = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=record, request=serializer.validated_data,
+                                 serializer=call_center_serializer.ExportCallLogsResponseSerializer)
