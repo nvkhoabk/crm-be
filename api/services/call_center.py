@@ -28,6 +28,7 @@ from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, M
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch)
 from api.utils.date import get_first_of_month, get_last_of_month
+from api.utils.order_detail import floor_rate
 from api.utils.phone import classify_telecom_number
 from crm.settings import MEDIA_ROOT
 
@@ -473,23 +474,22 @@ class GetExternalPaymentReportService(BaseService):
             from_date = timezone.now()
             to_date = timezone.now()
 
-            call_center = None
+            call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
             if kwargs['report_type'] == 'CURRENT_MONTH':
-                call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
-                from_date = call_center.payment_start_date
-                to_date = call_center.payment_date
-                # from_date = get_first_of_month(timezone.now())
-                # to_date = get_last_of_month(timezone.now())
+                # call_center = CallCenter.objects.get(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+                # from_date = call_center.payment_start_date
+                # to_date = call_center.payment_date
+                from_date = get_first_of_month(timezone.now())
+                to_date = get_last_of_month(timezone.now())
 
             if kwargs['report_type'] == 'PREVIOUS_MONTH':
-                call_center = CallCenterPaymentHistory.objects.filter(
-                    company_id=user_roles.first().company_id, deleted_at__isnull=True).order_by('-id').first()
-                from_date = call_center.payment_start_date
-                to_date = call_center.payment_date
-
-                # from_date = get_first_of_month(timezone.now() - relativedelta(months=1))
-                # to_date = get_last_of_month(timezone.now() - relativedelta(months=1))
+                # call_center = CallCenterPaymentHistory.objects.filter(
+                #     company_id=user_roles.first().company_id, deleted_at__isnull=True).order_by('-id').first()
+                # from_date = call_center.payment_start_date
+                # to_date = call_center.payment_date
+                from_date = get_first_of_month(timezone.now() - relativedelta(months=1))
+                to_date = get_last_of_month(timezone.now() - relativedelta(months=1))
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
             call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
@@ -702,6 +702,17 @@ class UploadExtFileService(BaseService):
             raise AgentRegisterNotFound()
 
 
+class CallCenterReportBuildService:
+    def __init__(self, call_center):
+        self.call_center = call_center
+        self.start_date = get_first_of_month(datetime.now())
+        self.end_date = get_last_of_month(datetime.now())
+
+    def calculate(self):
+        if self.call_center.payment_method == 'CREDIT' and self.call_center.charge_by == 'MINUTE':
+            CallCenterReport
+
+
 class CallCenterPaymentCalculatorService:
     def __init__(self, call_center, start_date, end_date):
         self.call_center = call_center
@@ -801,15 +812,19 @@ class CallCenterPaymentCalculatorService:
         return viettel_fee * viettel_minute + mobi_fee * mobi_minute + vina_fee * vina_minute
 
     def calculate_by_agent(self):
-        agent_register_list = AgentRegister.objects.filter(company_id=self.call_center.company_id)
         total = 0
-        due_date = get_last_of_month(self.call_center.payment_date - relativedelta(months=1))
+        due_date = get_last_of_month(self.end_date)
+        agent_register_list = AgentRegister.objects.filter(company_id=self.call_center.company_id,
+                                                           deleted_at__isnull=True)
+
         for agent_register in agent_register_list:
-            charge_from = max(agent_register.charge_from, self.call_center.payment_start_date)
-            charge_to = min(agent_register.charge_to, due_date)
-            total += agent_register.number * self.calculate_agent_fee(charge_from,
-                                                                      charge_to,
-                                                                      self.call_center.agent_fee)
+            if agent_register.charge_from <= due_date and agent_register.charge_to >= self.start_date:
+                calculate_from = max(self.start_date, agent_register.charge_from)
+                calculate_to = min(due_date, agent_register.charge_to)
+                rate = (calculate_to - calculate_from).days / (
+                        get_last_of_month(calculate_to) - get_first_of_month(calculate_to)).days
+                rate = floor_rate(rate)
+                total += agent_register.number * rate * self.call_center.agent_fee
 
         return total
 

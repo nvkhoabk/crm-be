@@ -30,6 +30,7 @@ class CallCenter(BaseModel):
     discount_amount = models.IntegerField(default=0)
     deposit = models.IntegerField(default=0)
     deposit_warning_threshold = models.IntegerField(default=0)
+    last_report_time = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'call_center'
@@ -114,9 +115,25 @@ class CallLog(BaseModel):
         db_table = 'call_log'
         index_together = [['extension', 'phone', 'status']]
 
+
 class ExportCallLogsHistory(BaseModel):
     file = models.FileField(upload_to='export_call_logs', null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'export_call_log_histories'
+
+
+class CallCenterReport(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    call_center = models.ForeignKey(CallCenter, on_delete=models.CASCADE)
+    from_date = models.DateTimeField()
+    to_date = models.DateTimeField()
+    credit_payment_amount = models.IntegerField(default=0)
+    external_payment_amount = models.IntegerField(default=0)
+    total_payment_amount = models.IntegerField(default=0)
+    current_prices = models.IntegerField(default=0)
+    current_minutes = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'call_center_reports'

@@ -9,7 +9,11 @@ from rest_framework import serializers
 class CallCenterSerializer(serializers.ModelSerializer):
 
     def get_minute_fee(self, call_center):
-        return json.loads(call_center.minute_fee)
+        return {
+            'Viettel': 0,
+            'Mobi': 0,
+            'Vina': 0
+        }
 
     def get_company_name(self, call_center):
         return call_center.company.name
