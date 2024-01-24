@@ -321,7 +321,14 @@ class GetExternalPaymentReportRequestSerializer(BasePagingSerializer):
         ('CURRENT_MONTH', 'CURRENT_MONTH'),
         ('PREVIOUS_MONTH', 'PREVIOUS_MONTH')
     )
+    PROVIDER = (
+        ('OTHER', 'OTHER'),
+        ('VIETTEL', 'VIETTEL'),
+        ('MOBIFONE', 'MOBIFONE'),
+        ('VINAPHONE', 'VINAPHONE'),
+    )
     report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
+    provider = serializers.ChoiceField(choices=PROVIDER)
 
 
 class GetExternalPaymentReportResponseSerializer(BaseResponseSerializer):
