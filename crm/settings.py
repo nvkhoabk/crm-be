@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'rest_framework',
     'corsheaders',
+    # Celery
+    "django_celery_results",
     'drf_yasg',
     'groups_manager',
     'guardian',
@@ -272,4 +274,10 @@ ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
 
 LOG_ROOT = '/var/log/crm/'
 LOG_LEVEL = logging.DEBUG
+
+# Celery Configuration Options
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_TIMEZONE = 'Asia/Ho_Chi_Minh'
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
 
