@@ -53,10 +53,10 @@ class CALL_DIRECTION:
 
 
 class TELECOM_NUMBER:
-    VIETTEL = 'Viettel'
-    MOBI = 'Mobi'
-    VINA = 'Vina'
-    OTHER = 'Other'
+    VIETTEL = 'VIETTEL'
+    MOBI = 'MOBIFONE'
+    VINA = 'VINAPHONE'
+    OTHER = 'OTHER'
 
 
 class PAYMENT_STATUS:
@@ -112,6 +112,7 @@ class NOTIFICATION_TYPE:
     NEW_PAYMENT = 'NEW_PAYMENT'
     APPROVE_PAYMENT = 'APPROVE_PAYMENT'
     UNAPPROVE_PAYMENT = 'UNAPPROVE_PAYMENT'
+    DEPOSIT_THRESOLD = 'DEPOSIT_THRESOLD'
 
 
 class PARAM_KEY:
@@ -122,3 +123,19 @@ class PRICE_TYPE:
     VINAPHONE = 'vinaphone'
     MOBIFONE = 'mobifone'
     OTHER = 'other'
+
+class CALL_CENTER_PAYMENT_METHOD:
+    CREDIT = 'CREDIT'
+    DEBIT = 'DEBIT'
+
+
+class CALL_CENTER_CHARGE_METHOD:
+    MINUTE = 'MINUTE'
+    AGENT = 'AGENT'
+
+
+class CACHE_KEY:
+    COMPANY_EXTENSION = 'company_extension'
+    CALL_CENTER_MINUTE = 'call_center_minute'
+    GENERAL_PACKAGE = 'general_package'
+    PACKAGE = 'package'

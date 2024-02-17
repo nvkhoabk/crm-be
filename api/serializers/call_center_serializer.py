@@ -1,18 +1,21 @@
 import json
+import math
 
-from api.const import PAYMENT_STATUS
+from api.const import PAYMENT_STATUS, TELECOM_NUMBER
 from api.models.call_center import CallCenter, CallAgent, AgentRegister, ExportCallLogsHistory
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
 from rest_framework import serializers
 
+import api.utils.call_center as call_center_utils
+
 
 class CallCenterSerializer(serializers.ModelSerializer):
-
     def get_minute_fee(self, call_center):
+        minute_fee = call_center_utils.get_minute_fee(call_center)
         return {
-            'Viettel': 0,
-            'Mobi': 0,
-            'Vina': 0
+            'Viettel': minute_fee[TELECOM_NUMBER.VIETTEL],
+            'Mobi': minute_fee[TELECOM_NUMBER.MOBI],
+            'Vina': minute_fee[TELECOM_NUMBER.VINA]
         }
 
     def get_company_name(self, call_center):
@@ -27,7 +30,7 @@ class CallCenterSerializer(serializers.ModelSerializer):
                   'minute_fee', 'external_fee', 'sip_fee_calculation', 'is_enable', 'discount_type', 'discount_value',
                   'company_name', 'payment_start_date', 'payment_status', 'total_payment_amount',
                   'credit_payment_amount', 'external_payment_amount', 'discount_amount', 'deposit',
-                  'deposit_warning_threshold']
+                  'deposit_warning_threshold', 'trial_warning', 'trial_expired']
 
 
 class CallAgentSerializer(serializers.ModelSerializer):
@@ -322,10 +325,10 @@ class GetExternalPaymentReportRequestSerializer(BasePagingSerializer):
         ('PREVIOUS_MONTH', 'PREVIOUS_MONTH')
     )
     PROVIDER = (
-        ('OTHER', 'OTHER'),
-        ('VIETTEL', 'VIETTEL'),
-        ('MOBIFONE', 'MOBIFONE'),
-        ('VINAPHONE', 'VINAPHONE'),
+        (TELECOM_NUMBER.OTHER, TELECOM_NUMBER.OTHER),
+        (TELECOM_NUMBER.VIETTEL, TELECOM_NUMBER.VIETTEL),
+        (TELECOM_NUMBER.MOBI, TELECOM_NUMBER.MOBI),
+        (TELECOM_NUMBER.VINA, TELECOM_NUMBER.VINA),
     )
     report_type = serializers.ChoiceField(choices=REPORT_TYPE_CHOICES)
     provider = serializers.ChoiceField(choices=PROVIDER)

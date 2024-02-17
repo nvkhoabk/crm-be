@@ -196,6 +196,16 @@ REST_FRAMEWORK = {
     ]
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
 FIXTURE_DIRS = (
     os.path.join(BASE_DIR, 'fixtures'),
 )
@@ -275,8 +285,11 @@ ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
 LOG_ROOT = '/var/log/crm/'
 LOG_LEVEL = logging.DEBUG
 
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+
 # Celery Configuration Options
-CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_BROKER_URL = 'redis://{0}:{1}'.format(REDIS_HOST, REDIS_PORT)
 CELERY_TIMEZONE = 'Asia/Ho_Chi_Minh'
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "django-cache"

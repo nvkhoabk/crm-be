@@ -31,6 +31,7 @@ from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
 
 from api.tasks import get_company_information
+from api.utils import cache
 
 User = get_user_model()
 
@@ -133,6 +134,7 @@ class GetPackageService(BaseService):
         except Package.DoesNotExist as e:
             raise ManagePackageNotFound()
 
+
 class GetCompanyPackageService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -155,6 +157,7 @@ class UpdatePackageService(BaseService):
                 package.mobifone = kwargs['mobifone']
                 package.other = kwargs['other']
                 package.save()
+                cache.update_package_from_db(package.company_id)
 
                 return package
             else:
@@ -175,6 +178,7 @@ class UpdatePackageService(BaseService):
 
                 general_package.value = json.dumps(config_price)
                 general_package.save()
+                cache.update_package_from_db()
 
         except Package.DoesNotExist:
             raise ManagePackageNotFound()

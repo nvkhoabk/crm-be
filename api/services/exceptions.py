@@ -304,3 +304,8 @@ class ZaloOAAPIHasNoPermission(APIException):
 class NotificationNotFound(APIException):
     code = 7001
     msg = 'Notification not found'
+
+
+class TrialExpired(APIException):
+    code = 8001
+    msg = 'Trial expired'

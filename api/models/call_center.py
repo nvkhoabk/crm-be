@@ -31,6 +31,8 @@ class CallCenter(BaseModel):
     deposit = models.IntegerField(default=0)
     deposit_warning_threshold = models.IntegerField(default=0)
     last_report_time = models.DateTimeField(null=True)
+    trial_expired = models.BooleanField(default=False)
+    trial_warning = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'call_center'
@@ -110,6 +112,7 @@ class CallLog(BaseModel):
     is_telco = models.BooleanField(default=False)
     seen = models.BooleanField(default=False)
     chargeable_time = models.IntegerField(default=0)
+    provider = models.CharField(max_length=128, default='')
 
     class Meta:
         db_table = 'call_log'

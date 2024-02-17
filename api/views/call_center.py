@@ -252,10 +252,12 @@ class StartCallOutView(BaseAPIView):
     @swagger_auto_schema(
         tags=['Manage Call Events'],
         operation_id='Start Call Out',
-        operation_description='End Call Out',
+        operation_description='Start Call Out',
         responses={}
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.StartCallOutService()
+        service.serve(request, cookies, *args, **kwargs)
         return self.get_response()
 
 

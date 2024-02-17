@@ -103,7 +103,7 @@ urlpatterns = [
     path('callcenter/get_external_report/', call_center.GetExternalPaymentReportView.as_view(),
          name='callcenter.get_external_report'),
     path('callcenter/get_credit_payment_report/', call_center.GetCreditPaymentReportView.as_view(),
-         name='callcenter.get_external_report'),
+         name='callcenter.get_credit_payment_report'),
     path('callcenter/calculate_payment/', call_center.CalculatePayemntCallCenterView.as_view(),
          name='callcenter.calculate_payment'),
     path('callcenter/upload_ext_file/', call_center.UploadExtFile.as_view(), name='upload_ext_file'),

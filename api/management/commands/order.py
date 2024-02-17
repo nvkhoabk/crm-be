@@ -8,14 +8,16 @@ from django.db.models import Sum, Q, F
 from pytz import timezone
 
 from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE
+from api.models.call_center import CallLog
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
 from api.models.notification import Notification
 from api.models.system_configuration import DataStatus, DataChannel
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment, \
     recalculate_payment_order_detail
-from api.utils.date import get_last_of_month
+from api.utils.date import get_last_of_month, get_first_of_month
 from api.utils.order_detail import update_charge_date_order_detail
+from api.utils.phone import classify_telecom_number
 from crm.settings import TIME_ZONE
 import logging
 from logging.handlers import RotatingFileHandler
@@ -259,15 +261,25 @@ class Command(BaseCommand):
                     print('New channel id: ', new_data_channel.id)
                     order.save()
 
+    def migrate_call_log(self):
+        last_month = get_first_of_month(datetime.now() - relativedelta(month=1))
+        call_logs = CallLog.objects.filter(calldate__gte=last_month)
+        for call_log in call_logs:
+            call_log.provider = classify_telecom_number(call_log.phone)
+
+        batch_size = 1000
+        for i in range(0, len(call_logs), batch_size):
+            print('Processing from {} to {}'.format(i, i + batch_size))
+            batch = call_logs[i:i + batch_size]
+            CallLog.objects.bulk_update(batch, fields=['provider'])
+
+
     def handle(self, *args, **options):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
             options['date'], '%Y%m%d').date()
 
-        self.process_annual_buy(processing_date)
-        self.calculate_debt_status_order(processing_date)
-        self.notify_renew_date(processing_date)
-
+        # self.migrate_call_log()
         # self.initialize_charge_date()
         # self.fix_annual_order_generation()
         # self.recalculate_order_17()

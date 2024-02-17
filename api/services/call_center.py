@@ -12,12 +12,13 @@ from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.http import HttpResponse, FileResponse
 from django.utils import timezone
+import api.utils.cache as cache
 
 from api.common.common import Common
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STATUS, CALL_AGENT_STATUS, PARAM_KEY, \
-    PRICE_TYPE
+    PRICE_TYPE, CALL_CENTER_PAYMENT_METHOD, CALL_CENTER_CHARGE_METHOD
 from api.models.call_center import CallCenter, CallAgent, AgentRegister, CallCenterPaymentHistory, \
     CallLog, ExtFileHistory, ExportCallLogsHistory
 from api.models.organization import Company, UserRole
@@ -26,7 +27,8 @@ from api.models.param import Param
 from api.serializers.call_center_serializer import UploadExtFileRequestSerializer, DownloadExtFileRequestSerializer
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
-                                     ReportNotFound, NumberAgentRegisterNotMatch)
+                                     ReportNotFound, NumberAgentRegisterNotMatch, TrialExpired)
+from api.utils.call_center import get_current_fee, is_trial
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.order_detail import floor_rate
 from api.utils.phone import classify_telecom_number
@@ -54,6 +56,7 @@ class CreateCallCenterService(BaseService):
                 if kwargs.get('minute_fee') is not None:
                     kwargs['minute_fee'] = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
                 call_center = CallCenter.objects.create(**kwargs)
+                cache.update_package_from_db(call_center.company_id)
                 return call_center
             except IntegrityError as e:
                 raise CallCenterDuplicated()
@@ -136,7 +139,8 @@ class FilterCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         query_set = CallCenter.objects.filter(deleted_at__isnull=True)
 
-        filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type', 'from_date', 'to_date']
+        filters = ['company_id', 'charge_by', 'payment_method', 'sip_fee_calculation', 'discount_type', 'from_date',
+                   'to_date']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -178,54 +182,62 @@ class UpdateCallCenterService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             Company.objects.get(pk=kwargs['company_id'])
-            call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
-
             old_call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
-
-            if kwargs.get('charge_by'):
-                call_center.charge_by = kwargs.get('charge_by')
-
-            if kwargs.get('payment_method'):
-                call_center.payment_method = kwargs.get('payment_method')
-
-            if kwargs.get('payment_date'):
-                call_center.payment_date = kwargs.get('payment_date')
-
-            if kwargs.get('payment_notify'):
-                call_center.payment_notify = kwargs.get('payment_notify')
-
-            if kwargs.get('agent_fee'):
-                call_center.agent_fee = kwargs.get('agent_fee')
-
-            if kwargs.get('minute_fee'):
-                call_center.minute_fee = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
-
-            if kwargs.get('external_fee'):
-                call_center.external_fee = kwargs.get('external_fee')
-
-            if kwargs.get('sip_fee_calculation'):
-                call_center.sip_fee_calculation = kwargs.get('sip_fee_calculation')
-
-            if kwargs.get('discount_type'):
-                call_center.discount_type = kwargs.get('discount_type')
-                call_center.discount_value = 0
-
-            if kwargs.get('discount_value'):
-                call_center.discount_value = kwargs.get('discount_value')
-
-            if kwargs.get('payment_start_date'):
-                call_center.payment_start_date = kwargs.get('payment_start_date')
-
-            if kwargs.get('deposit_warning_threshold'):
-                call_center.deposit_warning_threshold = kwargs.get('deposit_warning_threshold')
-
-            if kwargs.get('deposit'):
-                call_center.deposit = kwargs.get('deposit')
+            CallCenter.objects.filter(company_id=kwargs['company_id']).update(**kwargs)
+            call_center = CallCenter.objects.get(company_id=kwargs['company_id'])
+            # if kwargs.get('charge_by'):
+            #     call_center.charge_by = kwargs.get('charge_by')
+            #
+            # if kwargs.get('payment_method'):
+            #     call_center.payment_method = kwargs.get('payment_method')
+            #
+            # if kwargs.get('payment_date'):
+            #     call_center.payment_date = kwargs.get('payment_date')
+            #
+            # if kwargs.get('payment_notify'):
+            #     call_center.payment_notify = kwargs.get('payment_notify')
+            #
+            # if kwargs.get('agent_fee'):
+            #     call_center.agent_fee = kwargs.get('agent_fee')
+            #
+            # if kwargs.get('minute_fee'):
+            #     call_center.minute_fee = json.dumps(kwargs.get('minute_fee')).replace("'", "\"")
+            #
+            # if kwargs.get('external_fee'):
+            #     call_center.external_fee = kwargs.get('external_fee')
+            #
+            # if kwargs.get('sip_fee_calculation'):
+            #     call_center.sip_fee_calculation = kwargs.get('sip_fee_calculation')
+            #
+            # if kwargs.get('discount_type'):
+            #     call_center.discount_type = kwargs.get('discount_type')
+            #     call_center.discount_value = 0
+            #
+            # if kwargs.get('discount_value', None) is not None:
+            #     call_center.discount_value = kwargs.get('discount_value')
+            #
+            # if kwargs.get('payment_start_date'):
+            #     call_center.payment_start_date = kwargs.get('payment_start_date')
+            #
+            # if kwargs.get('deposit_warning_threshold'):
+            #     call_center.deposit_warning_threshold = kwargs.get('deposit_warning_threshold')
+            #
+            # if kwargs.get('deposit'):
+            #     call_center.deposit = kwargs.get('deposit')
 
             if kwargs.get('payment_status') and kwargs.get('payment_status') == PAYMENT_STATUS.PAID:
                 self.pay_call_center(call_center, old_call_center)
 
+            if call_center.deposit == 0 or call_center.deposit_warning_threshold == 0:
+                call_center.trial_expired = False
+                call_center.trial_warning = False
+
             call_center.save()
+
+            if call_center.deposit != old_call_center.deposit or \
+                    call_center.deposit_warning_threshold != old_call_center.deposit_warning_threshold:
+                cache.call_center_deposit_changed(call_center.company_id)
+
             return call_center
 
         except CallCenter.DoesNotExist as e:
@@ -274,6 +286,7 @@ class UpdateAgentService(BaseService):
                 call_agent.user_id = updating_value['user_id']
                 call_agent.save()
                 call_agents.append(call_agent)
+                cache.init_ext_company()
 
             return call_agents
         except CallAgent.DoesNotExist:
@@ -346,7 +359,8 @@ class GetUserCallHistoryService(BaseService):
 
         call_logs = []
         if phone_number is not None and phone_number != "":
-            call_logs = CallLog.objects.filter(extension=call_agent.name, phone__icontains=phone_number).order_by('-created_at')
+            call_logs = CallLog.objects.filter(extension=call_agent.name, phone__icontains=phone_number).order_by(
+                '-created_at')
         else:
             call_logs = CallLog.objects.filter(extension=call_agent.name).order_by('-created_at')
 
@@ -493,7 +507,8 @@ class GetExternalPaymentReportService(BaseService):
 
             call_agents = CallAgent.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
             call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                               calldate__gte=from_date, calldate__lte=to_date, is_telco=True,
+                                               calldate__gte=from_date, calldate__lte=to_date,
+                                               provider=kwargs.get('provider', None),
                                                direction=CALL_DIRECTION.OUTGOING).order_by('created_at')
 
             call_history_list = []
@@ -577,7 +592,8 @@ class IncomingCallService(BaseService):
         call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
                            extension=request.GET.get('extension', None))
         call_log.is_telco = is_external_number(call_log.phone)
-        call_log.direction = 'incoming'
+        call_log.provider = classify_telecom_number(call_log.phone)
+        call_log.direction = CALL_DIRECTION.INCOMING
         call_log.save()
         return call_log
 
@@ -587,7 +603,7 @@ class OutgoingCallService(BaseService):
         call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
                            extension=request.GET.get('extension', None))
         call_log.is_telco = is_external_number(call_log.phone)
-        call_log.direction = 'outgoing'
+        call_log.direction = CALL_DIRECTION.OUTGOING
         call_log.save()
         return call_log
 
@@ -607,6 +623,9 @@ class CallAnsweredService(BaseService):
         call_log.recording = kwargs.get('recording', None)
         call_log.chargeable_time = self.calculate_chargeable_time(call_log)
         call_log.save()
+
+        if call_log.direction == CALL_DIRECTION.OUTGOING and call_log.chargeable_time > 0:
+            cache.update_call_center_month_minute(call_log)
 
         return call_log
 
@@ -642,6 +661,24 @@ class CallAnsweredService(BaseService):
     def calculate_by_60_1(self, duration):
         return 60 * (math.floor((duration - 1) / 60) + 1)
 
+
+class StartCallOutService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            filter = {
+                'user': request.user,
+                'deleted_at__isnull': True
+            }
+            user_roles = UserRole.objects.filter(**filter)
+            company_id = user_roles.first().company_id
+        else:
+            company_id = kwargs.get('company_id', 0)
+
+        call_center = CallCenter.objects.get(company_id=company_id, deleted_at__isnull=True)
+        if is_trial(call_center) and call_center.trial_expired:
+            raise TrialExpired()
+
+
 class DownloadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         ext_file = ExtFileHistory.objects.filter(company_id=kwargs['company_id']).order_by('-created_at').first()
@@ -660,7 +697,8 @@ class UploadExtFileService(BaseService):
             common = Common()
             file = request.FILES['file']
             file_name = common.upload_ext_file(file, 'files/ext_files/')
-            ext_file = ExtFileHistory(file_name='files/ext_files/' + file_name, company_id=serializer_class.data['company_id'])
+            ext_file = ExtFileHistory(file_name='files/ext_files/' + file_name,
+                                      company_id=serializer_class.data['company_id'])
             ext_file.save()
             with default_storage.open('files/ext_files/' + file_name, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file)
@@ -669,15 +707,17 @@ class UploadExtFileService(BaseService):
                 existed_call_agents = CallAgent.objects.filter(company_id=serializer_class.data['company_id'])
                 for row in csv_reader:
                     if len(row) >= 3 and row[1] != '' and row[2] != '':
-                        call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1], secret=row[2],
-                                  agent_register_id=serializer_class.data['agent_register_id'],
-                                  status=CALL_AGENT_STATUS.ACTIVE)
+                        call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1],
+                                               secret=row[2],
+                                               agent_register_id=serializer_class.data['agent_register_id'],
+                                               status=CALL_AGENT_STATUS.ACTIVE)
                         if not self.exists_call_agent(existed_call_agents=existed_call_agents, ext_name=row[1]):
                             call_agents.append(call_agent)
                         else:
                             error_call_agents.append(row[1])
                 self.validate(len(call_agents) + len(error_call_agents), serializer_class.data['agent_register_id'])
                 CallAgent.objects.bulk_create(call_agents)
+                cache.init_ext_company()
             return {
                 'error_call_agents': error_call_agents
             }
@@ -702,15 +742,15 @@ class UploadExtFileService(BaseService):
             raise AgentRegisterNotFound()
 
 
-class CallCenterReportBuildService:
-    def __init__(self, call_center):
-        self.call_center = call_center
-        self.start_date = get_first_of_month(datetime.now())
-        self.end_date = get_last_of_month(datetime.now())
-
-    def calculate(self):
-        if self.call_center.payment_method == 'CREDIT' and self.call_center.charge_by == 'MINUTE':
-            CallCenterReport
+# class CallCenterReportBuildService:
+#     def __init__(self, call_center):
+#         self.call_center = call_center
+#         self.start_date = get_first_of_month(datetime.now())
+#         self.end_date = get_last_of_month(datetime.now())
+#
+#     def calculate(self):
+#         if self.call_center.payment_method == 'CREDIT' and self.call_center.charge_by == 'MINUTE':
+#             CallCenterReport
 
 
 class CallCenterPaymentCalculatorService:
@@ -754,11 +794,11 @@ class CallCenterPaymentCalculatorService:
         return self.current_minutes
 
     def calculate(self):
-        if self.call_center.payment_method == 'CREDIT':
-            if self.call_center.charge_by == 'AGENT':
+        if self.call_center.payment_method == CALL_CENTER_PAYMENT_METHOD.CREDIT:
+            if self.call_center.charge_by == CALL_CENTER_CHARGE_METHOD.AGENT:
                 self.credit_payment_amount = self.calculate_by_agent()
 
-            if self.call_center.charge_by == 'MINUTE':
+            if self.call_center.charge_by == CALL_CENTER_CHARGE_METHOD.MINUTE:
                 self.credit_payment_amount = self.calculate_by_sip_minute()
 
         self.external_payment_amount = self.calculate_external_payment_amount()
@@ -777,31 +817,31 @@ class CallCenterPaymentCalculatorService:
         return 0
 
     def calculate_by_sip_minute(self):
-        call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
-        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=self.start_date, calldate__lte=self.end_date,
-                                           is_telco=False, direction=CALL_DIRECTION.OUTGOING)
+        # call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
+        # call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+        #                                    calldate__gte=self.start_date, calldate__lte=self.end_date,
+        #                                    is_telco=False, direction=CALL_DIRECTION.OUTGOING)
 
-        total_viettel_duration = 0
-        total_mobi_duration = 0
-        total_vina_duration = 0
-        for call_log in call_logs:
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
-                total_viettel_duration += call_log.chargeable_time
-
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
-                total_mobi_duration += call_log.chargeable_time
-
-            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
-                total_vina_duration += call_log.chargeable_time
+        total_viettel_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VIETTEL)
+        total_mobi_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.MOBI)
+        total_vina_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VINA)
+        # for call_log in call_logs:
+        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
+        #         total_viettel_duration += call_log.chargeable_time
+        #
+        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
+        #         total_mobi_duration += call_log.chargeable_time
+        #
+        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
+        #         total_vina_duration += call_log.chargeable_time
 
         viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
         mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
         vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
 
-        viettel_fee = self.get_current_fee(PRICE_TYPE.VIETTEL, viettel_minute)
-        mobi_fee = self.get_current_fee(PRICE_TYPE.MOBIFONE, mobi_minute)
-        vina_fee = self.get_current_fee(PRICE_TYPE.VINAPHONE, vina_minute)
+        viettel_fee = get_current_fee(PRICE_TYPE.VIETTEL, viettel_minute, self.call_center.company_id)
+        mobi_fee = get_current_fee(PRICE_TYPE.MOBIFONE, mobi_minute, self.call_center.company_id)
+        vina_fee = get_current_fee(PRICE_TYPE.VINAPHONE, vina_minute, self.call_center.company_id)
         self.current_prices[PRICE_TYPE.VIETTEL] = viettel_fee
         self.current_prices[PRICE_TYPE.MOBIFONE] = mobi_fee
         self.current_prices[PRICE_TYPE.VINAPHONE] = vina_fee
@@ -840,55 +880,21 @@ class CallCenterPaymentCalculatorService:
         return total
 
     def calculate_external_payment_amount(self):
-        call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
-        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-                                           calldate__gte=self.start_date, calldate__lte=self.end_date,
-                                           is_telco=True, direction=CALL_DIRECTION.OUTGOING)
+        # call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
+        # call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+        #                                    calldate__gte=self.start_date, calldate__lte=self.end_date,
+        #                                    is_telco=True, direction=CALL_DIRECTION.OUTGOING)
 
-        total_duration = 0
-        for call_log in call_logs:
-            total_duration += call_log.chargeable_time
+        total_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.OTHER)
+        # for call_log in call_logs:
+        #     total_duration += call_log.chargeable_time
 
         total_minute = math.floor((total_duration - 1) / 60) + 1
 
-        self.current_prices[PRICE_TYPE.OTHER] = self.get_current_fee(PRICE_TYPE.OTHER, total_minute)
+        self.current_prices[PRICE_TYPE.OTHER] = get_current_fee(PRICE_TYPE.OTHER, total_minute,
+                                                                self.call_center.company_id)
         self.current_minutes[PRICE_TYPE.OTHER] = total_minute
         return self.current_prices[PRICE_TYPE.OTHER] * total_minute
-
-    def get_current_fee(self, type, total_minutes):
-        prices = {"viettel": [{"endAt": "", "unitPrice": 0}],
-                 "vinaphone": [{"endAt": "", "unitPrice": 0}],
-                 "mobifone": [{"endAt": "", "unitPrice": 0}],
-                 "other": [{"endAt": "", "unitPrice": 0}]}
-        try:
-            package = Package.objects.get(pk=self.call_center.company_id, deleted_at__isnull=True)
-            prices[PRICE_TYPE.VIETTEL] = json.loads(package.viettel)
-            prices[PRICE_TYPE.VINAPHONE] = json.loads(package.vinaphone)
-            prices[PRICE_TYPE.MOBIFONE] = json.loads(package.mobifone)
-            prices[PRICE_TYPE.OTHER] = json.loads(package.other)
-        except Package.DoesNotExist:
-            try:
-                prices = json.loads(Param.objects.get(key=PARAM_KEY.GENERAL_PACKAGE, deleted_at__isnull=True).value)
-            except Param.DoesNotExist:
-                print('Not found default price config')
-
-        price = prices[type]
-        if not price:
-            return 0
-
-        if len(price) == 1:
-            return price[0]['unitPrice']
-
-        index = 0
-        while True:
-            if price[index]['endAt'] < total_minutes:
-                index += 1
-                if price[index]['endAt'] == "":
-                    return price[index]['unitPrice']
-            else:
-                break
-
-        return price[index]['unitPrice']
 
 
 class ExportCallLogsService(BaseService):
