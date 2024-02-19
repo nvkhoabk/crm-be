@@ -591,8 +591,6 @@ class IncomingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
                            extension=request.GET.get('extension', None))
-        call_log.is_telco = is_external_number(call_log.phone)
-        call_log.provider = classify_telecom_number(call_log.phone)
         call_log.direction = CALL_DIRECTION.INCOMING
         call_log.save()
         return call_log
@@ -602,7 +600,6 @@ class OutgoingCallService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         call_log = CallLog(callid=request.GET.get('callid', None), phone=request.GET.get('phone', None),
                            extension=request.GET.get('extension', None))
-        call_log.is_telco = is_external_number(call_log.phone)
         call_log.direction = CALL_DIRECTION.OUTGOING
         call_log.save()
         return call_log
@@ -621,6 +618,12 @@ class CallAnsweredService(BaseService):
         call_log.duration = kwargs.get('duration', None)
         call_log.status = kwargs.get('status', None)
         call_log.recording = kwargs.get('recording', None)
+        call_log.billsec = kwargs.get('billsec', 0)
+        call_log.accountcode = kwargs.get('accountcode', '')
+        call_log.ip = kwargs.get('ip', '')
+        call_log.dstchannel = kwargs.get('dstchannel', '')
+        call_log.userfield = kwargs.get('userfield', '')
+        call_log.provider = classify_telecom_number(call_log.dstchannel)
         call_log.chargeable_time = self.calculate_chargeable_time(call_log)
         call_log.save()
 
@@ -630,7 +633,7 @@ class CallAnsweredService(BaseService):
         return call_log
 
     def calculate_chargeable_time(self, call_log):
-        if call_log.duration == 0:
+        if call_log.billsec == 0:
             return 0
         try:
             filter = {
@@ -644,10 +647,10 @@ class CallAnsweredService(BaseService):
 
             call_center = CallCenter.objects.get(company_id=user_roles.first().company_id)
             if call_center.sip_fee_calculation == '6+1':
-                return self.calculate_by_6_1(call_log.duration)
+                return self.calculate_by_6_1(call_log.billsec)
 
             if call_center.sip_fee_calculation == '60+1':
-                return self.calculate_by_60_1(call_log.duration)
+                return self.calculate_by_60_1(call_log.billsec)
 
         except CallAgent.DoesNotExist:
             return 0
@@ -817,23 +820,27 @@ class CallCenterPaymentCalculatorService:
         return 0
 
     def calculate_by_sip_minute(self):
-        # call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
-        # call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
-        #                                    calldate__gte=self.start_date, calldate__lte=self.end_date,
-        #                                    is_telco=False, direction=CALL_DIRECTION.OUTGOING)
+        # total_viettel_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VIETTEL)
+        # total_mobi_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.MOBI)
+        # total_vina_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VINA)
 
-        total_viettel_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VIETTEL)
-        total_mobi_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.MOBI)
-        total_vina_duration = cache.get_call_center_month_minute(self.call_center.company_id, TELECOM_NUMBER.VINA)
-        # for call_log in call_logs:
-        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
-        #         total_viettel_duration += call_log.chargeable_time
-        #
-        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
-        #         total_mobi_duration += call_log.chargeable_time
-        #
-        #     if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
-        #         total_vina_duration += call_log.chargeable_time
+        call_agents = CallAgent.objects.filter(company_id=self.call_center.company_id, deleted_at__isnull=True)
+        call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
+                                           calldate__gte=self.start_date, calldate__lte=self.end_date,
+                                           is_telco=False, direction=CALL_DIRECTION.OUTGOING)
+
+        total_viettel_duration = 0
+        total_mobi_duration = 0
+        total_vina_duration = 0
+        for call_log in call_logs:
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VIETTEL:
+                total_viettel_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.MOBI:
+                total_mobi_duration += call_log.chargeable_time
+
+            if classify_telecom_number(call_log.phone) == TELECOM_NUMBER.VINA:
+                total_vina_duration += call_log.chargeable_time
 
         viettel_minute = math.floor((total_viettel_duration - 1) / 60) + 1
         mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1

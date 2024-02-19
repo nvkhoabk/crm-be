@@ -113,6 +113,11 @@ class CallLog(BaseModel):
     seen = models.BooleanField(default=False)
     chargeable_time = models.IntegerField(default=0)
     provider = models.CharField(max_length=128, default='')
+    billsec = models.IntegerField(null=True)
+    accountcode = models.CharField(max_length=128, default='')
+    ip = models.CharField(max_length=128, default='')
+    dstchannel = models.CharField(max_length=128, default='')
+    userfield = models.CharField(max_length=128, default='')
 
     class Meta:
         db_table = 'call_log'

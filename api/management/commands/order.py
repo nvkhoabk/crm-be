@@ -265,7 +265,7 @@ class Command(BaseCommand):
         last_month = get_first_of_month(datetime.now() - relativedelta(month=1))
         call_logs = CallLog.objects.filter(calldate__gte=last_month)
         for call_log in call_logs:
-            call_log.provider = classify_telecom_number(call_log.phone)
+            call_log.provider = classify_telecom_number(call_log.dstchannel)
 
         batch_size = 1000
         for i in range(0, len(call_logs), batch_size):
@@ -278,6 +278,10 @@ class Command(BaseCommand):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
             options['date'], '%Y%m%d').date()
+
+        self.process_annual_buy(processing_date)
+        self.calculate_debt_status_order(processing_date)
+        self.notify_renew_date(processing_date)
 
         # self.migrate_call_log()
         # self.initialize_charge_date()

@@ -33,7 +33,7 @@ class CreateCallCenterView(BaseAPIView):
 
 class GetCallCenterView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated, SuperAdminPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = call_center_serializer.GetCallCenterRequestSerializer
 
     @swagger_auto_schema(

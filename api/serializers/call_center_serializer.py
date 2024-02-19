@@ -388,6 +388,11 @@ class CallLogRequestSerializer(serializers.Serializer):
     duration = serializers.IntegerField(required=True)
     status = serializers.CharField(max_length=128)
     recording = serializers.CharField(max_length=2048, required=True)
+    billsec = serializers.IntegerField(required=False, default=0)
+    accountcode = serializers.CharField(required=False, default='', allow_blank=True, max_length=128)
+    ip = serializers.CharField(required=False, default='', allow_blank=True, max_length=128)
+    dstchannel = serializers.CharField(required=False, default='', allow_blank=True, max_length=128)
+    userfield = serializers.CharField(required=False, default='', allow_blank=True, max_length=1024)
 
 
 class CallLogResponseSerializer(BaseResponseSerializer):
