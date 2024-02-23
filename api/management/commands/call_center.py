@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from pytz import timezone
 
 from api.services.call_center import DisableCallCenterService
+from api.utils import cache
 from crm.settings import TIME_ZONE
 
 import logging
@@ -48,6 +49,11 @@ class Command(BaseCommand):
                                                                                    flat=True)).update(
             status=CALL_AGENT_STATUS.INACTIVE)
 
+
+    def reset_call_center_cache(self):
+        if datetime.now(timezone(TIME_ZONE)).day == 1:
+            cache.reset_call_center_cache()
+
     def handle(self, *args, **options):
         self.initializer_logger()
         tomorrow = datetime.now(timezone(TIME_ZONE)).date() - relativedelta(days=1)
@@ -55,4 +61,4 @@ class Command(BaseCommand):
         self.logger.info('Running call_center job, tomorrow: ' + str(tomorrow))
         self.disable_call_center(tomorrow)
         self.disable_call_agent(tomorrow)
-
+        self.reset_call_center_cache()

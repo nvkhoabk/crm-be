@@ -139,3 +139,5 @@ class CACHE_KEY:
     CALL_CENTER_MINUTE = 'call_center_minute'
     GENERAL_PACKAGE = 'general_package'
     PACKAGE = 'package'
+    LAST_MONTH_CALL_CENTER_MINUTE = 'last_call_center_minute'
+    ERROR = 'error'
