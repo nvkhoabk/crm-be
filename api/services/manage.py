@@ -30,7 +30,6 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
 
-from api.tasks import get_company_information
 from api.utils import cache
 
 User = get_user_model()
@@ -286,7 +285,6 @@ class CreateCompanyService(BaseService):
 class GetCompanyService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            get_company_information.delay(kwargs['id'])
             return Company.objects.get(
                 pk=kwargs['id']
             )

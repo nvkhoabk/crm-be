@@ -22,14 +22,13 @@ from api.const import CALL_DIRECTION, TELECOM_NUMBER, DISCOUNT_TYPE, PAYMENT_STA
 from api.models.call_center import CallCenter, CallAgent, AgentRegister, CallCenterPaymentHistory, \
     CallLog, ExtFileHistory, ExportCallLogsHistory
 from api.models.organization import Company, UserRole
-from api.models.package import Package
-from api.models.param import Param
-from api.serializers.call_center_serializer import UploadExtFileRequestSerializer, DownloadExtFileRequestSerializer
+import api.serializers.call_center_serializer as call_center_serial
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch, TrialExpired)
 from api.services.manage import CreateCompanyService, CreateUserService
-from api.utils.call_center import get_current_fee, is_trial
+from api.tasks import insert_call_answered
+import api.utils.call_center as call_center_utils
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.order_detail import floor_rate
 from api.utils.phone import classify_telecom_number
@@ -619,37 +618,45 @@ class OutgoingCallService(BaseService):
 class CallAnsweredService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            call_log = CallLog.objects.filter(extension=kwargs.get('extension', None), phone=kwargs.get('phone', None),
-                                              status__isnull=True).order_by('-created_at')
-            if not call_log:
-                raise CallLogNotFound()
+            extension = kwargs.get('extension', None)
+            accountcode = kwargs.get('accountcode', '')
 
-            call_log = call_log.first()
-
-            call_log.calldate = kwargs.get('calldate', None)
-            call_log.duration = kwargs.get('duration', None)
-            call_log.status = kwargs.get('status', None)
-            call_log.recording = kwargs.get('recording', None)
-            call_log.billsec = kwargs.get('billsec', 0)
-            call_log.accountcode = kwargs.get('accountcode', '')
-            call_log.ip = kwargs.get('ip', '')
-            call_log.dstchannel = kwargs.get('dstchannel', '')
-            call_log.userfield = kwargs.get('userfield', '')
-            call_log.provider = classify_telecom_number(call_log.dstchannel)
-            call_log.chargeable_time = self.calculate_chargeable_time(call_log)
-            call_log.save()
-
-            if cache.get_ext_company(call_log.extension) == 0:
-                self.handle_new_extension(call_log, request, cookies)
+            # if cache.get_ext_company(extension) == 0:
+            #     self.handle_new_extension(extension, accountcode, request, cookies)
 
                 # recalculate chargeable_time because company is not existed in previous time
-                call_log.chargeable_time = self.calculate_chargeable_time(call_log)
-                call_log.save()
+                # call_log.chargeable_time = self.calculate_chargeable_time(call_log)
+                # call_log.save()
 
-            if call_log.direction == CALL_DIRECTION.OUTGOING and call_log.chargeable_time > 0:
-                cache.update_call_center_month_minute(call_log)
+            insert_call_answered.delay(kwargs.get('phone', None), kwargs.get('extension', None),
+                                        kwargs.get('calldate', None), kwargs.get('duration', None),
+                                        kwargs.get('status', None), kwargs.get('recording', None),
+                                        kwargs.get('billsec', 0), kwargs.get('accountcode', ''),
+                                        kwargs.get('ip', ''), kwargs.get('dstchannel', ''),
+                                        kwargs.get('userfield', ''))
+            # call_log = CallLog.objects.filter(extension=kwargs.get('extension', None), phone=kwargs.get('phone', None),
+            #                                   status__isnull=True).order_by('-created_at')
+            # if not call_log:
+            #     raise CallLogNotFound()
+            #
+            # call_log = call_log.first()
+            #
+            # call_log.calldate = kwargs.get('calldate', None)
+            # call_log.duration = kwargs.get('duration', None)
+            # call_log.status = kwargs.get('status', None)
+            # call_log.recording = kwargs.get('recording', None)
+            # call_log.billsec = kwargs.get('billsec', 0)
+            # call_log.accountcode = kwargs.get('accountcode', '')
+            # call_log.ip = kwargs.get('ip', '')
+            # call_log.dstchannel = kwargs.get('dstchannel', '')
+            # call_log.userfield = kwargs.get('userfield', '')
+            # call_log.provider = classify_telecom_number(call_log.dstchannel)
+            # call_log.chargeable_time = self.calculate_chargeable_time(call_log)
+            # call_log.save()
 
-            return call_log
+            # if call_log.direction == CALL_DIRECTION.OUTGOING and call_log.chargeable_time > 0:
+            #     cache.update_call_center_month_minute(call_log)
+
         except Exception as e:
             cache.log_error(request.GET.get('callid', 'None_callid') + '_' + str(e))
 
@@ -685,8 +692,8 @@ class CallAnsweredService(BaseService):
 
         return None
 
-    def handle_new_extension(self, call_log, request, cookies):
-        company_name = call_log.accountcode + '_call_center_only'
+    def handle_new_extension(self, extension, accountcode, request, cookies):
+        company_name = accountcode + '_call_center_only'
         companies = Company.objects.filter(deleted_at__isnull=True, name=company_name)
         company = None
         if companies:
@@ -699,8 +706,8 @@ class CallAnsweredService(BaseService):
 
         ag = AgentRegister.objects.create(company=company, number=1, use_from=datetime.now(), use_to=datetime.now(),
                                      charge_from=datetime.now(), charge_to=datetime.now())
-        CallAgent.objects.create(company_id=company.id, name=call_log.extension,
-                  secret=call_log.extension,
+        CallAgent.objects.create(company_id=company.id, name=extension,
+                  secret=extension,
                   agent_register_id=ag.id,
                   status=CALL_AGENT_STATUS.ACTIVE)
 
@@ -778,7 +785,7 @@ class StartCallOutService(BaseService):
             company_id = kwargs.get('company_id', 0)
 
         call_center = CallCenter.objects.get(company_id=company_id, deleted_at__isnull=True)
-        if is_trial(call_center) and call_center.trial_expired:
+        if call_center_utils.is_trial(call_center) and call_center.trial_expired:
             raise TrialExpired()
 
 
@@ -793,7 +800,7 @@ class DownloadExtFileService(BaseService):
 
 class UploadExtFileService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        serializer_class = UploadExtFileRequestSerializer(data=request.data)
+        serializer_class = call_center_serial.UploadExtFileRequestSerializer(data=request.data)
         if 'file' not in request.FILES or not serializer_class.is_valid():
             return 'failed'
         else:
@@ -955,9 +962,9 @@ class CallCenterPaymentCalculatorService:
         mobi_minute = math.floor((total_mobi_duration - 1) / 60) + 1
         vina_minute = math.floor((total_vina_duration - 1) / 60) + 1
 
-        viettel_fee = get_current_fee(PRICE_TYPE.VIETTEL, viettel_minute, self.call_center.company_id)
-        mobi_fee = get_current_fee(PRICE_TYPE.MOBIFONE, mobi_minute, self.call_center.company_id)
-        vina_fee = get_current_fee(PRICE_TYPE.VINAPHONE, vina_minute, self.call_center.company_id)
+        viettel_fee = call_center_utils.get_current_fee(PRICE_TYPE.VIETTEL, viettel_minute, self.call_center.company_id)
+        mobi_fee = call_center_utils.get_current_fee(PRICE_TYPE.MOBIFONE, mobi_minute, self.call_center.company_id)
+        vina_fee = call_center_utils.get_current_fee(PRICE_TYPE.VINAPHONE, vina_minute, self.call_center.company_id)
         self.current_prices[PRICE_TYPE.VIETTEL] = viettel_fee
         self.current_prices[PRICE_TYPE.MOBIFONE] = mobi_fee
         self.current_prices[PRICE_TYPE.VINAPHONE] = vina_fee
@@ -1010,7 +1017,7 @@ class CallCenterPaymentCalculatorService:
 
         total_minute = math.floor((total_duration - 1) / 60) + 1
 
-        self.current_prices[PRICE_TYPE.OTHER] = get_current_fee(PRICE_TYPE.OTHER, total_minute,
+        self.current_prices[PRICE_TYPE.OTHER] = call_center_utils.get_current_fee(PRICE_TYPE.OTHER, total_minute,
                                                                 self.call_center.company_id)
         self.current_minutes[PRICE_TYPE.OTHER] = total_minute
         return self.current_prices[PRICE_TYPE.OTHER] * total_minute
