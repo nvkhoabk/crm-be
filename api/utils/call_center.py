@@ -193,11 +193,11 @@ def create_company_admin(company, request, cookies):
     service.serve(request, cookies, *[], **data)
 
 
-def calculate_by_6_1(self, duration):
+def calculate_by_6_1(duration):
     return duration if duration > 6 else 6
 
 
-def calculate_by_60_1(self, duration):
+def calculate_by_60_1(duration):
     return 60 * (math.floor((duration - 1) / 60) + 1)
 
 

@@ -1,4 +1,5 @@
 import json
+import requests
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
@@ -24,6 +25,7 @@ from logging.handlers import RotatingFileHandler
 
 from crm.settings import LOG_ROOT, LOG_LEVEL
 
+import api.utils.call_center as call_center_utils
 
 class Command(BaseCommand):
     help = 'Job generate annual buy and recalculate debt status'
@@ -273,6 +275,33 @@ class Command(BaseCommand):
             batch = call_logs[i:i + batch_size]
             CallLog.objects.bulk_update(batch, fields=['provider'])
 
+    def fix_call_log_missing(self):
+        url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid=1709258120.35581337&fromdate=2024-02-01 00:00:00'
+        call_logs = CallLog.objects.filter(status__isnull=True, created_at__gte='2024-02-01')
+        session = requests.Session()
+        session.auth = ('ITY', 'Crm1ty@1305Fri')
+        for call_log in call_logs:
+            url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-02-01 00:00:00'.format(call_log.callid)
+            response = session.get(url)
+
+            # Print the response
+            response_json = response.json()
+            if len(response_json['cdr']) == 1:
+                data = response_json['cdr'][0]
+                call_log.calldate = datetime.strptime(data['calldate'], '%Y-%m-%d %H:%M:%S')
+                call_log.duration = int(data['duration'])
+                call_log.billsec = int(data['billsec'])
+                call_log.status = data['status']
+                call_log.recording = data['recordingfile']
+                call_log.accountcode = data['accountcode']
+                call_log.ip = data['ip']
+                call_log.dstchannel = data['dstchannel']
+                call_log.userfield = data['userfield']
+                call_log.provider = classify_telecom_number(call_log.dstchannel)
+                call_log.chargeable_time = call_center_utils.calculate_chargeable_time(call_log)
+                call_log.save()
+            else:
+                print('Cannot get data for callid: ' + call_log.callid)
 
     def handle(self, *args, **options):
         self.initializer_logger()
@@ -283,6 +312,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.fix_call_log_missing()
         # self.migrate_call_log()
         # self.initialize_charge_date()
         # self.fix_annual_order_generation()
