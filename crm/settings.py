@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
@@ -96,7 +97,7 @@ ROOT_URLCONF = 'crm.urls'
 
 # WSGI
 WSGI_APPLICATION = 'crm.wsgi.application'
-ASGI_APPLICATION = 'crm.routing.application'
+ASGI_APPLICATION = 'crm.asgi.application'
 
 # Database
 DATABASES = {
@@ -294,3 +295,14 @@ CELERY_TIMEZONE = 'Asia/Ho_Chi_Minh'
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "django-cache"
 
+
+REDIS_URL = os.getenv('REDIS_URL', CELERY_BROKER_URL)
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
+}

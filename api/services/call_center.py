@@ -26,7 +26,7 @@ import api.serializers.call_center_serializer as call_center_serial
 from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, ManageCompanyNotFound, CallAgentNotFound,
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch, TrialExpired)
-from api.services.manage import CreateCompanyService, CreateUserService
+import api.services.manage as manage
 from api.tasks import insert_call_answered
 import api.utils.call_center as call_center_utils
 from api.utils.date import get_first_of_month, get_last_of_month
@@ -755,7 +755,7 @@ class CallAnsweredService(BaseService):
             'phone': '',
         }
 
-        service = CreateCompanyService()
+        service = manage.CreateCompanyService()
         service.serve(request, cookies, *name, **data)
         company = Company.objects.get(name=name, deleted_at__isnull=True)
         return company
@@ -768,7 +768,7 @@ class CallAnsweredService(BaseService):
         }
 
         request.user.is_superuser = True
-        service = CreateUserService()
+        service = manage.CreateUserService()
         service.serve(request, cookies, *[], **data)
 
 

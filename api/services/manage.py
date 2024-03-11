@@ -35,6 +35,25 @@ from api.utils import cache
 User = get_user_model()
 
 
+async def is_technical_staff(user):
+    try:
+        filter = {
+            'user': user,
+            'deleted_at__isnull': True
+        }
+        company_id = (await UserRole.objects.filter(**filter).afirst()).company_id
+        permissions = Permission.objects.filter(
+            edit_permissions__icontains=MODULES.PHONE_NUMBER_TECHNICAL) | Permission.objects.filter(
+            read_permissions__icontains=MODULES.PHONE_NUMBER_TECHNICAL)
+        permissions = permissions.filter(company_id=company_id)
+        roles = Role.objects.filter(id__in=permissions.values_list('role__id', flat=True))
+        user_roles = UserRole.objects.filter(company_id=company_id,
+                                             role_id__in=roles.values_list('id', flat=True))
+        await user_roles.aget(user_id=user.id)
+        return True
+    except UserRole.DoesNotExist:
+        return False
+
 class CreateParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:

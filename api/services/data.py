@@ -1446,6 +1446,13 @@ class FilterOrderDetailPaymentService(BaseService):
             order_details = order_details.filter(payment_date__gte=order_filter['payment_from_date'],
                                                  payment_date__lte=order_filter['payment_to_date'])
 
+        if 'charge_from_date' in order_filter and 'charge_to_date' in order_filter \
+                and order_filter['charge_from_date'] and order_filter['charge_to_date']:
+            monthly_order_details = MonthlyOrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                      month__gte=order_filter['charge_from_date'],
+                                                                      month__lte=order_filter['charge_to_date'])
+            order_details = order_details.filter(id__in=monthly_order_details.values_list('order_detail_id', flat=True))
+
         query_set = OrderDetailPayment.objects.filter(
             deleted_at__isnull=True,
             order_detail_id__in=order_details.values_list('id', flat=True),
