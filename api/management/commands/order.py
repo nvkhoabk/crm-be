@@ -308,11 +308,7 @@ class Command(BaseCommand):
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
             options['date'], '%Y%m%d').date()
 
-        self.process_annual_buy(processing_date)
-        self.calculate_debt_status_order(processing_date)
-        self.notify_renew_date(processing_date)
-
-        # self.fix_call_log_missing()
+        self.fix_call_log_missing()
         # self.migrate_call_log()
         # self.initialize_charge_date()
         # self.fix_annual_order_generation()

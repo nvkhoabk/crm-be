@@ -309,3 +309,83 @@ class NotificationNotFound(APIException):
 class TrialExpired(APIException):
     code = 8001
     msg = 'Trial expired'
+
+
+class MainPhoneNumberDuplicated(APIException):
+    code = 9001
+    msg = 'main phone number is duplicated'
+
+
+class MainPhoneNumberNotFound(APIException):
+    code = 9002
+    msg = 'main phone number is not found'
+
+
+class ProviderDuplicated(APIException):
+    code = 9003
+    msg = 'provider is duplicated'
+
+
+class ProviderNotFound(APIException):
+    code = 9004
+    msg = 'provider is not found'
+
+
+class LegalDuplicated(APIException):
+    code = 9005
+    msg = 'legal is duplicated'
+
+
+class LegalNotFound(APIException):
+    code = 9006
+    msg = 'legal is not found'
+
+
+class PhoneNumberClientDuplicated(APIException):
+    code = 9007
+    msg = 'PhoneNumberClient is duplicated'
+
+
+class PhoneNumberClientNotFound(APIException):
+    code = 9008
+    msg = 'PhoneNumberClient is not found'
+
+
+class PhoneNumberStatusDuplicated(APIException):
+    code = 9009
+    msg = 'PhoneNumberStatus is duplicated'
+
+
+class PhoneNumberStatusNotFound(APIException):
+    code = 9010
+    msg = 'PhoneNumberStatus is not found'
+
+
+class PhoneNumberDuplicated(APIException):
+    code = 9011
+    msg = 'PhoneNumber is duplicated'
+
+
+class PhoneNumberNotFound(APIException):
+    code = 9012
+    msg = 'PhoneNumber is not found'
+
+
+class PhoneNumberMonthlyFeeDuplicated(APIException):
+    code = 9013
+    msg = 'PhoneNumberMonthlyFee is duplicated'
+
+
+class PhoneNumberMonthlyFeeNotFound(APIException):
+    code = 9014
+    msg = 'PhoneNumberMonthlyFee is not found'
+
+
+class PhoneNumberActivityDuplicated(APIException):
+    code = 9015
+    msg = 'PhoneNumberActivity is duplicated'
+
+
+class PhoneNumberActivityNotFound(APIException):
+    code = 9016
+    msg = 'PhoneNumberActivity is not found'

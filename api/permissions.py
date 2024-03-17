@@ -147,3 +147,11 @@ class MarketingReadPermission(ModuleReadPermission):
 
 class MarketingEditPermission(ModuleEditPermission):
     MODULE_NAME = MODULES.MARKETING
+
+
+class PhoneNumberReadPermission(ModuleReadPermission):
+    MODULE_NAME = [MODULES.PHONE_NUMBER_TECHNICAL, MODULES.PHONE_NUMBER_MANAGER]
+
+
+class PhoneNumberEditPermission(ModuleEditPermission):
+    MODULE_NAME = [MODULES.PHONE_NUMBER_TECHNICAL, MODULES.PHONE_NUMBER_MANAGER]

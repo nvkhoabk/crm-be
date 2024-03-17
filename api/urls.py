@@ -10,6 +10,7 @@ from api.views import data
 from api.views import report
 from api.views import system_configuration
 from api.views import notification
+from api.views import phone_number
 from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import (
@@ -266,5 +267,85 @@ urlpatterns = [
     path('notification/update_unread_notification/', notification.UpdateUnreadNotificationView.as_view(), name='notification.update_unread_notification'),
     path('notification/mark_all_as_read/', notification.MarkAllAsReadView.as_view(), name='notification.mark_all_as_read'),
 
+    # phone number
+    path('phone_number/create_main_phone_number/', phone_number.CreateMainPhoneNumberView.as_view(),
+       name='phone_number.create_main_phone_number'),
+    path('phone_number/filter_main_phone_number/', phone_number.FilterMainPhoneNumberView.as_view(),
+       name='phone_number.filter_main_phone_number'),
+    path('phone_number/get_main_phone_number/', phone_number.GetMainPhoneNumberView.as_view(),
+       name='phone_number.get_main_phone_number'),
+    path('phone_number/update_main_phone_number/', phone_number.UpdateMainPhoneNumberView.as_view(),
+       name='phone_number.update_main_phone_number'),
+    path('phone_number/delete_main_phone_number/', phone_number.DeleteMainPhoneNumberView.as_view(),
+       name='phone_number.delete_main_phone_number'),
 
+    path('phone_number/create_provider/', phone_number.CreateProviderView.as_view(),
+       name='phone_number.create_provider'),
+    path('phone_number/filter_provider/', phone_number.FilterProviderView.as_view(),
+       name='phone_number.filter_provider'),
+    path('phone_number/get_provider/', phone_number.GetProviderView.as_view(),
+       name='phone_number.get_provider'),
+    path('phone_number/update_provider/', phone_number.UpdateProviderView.as_view(),
+       name='phone_number.update_provider'),
+    path('phone_number/delete_provider/', phone_number.DeleteProviderView.as_view(),
+       name='phone_number.delete_provider'),
+
+    path('phone_number/create_legal/', phone_number.CreateLegalView.as_view(),
+       name='phone_number.create_legal'),
+    path('phone_number/filter_legal/', phone_number.FilterLegalView.as_view(),
+       name='phone_number.filter_legal'),
+    path('phone_number/get_legal/', phone_number.GetLegalView.as_view(),
+       name='phone_number.get_legal'),
+    path('phone_number/update_legal/', phone_number.UpdateLegalView.as_view(),
+       name='phone_number.update_legal'),
+    path('phone_number/delete_legal/', phone_number.DeleteLegalView.as_view(),
+       name='phone_number.delete_legal'),
+
+    path('phone_number/create_phone_number_client/', phone_number.CreatePhoneNumberClientView.as_view(),
+       name='phone_number.create_phone_number_client'),
+    path('phone_number/filter_phone_number_client/', phone_number.FilterPhoneNumberClientView.as_view(),
+       name='phone_number.filter_phone_number_client'),
+    path('phone_number/get_phone_number_client/', phone_number.GetPhoneNumberClientView.as_view(),
+       name='phone_number.get_phone_number_client'),
+    path('phone_number/update_phone_number_client/', phone_number.UpdatePhoneNumberClientView.as_view(),
+       name='phone_number.update_phone_number_client'),
+    path('phone_number/delete_phone_number_client/', phone_number.DeletePhoneNumberClientView.as_view(),
+       name='phone_number.delete_phone_number_client'),
+
+    path('phone_number/create_phone_number_status/', phone_number.CreatePhoneNumberStatusView.as_view(),
+       name='phone_number.create_phone_number_status'),
+    path('phone_number/filter_phone_number_status/', phone_number.FilterPhoneNumberStatusView.as_view(),
+       name='phone_number.filter_phone_number_status'),
+    path('phone_number/get_phone_number_status/', phone_number.GetPhoneNumberStatusView.as_view(),
+       name='phone_number.get_phone_number_status'),
+    path('phone_number/update_phone_number_status/', phone_number.UpdatePhoneNumberStatusView.as_view(),
+       name='phone_number.update_phone_number_status'),
+    path('phone_number/delete_phone_number_status/', phone_number.DeletePhoneNumberStatusView.as_view(),
+       name='phone_number.delete_phone_number_status'),
+
+    path('phone_number/create_phone_number/', phone_number.CreatePhoneNumberView.as_view(),
+       name='phone_number.create_phone_number'),
+    path('phone_number/filter_phone_number/', phone_number.FilterPhoneNumberView.as_view(),
+       name='phone_number.filter_phone_number'),
+    path('phone_number/get_phone_number/', phone_number.GetPhoneNumberView.as_view(),
+       name='phone_number.get_phone_number'),
+    path('phone_number/update_phone_number/', phone_number.UpdatePhoneNumberView.as_view(),
+       name='phone_number.update_phone_number'),
+    path('phone_number/delete_phone_number/', phone_number.DeletePhoneNumberView.as_view(),
+       name='phone_number.delete_phone_number'),
+
+    path('phone_number/create_phone_number_montly_fee/',
+       phone_number.CreatePhoneNumberMonthlyFeeView.as_view(),
+       name='phone_number.create_phone_number_montly_fee'),
+    # path('phone_number/filter_phone_number_montly_fee/',
+    #    phone_number.FilterPhoneNumberMonthlyFeeView.as_view(),
+    #    name='phone_number.filter_phone_number_montly_fee'),
+    path('phone_number/get_phone_number_montly_fee/', phone_number.GetPhoneNumberMonthlyFeeView.as_view(),
+       name='phone_number.get_phone_number_montly_fee'),
+    path('phone_number/update_phone_number_montly_fee/',
+       phone_number.UpdatePhoneNumberMonthlyFeeView.as_view(),
+       name='phone_number.update_phone_number_montly_fee'),
+    path('phone_number/delete_phone_number_montly_fee/',
+       phone_number.DeletePhoneNumberMonthlyFeeView.as_view(),
+       name='phone_number.delete_phone_number_montly_fee'),
 ] + static('files/', document_root=Const.FILE_ROOT)
