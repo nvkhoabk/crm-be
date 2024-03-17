@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 
+from django.db.models import Q
+
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.models.organization import UserRole
@@ -687,7 +689,8 @@ class FilterPhoneNumberMonthlyFeeService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = PhoneNumberMonthlyFee.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        query_set = PhoneNumberMonthlyFee.objects.filter(company_id=user_roles.first().company_id,
+                                                         deleted_at__isnull=True)
 
         filters = ['name']
         params = dict(kwargs.get('filter', []))
@@ -856,16 +859,66 @@ class FilterPhoneNumberService(BaseService):
 
         query_set = PhoneNumber.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
-        filters = ['name']
         params = dict(kwargs.get('filter', []))
+
+        if 'pickup_date_from' in params and 'pickup_date_to' in params and params['pickup_date_from'] and params[
+            'pickup_date_to']:
+            query_set = query_set.filter(pickup_date__gte=params['pickup_date_from'],
+                                         pickup_date__lte=params['pickup_date_to'])
+
+        # if 'lock_date_from' in params and 'lock_date_to' in params and params['lock_date_from'] and params[
+        #     'lock_date_to']:
+        #     query_set = query_set.filter(lock_date__gte=params['lock_date_from'],
+        #                                  lock_date__lte=params['lock_date_to'])
+        if 'cancel_date_from' in params and 'cancel_date_to' in params and params['cancel_date_from'] and params[
+            'cancel_date_to']:
+            query_set = query_set.filter(cancel_date__gte=params['cancel_date_from'],
+                                         cancel_date__lte=params['cancel_date_to'])
+
+        # if 'payment_date_from' in params and 'payment_date_to' in params and params['payment_date_from'] and params[
+        #     'payment_date_to']:
+        #     query_set = query_set.filter(cancel_date__gte=params['cancel_date_from'],
+        #                                  cancel_date__lte=params['cancel_date_to'])
+
+        filters = ['name', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list', 'phone_number_client_list',
+                   'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count']
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'phone_number':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    phone_number__icontains=value,
                 )
+
+            if key == 'main_phone_number_id_list' and value is not None and value:
+                if None in value:
+                    query_set = query_set.filter(
+                        Q(main_phone_number_id__isnull=True) | Q(main_phone_number_id__in=value))
+                else:
+                    query_set = query_set.filter(main_phone_number_id__in=value)
+
+            if key == 'provider_id_list' and value is not None and value:
+                query_set = query_set.filter(provider_id__in=value)
+
+            if key == 'legal_id_list' and value is not None and value:
+                query_set = query_set.filter(legal_id__in=value)
+
+            if key == 'phone_number_client_list' and value is not None and value:
+                query_set = query_set.filter(phone_number_client_id__in=value)
+
+            if key == 'phone_number_status_id_list' and value is not None and value:
+                query_set = query_set.filter(phone_number_status_id__in=value)
+
+            if key == 'lock_count':
+                if value <= 5:
+                    query_set = query_set.filter(
+                        lock_count=value,
+                    )
+                else:
+                    query_set = query_set.filter(
+                        lock_count__gt=value,
+                    )
 
         return query_set
 
