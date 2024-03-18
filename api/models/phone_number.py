@@ -86,6 +86,7 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     open_payment_date = models.DateField(null=True)
     operate_payment_date = models.DateField(null=True)
     other_payment_date = models.DateField(null=True)
+    note = models.CharField(max_length=1048, default='')
 
     class Meta:
         db_table = 'phone_numbers'

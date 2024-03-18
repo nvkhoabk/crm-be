@@ -321,7 +321,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
         model = PhoneNumber
         fields = ['id', 'phone_number', 'company', 'main_phone_number', 'provider', 'legal', 'phone_number_client',
                   'phone_number_status', 'pickup_date', 'brand', 'lock_provider', 'lock_count', 'phone_number_avg_age',
-                  'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at']
+                  'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):
@@ -342,6 +342,7 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     operate_fee = serializers.FloatField(default=0)
     open_fee = serializers.FloatField(default=0)
     other_fee = serializers.FloatField(default=0)
+    note = serializers.CharField(max_length=1048, default='')
 
 
 class CreatePhoneNumberResponseSerializer(BaseResponseSerializer):
@@ -377,6 +378,7 @@ class UpdatePhoneNumberRequestSerializer(serializers.Serializer):
     open_payment_date = serializers.DateField(allow_null=True, required=False)
     operate_payment_date = serializers.DateField(allow_null=True, required=False)
     other_payment_date = serializers.DateField(allow_null=True, required=False)
+    note = serializers.CharField(max_length=1048, required=False)
 
 
 class UpdatePhoneNumberResponseSerializer(BaseResponseSerializer):

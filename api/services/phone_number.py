@@ -7,7 +7,7 @@ from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.models.organization import UserRole
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
-    PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity
+    PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity, PhoneNumberLockHistory
 from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
@@ -838,6 +838,9 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('other_payment_date'):
                 phone_number.other_payment_date = kwargs['other_payment_date']
 
+            if kwargs.get('note', None) is not None:
+                phone_number.note = kwargs['note']
+
             if phone_number.has_changed:
                 PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                    user_id=request.user, diff=phone_number.diff)
@@ -866,19 +869,40 @@ class FilterPhoneNumberService(BaseService):
             query_set = query_set.filter(pickup_date__gte=params['pickup_date_from'],
                                          pickup_date__lte=params['pickup_date_to'])
 
-        # if 'lock_date_from' in params and 'lock_date_to' in params and params['lock_date_from'] and params[
-        #     'lock_date_to']:
-        #     query_set = query_set.filter(lock_date__gte=params['lock_date_from'],
-        #                                  lock_date__lte=params['lock_date_to'])
+        if 'lock_date_from' in params and 'lock_date_to' in params and params['lock_date_from'] and params[
+            'lock_date_to']:
+            lock_id_list = PhoneNumberLockHistory.objects.filter(company_id=user_roles.first().company_id,
+                                                                 deleted_at__isnull=True,
+                                                                 confirm_lock_date__gte=params['lock_date_from'],
+                                                                 confirm_lock_date__lte=params[
+                                                                     'lock_date_to']).values_list(
+                'phone_number_id', flat=True)
+            query_set = query_set.filter(id__in=lock_id_list)
+
         if 'cancel_date_from' in params and 'cancel_date_to' in params and params['cancel_date_from'] and params[
             'cancel_date_to']:
             query_set = query_set.filter(cancel_date__gte=params['cancel_date_from'],
                                          cancel_date__lte=params['cancel_date_to'])
 
-        # if 'payment_date_from' in params and 'payment_date_to' in params and params['payment_date_from'] and params[
-        #     'payment_date_to']:
-        #     query_set = query_set.filter(cancel_date__gte=params['cancel_date_from'],
-        #                                  cancel_date__lte=params['cancel_date_to'])
+        if 'payment_date_from' in params and 'payment_date_to' in params and params['payment_date_from'] and params[
+            'payment_date_to']:
+            query_set = query_set.filter(
+                Q(init_payment_date__gte=params['payment_date_from'], init_payment_date__lte=params[
+                    'payment_date_to']) |
+                Q(open_payment_date__gte=params['payment_date_from'], open_payment_date__lte=params[
+                    'payment_date_to']) |
+                Q(operate_payment_date__gte=params['payment_date_from'], operate_payment_date__lte=params[
+                    'payment_date_to']) |
+                Q(other_payment_date__gte=params['payment_date_from'], other_payment_date__lte=params[
+                    'payment_date_to']))
+
+            monthly_fee_id_list = PhoneNumberMonthlyFee.objects.filter(company_id=user_roles.first().company_id,
+                                                                       deleted_at__isnull=True,
+                                                                       payment_date__gte=params['payment_date_from'],
+                                                                       payment_date__lte=params[
+                                                                           'payment_date_to']).values_list(
+                'phone_number_id', flat=True)
+            query_set = query_set.filter(id__in=monthly_fee_id_list)
 
         filters = ['name', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list', 'phone_number_client_list',
                    'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count']
