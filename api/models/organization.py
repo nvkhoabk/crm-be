@@ -17,6 +17,7 @@ class Company(BaseModel):
     type = models.CharField(max_length=255)
     owner = models.CharField(max_length=255)
     phone = models.CharField(max_length=255)
+    enable_phone_number_management = models.BooleanField(default=False)
     class Meta:
         db_table = 'companies'
         unique_together = ('name', 'deleted_at',)

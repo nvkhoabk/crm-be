@@ -137,6 +137,8 @@ class CreateCompanyRequestSerializer(serializers.Serializer):
         allow_blank=True, required=False, help_text='Owner name')
     phone = serializers.CharField(
         allow_blank=True, required=False, help_text='Company phone')
+    enable_phone_number_management = serializers.BooleanField(default=False,
+                                                              help_text='Flag to enable phone number module')
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -157,7 +159,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ['id', 'name', 'type', 'owner', 'phone', 'use_package', 'call_center']
+        fields = ['id', 'name', 'type', 'owner', 'phone', 'use_package', 'call_center',
+                  'enable_phone_number_management']
 
 
 class CreateCompanyResponseSerializer(BaseResponseSerializer):
@@ -186,6 +189,7 @@ class UpdateCompanyRequestSerializer(serializers.Serializer):
     type = serializers.CharField(required=False)
     owner = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
+    enable_phone_number_management = serializers.BooleanField(required=False)
 
 
 class UpdateCompanyResponseSerializer(BaseResponseSerializer):
@@ -364,6 +368,10 @@ class CreatePermissionRequestSerializer(serializers.Serializer):
         ('ACCOUNTING', 'ACCOUNTING'),
         ('SYSTEM_CONFIGURATION', 'SYSTEM_CONFIGURATION'),
         ('REPORT', 'REPORT'),
+        ('SYNC_SOCIAL_NETWORK', 'SYNC_SOCIAL_NETWORK'),
+        ('USER_CALL_CENTER_MANAGEMENT', 'USER_CALL_CENTER_MANAGEMENT'),
+        ('PHONE_NUMBER_MANAGER', 'PHONE_NUMBER_MANAGER'),
+        ('PHONE_NUMBER_TECHNICAL', 'PHONE_NUMBER_TECHNICAL'),
     )
     company_id = serializers.IntegerField()
     department_id = serializers.IntegerField()
@@ -420,7 +428,9 @@ class UpdatePermissionRequestSerializer(serializers.Serializer):
         ('ACCOUNTING', 'ACCOUNTING'),
         ('SYSTEM_CONFIGURATION', 'SYSTEM_CONFIGURATION'),
         ('REPORT', 'REPORT'),
-        ('USER_CALL_CENTER_MANAGEMENT', 'USER_CALL_CENTER_MANAGEMENT')
+        ('USER_CALL_CENTER_MANAGEMENT', 'USER_CALL_CENTER_MANAGEMENT'),
+        ('PHONE_NUMBER_MANAGER', 'PHONE_NUMBER_MANAGER'),
+        ('PHONE_NUMBER_TECHNICAL', 'PHONE_NUMBER_TECHNICAL'),
     )
     id = serializers.IntegerField()
     edit_permissions = serializers.ListField(

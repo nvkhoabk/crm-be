@@ -44,6 +44,7 @@ class AuthGetUserInfoService(BaseService):
 
         roles = []
         company_id = 0
+        company = None
         for position in user_roles:
             data = {
                 'company': None,
@@ -96,7 +97,9 @@ class AuthGetUserInfoService(BaseService):
                 and response['roles'][0]['department'] is None:
             response['menu'] = [MODULES.USER_MANAGEMENT, MODULES.DATA_MANAGEMENT, MODULES.ACCOUNTING,
                                 MODULES.PRODUCT_AND_WAREHOUSE, MODULES.MARKETING,
-                                MODULES.SYSTEM_CONFIGURATION, MODULES.REPORT]
+                                MODULES.SYSTEM_CONFIGURATION, MODULES.REPORT, MODULES.PHONE_NUMBER_MANAGER,
+                                MODULES.PHONE_NUMBER_TECHNICAL]
+
             call_center = CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True).order_by(
                 '-id').first()
 
@@ -113,11 +116,18 @@ class AuthGetUserInfoService(BaseService):
                     if permission not in response['menu']:
                         response['menu'].append(permission)
 
+        response['phone_number'] = True
+        if company and not company.enable_phone_number_management:
+            response['phone_number'] = False
+            response['menu'].remove(MODULES.PHONE_NUMBER_MANAGER)
+            response['menu'].remove(MODULES.PHONE_NUMBER_TECHNICAL)
+
         response['call_center'] = {
             'ext': None,
             'secret': None,
             'sip_server': None
         }
+
 
         try:
             if CallCenter.objects.filter(company_id=company_id, deleted_at__isnull=True, is_enable=True):

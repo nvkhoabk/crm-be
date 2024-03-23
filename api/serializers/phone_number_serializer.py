@@ -342,6 +342,10 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     operate_fee = serializers.FloatField(default=0)
     open_fee = serializers.FloatField(default=0)
     other_fee = serializers.FloatField(default=0)
+    init_payment_date = serializers.DateField()
+    open_payment_date = serializers.DateField()
+    operate_payment_date = serializers.DateField()
+    other_payment_date = serializers.DateField()
     note = serializers.CharField(max_length=1048, default='')
 
 
