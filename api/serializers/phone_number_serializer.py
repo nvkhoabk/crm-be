@@ -18,12 +18,6 @@ class PhoneNumberLockHistorySerializer(serializers.ModelSerializer):
                   'cancel_date', 'created_at']
 
 
-class PhoneNumberActivitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PhoneNumberActivity
-        fields = ['id', 'phone_number', 'company', 'user', 'diff', 'created_at']
-
-
 class MainPhoneNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = MainPhoneNumber
@@ -472,3 +466,31 @@ class DeletePhoneNumberMonthlyFeeRequestSerializer(serializers.Serializer):
 class DeletePhoneNumberMonthlyFeeResponseSerializer(BaseResponseSerializer):
     pass
 
+
+class PhoneNumberActivitySerializer(serializers.ModelSerializer):
+    def get_user_id(self, call_agent):
+        return call_agent.user_id
+
+    def get_user_name(self, call_agent):
+        if call_agent.user is None:
+            return None
+        return call_agent.user.username
+
+    user_id = serializers.SerializerMethodField(source='get_user_id')
+    user_name = serializers.SerializerMethodField(source='get_user_name')
+
+    class Meta:
+        model = PhoneNumberActivity
+        fields = ['id', 'user_name', 'user_id', 'diff', 'created_at']
+
+
+class FilterPhoneNumberActivityRequestParamSerializer(serializers.Serializer):
+    phone_number_id = serializers.IntegerField()
+
+
+class FilterPhoneNumberActivityRequestSerializer(BasePagingSerializer):
+    filter = FilterPhoneNumberActivityRequestParamSerializer()
+
+
+class FilterPhoneNumberActivityResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=PhoneNumberActivitySerializer())

@@ -966,3 +966,28 @@ class DeletePhoneNumberService(BaseService):
 
         except PhoneNumber.DoesNotExist as e:
             raise PhoneNumberNotFound()
+
+
+class FilterPhoneNumberActivityService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = PhoneNumberActivity.objects.filter(company_id=user_roles.first().company_id,
+                                                       deleted_at__isnull=True)
+
+        filters = ['phone_number_id']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'phone_number_id':
+                query_set = query_set.filter(
+                    phone_number_id=value,
+                ).order_by('-id')
+
+        return query_set

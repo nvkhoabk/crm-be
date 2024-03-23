@@ -851,4 +851,27 @@ class DeletePhoneNumberMonthlyFeeView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=result, request=request,
                                  serializer=phone_number_serializer.DeletePhoneNumberMonthlyFeeResponseSerializer)
-    
+
+
+class FilterPhoneNumberActivityView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.FilterPhoneNumberActivityRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['PhoneNumberActivity'],
+        operation_id='Filter phone number activity',
+        operation_description='Filter phone number activity api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.FilterPhoneNumberActivityResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.FilterPhoneNumberActivityService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.FilterPhoneNumberActivityResponseSerializer)

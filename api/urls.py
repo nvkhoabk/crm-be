@@ -348,4 +348,8 @@ urlpatterns = [
     path('phone_number/delete_phone_number_montly_fee/',
        phone_number.DeletePhoneNumberMonthlyFeeView.as_view(),
        name='phone_number.delete_phone_number_montly_fee'),
+
+    path('phone_number/filter_phone_number_activity/',
+     phone_number.FilterPhoneNumberActivityView.as_view(),
+     name='phone_number.filter_phone_number_activity'),
 ] + static('files/', document_root=Const.FILE_ROOT)
