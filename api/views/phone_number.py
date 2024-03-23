@@ -855,7 +855,7 @@ class DeletePhoneNumberMonthlyFeeView(BaseAPIView):
 
 class FilterPhoneNumberActivityView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PhoneNumberReadPermission]
     serializer_class = phone_number_serializer.FilterPhoneNumberActivityRequestSerializer
     pagination_class = True
 
