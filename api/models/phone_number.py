@@ -119,7 +119,7 @@ class PhoneNumberMonthlyFee(BaseModel):
 class PhoneNumberActivity(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     phone_number = models.ForeignKey(PhoneNumber, on_delete=models.CASCADE)
-    user = User()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     diff = models.CharField(max_length=4096, default='')
 
     class Meta:

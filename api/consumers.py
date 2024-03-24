@@ -96,6 +96,12 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
 
     async def take_number(self, message):
         data = message.get('data')
+        await self.send_json({
+            "result": "ALLOW",
+            "user_id": data["user_id"],
+            "phone_number": data["phone_number"],
+            "phone_number_id": data["phone_number_id"]
+        })
 
     async def release_number(self, message):
         data = message.get('data')

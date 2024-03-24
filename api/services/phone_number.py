@@ -843,7 +843,7 @@ class UpdatePhoneNumberService(BaseService):
 
             if phone_number.has_changed:
                 PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
-                                                   user_id=request.user, diff=phone_number.diff)
+                                                   user_id=request.user.id, diff=phone_number.diff)
 
             phone_number.save()
 
