@@ -467,6 +467,18 @@ class DeletePhoneNumberMonthlyFeeResponseSerializer(BaseResponseSerializer):
     pass
 
 
+class FilterPhoneNumberMonthlyFeeRequestParamSerializer(serializers.Serializer):
+    phone_number_id = serializers.IntegerField()
+
+
+class FilterPhoneNumberMonthlyFeeRequestSerializer(BasePagingSerializer):
+    filter = FilterPhoneNumberMonthlyFeeRequestParamSerializer()
+
+
+class FilterPhoneNumberMonthlyFeeResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=PhoneNumberMonthlyFeeSerializer())
+
+
 class PhoneNumberActivitySerializer(serializers.ModelSerializer):
     def get_user_id(self, call_agent):
         return call_agent.user_id

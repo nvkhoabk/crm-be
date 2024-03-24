@@ -692,15 +692,15 @@ class FilterPhoneNumberMonthlyFeeService(BaseService):
         query_set = PhoneNumberMonthlyFee.objects.filter(company_id=user_roles.first().company_id,
                                                          deleted_at__isnull=True)
 
-        filters = ['name']
+        filters = ['phone_number_id']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
                 continue
 
-            if key == 'name':
+            if key == 'phone_number_id':
                 query_set = query_set.filter(
-                    name__icontains=value,
+                    phone_number_id=value,
                 )
 
         return query_set

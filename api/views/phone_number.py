@@ -804,29 +804,29 @@ class UpdatePhoneNumberMonthlyFeeView(BaseAPIView):
         return self.get_response(results=result, request=request,
                                  serializer=phone_number_serializer.UpdatePhoneNumberMonthlyFeeResponseSerializer)
 
-#
-# class FilterPhoneNumberMonthlyFeeView(BaseAPIView):
-#     authentication_classes = []
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = phone_number_serializer.FilterPhoneNumberMonthlyFeeRequestSerializer
-#     pagination_class = True
-#
-#     @swagger_auto_schema(
-#         tags=['PhoneNumberMonthlyFee'],
-#         operation_id='Filter phone_number_monthly_fee',
-#         operation_description='Filter phone_number_monthly_fee api',
-#         request_body=serializer_class,
-#         responses={
-#             status.HTTP_201_CREATED: None,
-#             0: phone_number_serializer.FilterPhoneNumberMonthlyFeeResponseSerializer,
-#         }
-#     )
-#     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
-#         service = phone_number_service.FilterPhoneNumberMonthlyFeeService()
-#         result = service.serve(
-#             request, cookies, *args, **serializer.validated_data)
-#         return self.get_response(results=result, request=serializer.validated_data,
-#                                  serializer=phone_number_serializer.FilterPhoneNumberMonthlyFeeResponseSerializer)
+
+class FilterPhoneNumberMonthlyFeeView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.FilterPhoneNumberMonthlyFeeRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['PhoneNumberMonthlyFee'],
+        operation_id='Filter phone_number_monthly_fee',
+        operation_description='Filter phone_number_monthly_fee api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.FilterPhoneNumberMonthlyFeeResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.FilterPhoneNumberMonthlyFeeService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.FilterPhoneNumberMonthlyFeeResponseSerializer)
 
 
 class DeletePhoneNumberMonthlyFeeView(BaseAPIView):
