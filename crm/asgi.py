@@ -10,13 +10,13 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crm.settings')
 
 from api.middleware import TokenAuthMiddlewareStack
-from api.consumers import TaxiConsumer
+from api.consumers import CrmConsumer
 
 application = ProtocolTypeRouter({
     'http': django_asgi_app,
     'websocket': TokenAuthMiddlewareStack(
         URLRouter([
-            path('taxi/', TaxiConsumer.as_asgi()),
+            path('ws/', CrmConsumer.as_asgi()),
         ])
     ),
 })

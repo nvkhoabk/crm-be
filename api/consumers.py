@@ -9,8 +9,8 @@ from asgiref.sync import sync_to_async
 # from trips.serializers import NestedTripSerializer, TripSerializer
 
 
-class TaxiConsumer(AsyncJsonWebsocketConsumer):
-    groups = ['test']
+class CrmConsumer(AsyncJsonWebsocketConsumer):
+    groups = ['crm']
 
     @database_sync_to_async
     def _create_trip(self, data):
@@ -49,10 +49,8 @@ class TaxiConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         user = self.scope['user']
         if user.is_anonymous:
-            print('--anooo')
             await self.close()
         else:
-            print('--usersss')
             await self.channel_layer.group_add(
                 group=WS_USER_GROUP.USER,
                 channel=self.channel_name
@@ -89,10 +87,18 @@ class TaxiConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content, **kwargs):
         message_type = content.get('type')
-        if message_type == 'open.ticket':
-            await self.open_ticket(content)
-        elif message_type == 'echo.message':
+        if message_type == 'take_number':
+            await self.take_number(content)
+        elif message_type == 'release_number':
+            await self.release_number(content)
+        elif message_type == 'echo_message':
             await self.echo_message(content)
+
+    async def take_number(self, message):
+        data = message.get('data')
+
+    async def release_number(self, message):
+        data = message.get('data')
 
     async def open_ticket(self, message):
         data = message.get('data')
