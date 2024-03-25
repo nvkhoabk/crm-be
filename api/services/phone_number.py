@@ -904,8 +904,8 @@ class FilterPhoneNumberService(BaseService):
                 'phone_number_id', flat=True)
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
-        filters = ['name', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list', 'phone_number_client_list',
-                   'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count']
+        filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
+                   'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -934,14 +934,14 @@ class FilterPhoneNumberService(BaseService):
             if key == 'phone_number_status_id_list' and value is not None and value:
                 query_set = query_set.filter(phone_number_status_id__in=value)
 
-            if key == 'lock_count':
+            if key == 'lock_count' and value:
                 if value <= 5:
                     query_set = query_set.filter(
                         lock_count=value,
                     )
                 else:
                     query_set = query_set.filter(
-                        lock_count__gt=value,
+                        lock_count__gt=5,
                     )
 
         return query_set

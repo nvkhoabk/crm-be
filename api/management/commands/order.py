@@ -303,16 +303,35 @@ class Command(BaseCommand):
             else:
                 print('Cannot get data for callid: ' + call_log.callid)
 
-    def handle(self, *args, **options):
-        # self.initializer_logger()
-        # processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
-        #     options['date'], '%Y%m%d').date()
-        #
-        # self.process_annual_buy(processing_date)
-        # self.calculate_debt_status_order(processing_date)
-        # self.notify_renew_date(processing_date)
+    def fix_dstchannel(self):
+        import pandas as pd
 
-        self.fix_call_log_missing()
+        records = pd.read_excel('/home/khanhnt/crm/dstchannel20240325.xlsx', header=None).to_numpy()
+        dst_dict = dict()
+        for record in records:
+            dst_dict[str(record[0])] = record[1]
+
+        print(len(dst_dict))
+        call_logs = CallLog.objects.filter(deleted_at__isnull=True, created_at__gte='2024-03-01')
+        for call_log in call_logs:
+            if call_log.callid in dst_dict and call_log.dstchannel != dst_dict[call_log.callid]:
+                call_log.dstchannel = dst_dict[call_log.callid]
+                call_log.provider = classify_telecom_number(call_log.dstchannel)
+                call_log.save()
+            else:
+                print('Missing: ' + str(call_log.callid))
+
+    def handle(self, *args, **options):
+        self.initializer_logger()
+        processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
+            options['date'], '%Y%m%d').date()
+
+        self.process_annual_buy(processing_date)
+        self.calculate_debt_status_order(processing_date)
+        self.notify_renew_date(processing_date)
+
+        # self.fix_dstchannel()
+        # self.fix_call_log_missing()
         # self.migrate_call_log()
         # self.initialize_charge_date()
         # self.fix_annual_order_generation()

@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 from pytz import timezone
 
-import pandas as pd
 import xlrd
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
