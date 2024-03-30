@@ -306,20 +306,39 @@ class Command(BaseCommand):
     def fix_dstchannel(self):
         import pandas as pd
 
-        records = pd.read_excel('/home/khanhnt/crm/dstchannel20240325.xlsx', header=None).to_numpy()
+        records = pd.read_csv('/home/khanhnt/crm/202402.csv', header=None).to_numpy()
         dst_dict = dict()
         for record in records:
             dst_dict[str(record[0])] = record[1]
+            # if 'VTL' not in record[1] and 'VMS' not in record[1] and 'VNP' not in record[1] and 'OTHER' not in record[1]\
+            #         and 'Other' not in record[1]:
+            #     print(record[1])
 
         print(len(dst_dict))
-        call_logs = CallLog.objects.filter(deleted_at__isnull=True, created_at__gte='2024-03-01')
+        call_logs = CallLog.objects.filter(deleted_at__isnull=True, created_at__gte='2024-02-01')
         for call_log in call_logs:
-            if call_log.callid in dst_dict and call_log.dstchannel != dst_dict[call_log.callid]:
-                call_log.dstchannel = dst_dict[call_log.callid]
-                call_log.provider = classify_telecom_number(call_log.dstchannel)
-                call_log.save()
+            call_id = call_log.callid
+            call_id = call_id.split('.')[0]
+            #print('checking ' + call_id)
+            if call_id in dst_dict:
+                if call_log.dstchannel != dst_dict[call_id]:
+                    call_log.dstchannel = dst_dict[call_id]
+                    call_log.provider = classify_telecom_number(call_log.dstchannel)
+                    call_log.save()
+                # else:
+                #     print(call_log.callid)
+
             else:
-                print('Missing: ' + str(call_log.callid))
+                print('Missing: ' + str(call_id))
+
+    def recalculate_provider(self):
+        call_logs = CallLog.objects.filter(deleted_at__isnull=True, created_at__gte='2024-02-01', created_at__lte='2024-03-14')
+        for call_log in call_logs:
+            old_provider = call_log.provider
+            call_log.provider = classify_telecom_number(call_log.phone)
+            call_log.save()
+            if call_log.provider != old_provider:
+                print("Changed " + str(call_log.id))
 
     def handle(self, *args, **options):
         self.initializer_logger()
@@ -330,6 +349,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.recalculate_provider()
         # self.fix_dstchannel()
         # self.fix_call_log_missing()
         # self.migrate_call_log()

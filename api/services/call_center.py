@@ -27,7 +27,7 @@ from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, M
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch, TrialExpired)
 import api.services.manage as manage
-from api.tasks import insert_call_answered
+from api.tasks import insert_call_answered, fetch_call_log_data
 import api.utils.call_center as call_center_utils
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.order_detail import floor_rate
@@ -787,6 +787,25 @@ class StartCallOutService(BaseService):
         call_center = CallCenter.objects.get(company_id=company_id, deleted_at__isnull=True)
         if call_center_utils.is_trial(call_center) and call_center.trial_expired:
             raise TrialExpired()
+
+
+class EndCallOutService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+        company_id = user_roles.first().company_id
+
+        phone = kwargs.get('phone', '')
+        ext = CallAgent.objects.filter(user_id=request.user.id, deleted_at__isnull=True,
+                                       status=CALL_AGENT_STATUS.ACTIVE, company_id=company_id)
+
+        if phone and ext:
+            call_log = CallLog.objects.filter(phone=phone, extension=ext.first().name).order_by('-id')
+            if call_log and call_log.first().status is None:
+                fetch_call_log_data.delay(call_log.first().id)
 
 
 class DownloadExtFileService(BaseService):

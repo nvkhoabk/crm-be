@@ -264,14 +264,18 @@ class StartCallOutView(BaseAPIView):
 class EndCallOutView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated]
+    serializer_class = call_center_serializer.EndCallOutRequestSerializer
 
     @swagger_auto_schema(
         tags=['Manage Call Events'],
         operation_id='End Call Out',
         operation_description='End Call Out',
+        request_body=serializer_class,
         responses={}
     )
     def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.EndCallOutService()
+        service.serve(request, cookies, **serializer.validated_data)
         return self.get_response()
 
 

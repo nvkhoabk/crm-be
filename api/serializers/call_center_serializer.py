@@ -419,3 +419,6 @@ class ExportCallLogsHistorySerializer(serializers.ModelSerializer):
 
 class ExportCallLogsResponseSerializer(BaseResponseSerializer):
     data = ExportCallLogsHistorySerializer()
+
+class EndCallOutRequestSerializer(serializers.Serializer):
+    phone = serializers.CharField(default='')

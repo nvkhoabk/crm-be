@@ -121,3 +121,12 @@ def insert_call_answered(phone, extension, calldate, duration, status, recording
 
     if call_log.direction == CALL_DIRECTION.OUTGOING and call_log.chargeable_time > 0:
         cache.update_call_center_month_minute(call_log)
+
+
+@shared_task
+def fetch_call_log_data(call_log_id):
+    try:
+        call_log = CallLog.objects.get(pk=call_log_id)
+
+    except CallLog.DoesNotExist:
+        print('Not found call log id: ' + str(call_log_id))
