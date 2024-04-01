@@ -328,7 +328,7 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     phone_number_client_id = serializers.IntegerField()
     phone_number_status_id = serializers.IntegerField()
     pickup_date = serializers.DateField()
-    brand = serializers.CharField(max_length=512, default='')
+    brand = serializers.CharField(max_length=512, default='', allow_blank=True)
     lock_provider = serializers.CharField(max_length=512, default='')
     lock_count = serializers.IntegerField(default=0)
     phone_number_avg_age = serializers.FloatField(default=0)
@@ -341,7 +341,7 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     open_payment_date = serializers.DateField()
     operate_payment_date = serializers.DateField()
     other_payment_date = serializers.DateField()
-    note = serializers.CharField(max_length=1048, default='')
+    note = serializers.CharField(max_length=1048, default='', allow_blank=True)
 
 
 class CreatePhoneNumberResponseSerializer(BaseResponseSerializer):
