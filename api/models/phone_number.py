@@ -124,3 +124,11 @@ class PhoneNumberActivity(BaseModel):
 
     class Meta:
         db_table = 'phone_number_activities'
+
+
+# class ImportPhoneNumberRecords(BaseModel):
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+#     file = models.FileField(upload_to='uploads/%Y/%m/%d/')
+#
+#     class Meta:
+#         db_table = 'import_order_records'

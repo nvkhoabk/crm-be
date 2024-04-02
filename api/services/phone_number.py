@@ -1,16 +1,19 @@
 import json
 from datetime import datetime
 
+import xlrd
 from django.db.models import Q
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.models.data import ImportOrderRecords
 from api.models.organization import UserRole
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
     PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity, PhoneNumberLockHistory
 from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
+from api.serializers.phone_number_serializer import CreatePhoneNumberRequestSerializer
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPhoneNumberDuplicated,
@@ -18,10 +21,12 @@ from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPho
                                      LegalDuplicated, PhoneNumberClientNotFound, PhoneNumberClientDuplicated,
                                      PhoneNumberStatusNotFound, PhoneNumberStatusDuplicated,
                                      PhoneNumberMonthlyFeeNotFound, PhoneNumberMonthlyFeeDuplicated,
-                                     PhoneNumberNotFound, PhoneNumberDuplicated, )
+                                     PhoneNumberNotFound, PhoneNumberDuplicated, ImportRecordNotFound, )
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
+import api.services.validate_error_code as vec
+import re
 
 
 class CreateMainPhoneNumberService(BaseService):
@@ -991,3 +996,288 @@ class FilterPhoneNumberActivityService(BaseService):
                 ).order_by('-id')
 
         return query_set
+
+
+class ImportPhoneNumberService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
+
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        record = ImportOrderRecords.objects.create(
+            **kwargs
+        )
+
+        with record.file.open('r') as excel_file:
+            workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+            worksheet = workbook.sheet_by_index(0)
+            num_rows = worksheet.nrows - 1
+            curr_row = 0
+            rows = []
+            while curr_row < num_rows:
+                curr_row += 1
+                row = worksheet.row(curr_row)
+                data_record = self.rowParser(row)
+                error_codes = self.validate_data(data_record, kwargs['company_id'])
+                if error_codes:
+                    data_record['error_codes'] = error_codes
+                    data_record['row_number'] = curr_row
+                    rows.append(data_record)
+
+        return {
+            'id': record.id,
+            'rows': rows
+        }
+
+    def rowParser(self, rows):
+        return {
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
+            'phone_number': str(rows[1].value).strip(),
+            'main_phone_number': str(rows[2].value).strip(),
+            'provider': str(rows[3].value).strip(),
+            'legal': str(rows[4].value).strip(),
+            'phone_number_client': str(rows[5].value).strip(),
+            'phone_number_status': str(rows[6].value).strip(),
+            'pickup_date': str(rows[7].value).strip(),
+            'cancel_date': str(rows[8].value).strip(),
+            'init_fee': str(rows[8].value).strip(),
+            'operate_fee': str(rows[8].value).strip(),
+            'open_fee': str(rows[8].value).strip(),
+            'other_fee': str(rows[8].value).strip(),
+            'init_payment_date': str(rows[8].value).strip(),
+            'open_payment_date': str(rows[8].value).strip(),
+            'operate_payment_date': str(rows[8].value).strip(),
+            'other_payment_date': str(rows[8].value).strip(),
+            'note': str(rows[8].value).strip()
+        }
+
+    def validate_data(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_id(data))
+        error_codes.extend(self.validate_phone_format(data))
+        error_codes.extend(self.validate_existed_phone(data, company_id))
+        error_codes.extend(self.validate_main_phone_number(data, company_id))
+        error_codes.extend(self.validate_provider(data, company_id))
+        error_codes.extend(self.validate_legal(data, company_id))
+        error_codes.extend(self.validate_phone_number_client(data, company_id))
+        error_codes.extend(self.validate_phone_number_status(data, company_id))
+        error_codes.extend(self.validate_date(data))
+        error_codes.extend(self.validate_fee(data))
+        return error_codes
+
+    def validate_id(self, row):
+        error_codes = []
+        id_str = str(row['id']).strip()
+        if id_str == '':
+            error_codes.append(vec.IdIsEmpty.code)
+
+        if not id_str.isnumeric():
+            error_codes.append(vec.IdIsNotNumeric.code)
+
+        return error_codes
+
+    def validate_phone_format(self, row):
+        phone = str(row['phone']).strip()
+        if phone == '':
+            return [vec.InvalidPhoneFormat.code]
+
+        phone.replace(' ', '')
+        phone.replace('.', '')
+        phone.replace('+', '')
+        path = r'([\+84|84|0]+(3|5|7|8|9|1[2|6|8|9]))+([0-9]{8})\b'
+
+        if re.match(path, phone):
+            return []
+
+        return [vec.InvalidPhoneFormat.code]
+
+    def validate_existed_phone(self, row, company_id):
+        phone = str(row['phone_number']).strip()
+
+        entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
+        if entity is None:
+            return [vec.PhoneNumberDuplicated.code]
+
+        return []
+
+    def validate_main_phone_number(self, row, company_id):
+        error_codes = []
+        main_phone_number = str(row['main_phone_number']).strip()
+        entity = MainPhoneNumber.objects.filter(name__iexact=main_phone_number,
+                                                company_id=company_id).first()
+
+        if entity is None:
+            error_codes.append(vec.MainPhoneNumberNotFound.code)
+
+        return error_codes
+
+    def validate_provider(self, row, company_id):
+        provider = str(row['provider']).strip()
+        entity = Provider.objects.filter(name__iexact=provider,
+                                         company_id=company_id).first()
+
+        if entity is None:
+            return [vec.ProviderNotFound.code]
+
+        return []
+
+    def validate_legal(self, row, company_id):
+        legal = str(row['legal']).strip()
+        entity = Legal.objects.filter(name__iexact=legal,
+                                      company_id=company_id).first()
+
+        if entity is None:
+            return [vec.LegalNotFound.code]
+
+        return []
+
+    def validate_phone_number_client(self, row, company_id):
+        phone_number_client = str(row['phone_number_client']).strip()
+        entity = PhoneNumberClient.objects.filter(name__iexact=phone_number_client,
+                                      company_id=company_id).first()
+
+        if entity is None:
+            return [vec.PhoneNumberClientNotFound.code]
+
+        return []
+
+    def validate_phone_number_status(self, row, company_id):
+        phone_number_status = str(row['phone_number_status']).strip()
+        entity = PhoneNumberStatus.objects.filter(name__iexact=phone_number_status,
+                                                  company_id=company_id).first()
+
+        if entity is None:
+            return [vec.PhoneNumberStatusNotFound.code]
+
+        return []
+
+    def validate_date_format_YYYYMMDD(self, date_text):
+        try:
+            if date_text != datetime.strptime(date_text, "%Y-%m-%d").strftime('%Y-%m-%d'):
+                raise ValueError
+            return True
+        except ValueError:
+            return False
+
+    def validate_date(self, row):
+        error_codes = []
+        pickup_date = str(row['pickup_date']).strip()
+        cancel_date = str(row['cancel_date']).strip()
+        init_payment_date = str(row['init_payment_date']).strip()
+        operate_payment_date = str(row['operate_payment_date']).strip()
+
+        if not self.validate_date_format_YYYYMMDD(pickup_date):
+            error_codes.append(vec.PickupDateWrongFormat.code)
+        if not self.validate_date_format_YYYYMMDD(cancel_date):
+            error_codes.append(vec.CancelDateWrongFormat.code)
+        if not self.validate_date_format_YYYYMMDD(init_payment_date):
+            error_codes.append(vec.InitPaymentDateWrongFormat.code)
+        if not self.validate_date_format_YYYYMMDD(operate_payment_date):
+            error_codes.append(vec.OperatePaymentDateWrongFormat.code)
+
+        open_payment_date = str(row['open_payment_date']).strip()
+        if open_payment_date and self.validate_date_format_YYYYMMDD(open_payment_date) == False:
+            error_codes.append(vec.OpenPaymentDateWrongFormat.code)
+
+        other_payment_date = str(row['other_payment_date']).strip()
+        if other_payment_date and self.validate_date_format_YYYYMMDD(other_payment_date) == False:
+            error_codes.append(vec.OpenPaymentDateWrongFormat.code)
+
+        return error_codes
+
+    def validate_fee(self, row):
+        error_codes = []
+        init_fee = str(row['init_fee']).strip()
+        operate_fee = str(row['operate_fee']).strip()
+        if init_fee == '':
+            error_codes.append(vec.InitFeeIsEmpty.code)
+
+        if not init_fee.isnumeric():
+            error_codes.append(vec.InitFeeIsNotNumeric.code)
+
+        if int(init_fee) == 0:
+            error_codes.append(vec.InitFeeIsZero.code)
+
+        if operate_fee == '':
+            error_codes.append(vec.OperateFeeIsEmpty.code)
+
+        if not operate_fee.isnumeric():
+            error_codes.append(vec.OperateFeeIsNotNumeric.code)
+
+        if int(operate_fee) == 0:
+            error_codes.append(vec.OperateFeeIsZero.code)
+
+        return error_codes
+
+
+class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        if not request.user.is_superuser:
+            user_roles = UserRole.objects.filter(user_id=request.user)
+
+            if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
+                raise PermissionDenied()
+
+        try:
+            record = ImportOrderRecords.objects.get(
+                pk=kwargs.get('id')
+            )
+
+            create_phone_number_service = CreatePhoneNumberService()
+
+            with record.file.open('r') as excel_file:
+                workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
+                worksheet = workbook.sheet_by_index(0)
+                num_rows = worksheet.nrows - 1
+                curr_row = 0
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    data_record = self.rowParser(row)
+                    error_codes = self.validate_data(data_record, kwargs['company_id'])
+                    if not error_codes:
+                        main_phone_number = MainPhoneNumber.objects.filter(name=data_record['main_phone_number'],
+                                                                deleted_at__isnull=True,
+                                                                company_id=kwargs['company_id']).first()
+                        provider = Provider.objects.filter(name=data_record['provider'],
+                                                                           deleted_at__isnull=True,
+                                                                           company_id=kwargs['company_id']).first()
+                        legal = Legal.objects.filter(name=data_record['legal'],
+                                                                           deleted_at__isnull=True,
+                                                                           company_id=kwargs['company_id']).first()
+                        phone_number_client = PhoneNumberClient.objects.filter(name=data_record['phone_number_client'],
+                                                                           deleted_at__isnull=True,
+                                                                           company_id=kwargs['company_id']).first()
+                        phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
+                                                                           deleted_at__isnull=True,
+                                                                           company_id=kwargs['company_id']).first()
+                        phone_number = PhoneNumber(
+                            phone_number=data_record['phone_number'],
+                            main_phone_number=phone_number,
+                            provider=provider,
+                            legal=legal,
+                            phone_number_client=phone_number_client,
+                            phone_number_status=phone_number_status,
+                            pickup_date=data_record['pickup_date'],
+                            brand=data_record['brand'],
+                            lock_provider=data_record['lock_provider'],
+                            cancel_date=data_record['cancel_date'],
+                            init_fee=data_record['init_fee'],
+                            operate_fee=data_record['operate_fee'],
+                            open_fee=data_record['open_fee'],
+                            other_fee=data_record['other_fee'],
+                            init_payment_date=data_record['init_payment_date'],
+                            open_payment_date=data_record['open_payment_date'],
+                            operate_payment_date=data_record['operate_payment_date'],
+                            other_payment_date=data_record['other_payment_date'],
+                            note=data_record['note'],
+                            company_id=kwargs['company_id'],
+                            created_at=datetime.today().date())
+
+                        create_phone_number_service.serve(request, cookies, *args,
+                                                          **CreatePhoneNumberRequestSerializer(phone_number).data)
+
+        except ImportOrderRecords.DoesNotExist:
+            raise ImportRecordNotFound

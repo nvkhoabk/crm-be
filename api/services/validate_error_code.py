@@ -72,3 +72,93 @@ class AmountIsNotNumeric:
 class PaymentForNoProductOrder:
     code = 15
     msg = 'Create payment for order that have no product'
+
+
+class PhoneNumberDuplicated:
+    code = 16
+    msg = 'Phone number is duplicate'
+
+
+class MainPhoneNumberNotFound:
+    code = 17
+    msg = 'Main phone number is not found'
+
+
+class ProviderNotFound:
+    code = 18
+    msg = 'Provider is not found'
+
+
+class LegalNotFound:
+    code = 19
+    msg = 'Legal is not found'
+
+
+class PhoneNumberClientNotFound:
+    code = 20
+    msg = 'Phone number client is not found'
+
+
+class PhoneNumberStatusNotFound:
+    code = 21
+    msg = 'Phone number status is not found'
+
+
+class PickupDateWrongFormat:
+    code = 22
+    msg = ''
+
+
+class CancelDateWrongFormat:
+    code = 23
+    msg = ''
+
+
+class OpenPaymentDateWrongFormat:
+    code = 24
+    msg = ''
+
+
+class InitPaymentDateWrongFormat:
+    code = 25
+    msg = ''
+
+
+class OperatePaymentDateWrongFormat:
+    code = 26
+    msg = ''
+
+
+class OtherPaymentDateWrongFormat:
+    code = 27
+    msg = ''
+
+
+class InitFeeIsEmpty:
+    code = 28
+    msg = ''
+
+
+class InitFeeIsNotNumeric:
+    code = 29
+    msg = ''
+
+
+class InitFeeIsZero:
+    code = 30
+    msg = ''
+
+
+class OperateFeeIsEmpty:
+    code = 31
+    msg = ''
+
+
+class OperateFeeIsNotNumeric:
+    code = 32
+    msg = ''
+
+
+class OperateFeeIsZero:
+    code = 33
+    msg = ''

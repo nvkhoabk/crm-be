@@ -13,6 +13,40 @@ import api.utils.call_center as call_center_utils
 from api.utils.date import get_first_of_month, get_last_of_month
 
 
+def is_phone_number_opening(phone_number):
+    phone_number_dict = cache.get(CACHE_KEY.PHONE_NUMBER, None)
+    if phone_number_dict is None:
+        return False
+
+    return phone_number in phone_number_dict
+
+
+def get_phone_number_cache():
+    return cache.get(CACHE_KEY.PHONE_NUMBER, {})
+
+
+def add_phone_number_to_cache(phone_number, user_name):
+    phone_number_dict = cache.get(CACHE_KEY.PHONE_NUMBER, None)
+    if phone_number_dict is None:
+        phone_number_dict = dict()
+
+    phone_number_dict[phone_number] = user_name
+    cache.set(CACHE_KEY.PHONE_NUMBER, phone_number_dict)
+    return phone_number_dict
+
+
+def delete_phone_number_to_cache(phone_number):
+    phone_number_dict = cache.get(CACHE_KEY.PHONE_NUMBER, None)
+    if phone_number_dict is None:
+        phone_number_dict = dict()
+
+    if phone_number in phone_number_dict:
+        del phone_number_dict[phone_number]
+
+    cache.set(CACHE_KEY.PHONE_NUMBER, phone_number_dict)
+    return phone_number_dict
+
+
 def init_ext_company():
     call_agents = CallAgent.objects.filter(deleted_at__isnull=True)
     call_agent_cache = dict()

@@ -143,6 +143,7 @@ class CACHE_KEY:
     PACKAGE = 'package'
     LAST_MONTH_CALL_CENTER_MINUTE = 'last_call_center_minute'
     ERROR = 'error'
+    PHONE_NUMBER = 'phone_number'
 
 
 class WS_USER_GROUP:
