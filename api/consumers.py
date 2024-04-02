@@ -35,7 +35,6 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
                 phone_number_cache = cache.get_phone_number_cache()
                 await self.update_phone_number_to_client({'data': phone_number_cache})
 
-
     async def disconnect(self, code):
         user = self.scope['user']
         if user.is_anonymous:
@@ -56,7 +55,6 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
                     if value == user.username:
                         phone_number_cache = cache.delete_phone_number_to_cache(key)
                         await self.phone_number_updated(phone_number_cache)
-
 
         await super().disconnect(code)
 
@@ -145,5 +143,10 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
             "data": list_phone_number
         })
 
+    async def trigger_update_phone_number_queue(self, message):
+        await self.send_json({
+            "type": "update_phone_number_queue",
+            "data": ""
+        })
 
 

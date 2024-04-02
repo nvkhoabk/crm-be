@@ -9,6 +9,7 @@ from api.models.data import Customer, ImportOrderRecords
 from api.models.organization import Company, Department, Permission, Role, UserRole
 from api.models.package import Package
 from api.models.param import Param
+from api.models.phone_number import PhoneNumberStatus, MainPhoneNumber, PhoneNumberClient, Provider, Legal
 from api.models.system_configuration import DataStatus, DataSource, DataSubStatus
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
@@ -53,6 +54,7 @@ async def is_technical_staff(user):
         return True
     except UserRole.DoesNotExist:
         return False
+
 
 class CreateParamService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -290,6 +292,98 @@ class CreateCompanyService(BaseService):
                     index=3,
                     choose_by_default=True
                 )
+
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Số mới nhập',
+                    color='#CC6633',
+                    index=1,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Số đạt',
+                    color='#a3ce71',
+                    index=0,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Đang nghi ngờ',
+                    color='#f59da9',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Đang nghi ngờ',
+                    color='#CC6633',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Đang chờ mở',
+                    color='#CC6633',
+                    index=0,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Đã hủy',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Cảnh báo sai',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
+                    name='Không xác định',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                MainPhoneNumber.objects.create(
+                    company_id=company.id,
+                    name='Không xác định',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                PhoneNumberClient.objects.create(
+                    company_id=company.id,
+                    name='Không xác định',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                Provider.objects.create(
+                    company_id=company.id,
+                    name='Không xác định',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+
+                Legal.objects.create(
+                    company_id=company.id,
+                    name='Không xác định',
+                    color='#7a7980',
+                    index=0,
+                    choose_by_default=False
+                )
+
                 # Create group permission
                 company_group = Group.objects.create(
                     name=utils.get_company_group_name(company.id))
@@ -314,14 +408,120 @@ class GetCompanyService(BaseService):
 class UpdateCompanyService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
-            Company.objects.get(pk=kwargs['id'])
+            company = Company.objects.get(pk=kwargs['id'])
         except Company.DoesNotExist:
             raise ManageCompanyNotFound()
+        old_phone_number_enable = company.enable_phone_number_management
 
         try:
             Company.objects.filter(pk=kwargs['id']).update(**kwargs)
+            if old_phone_number_enable is False and kwargs.get('enable_phone_number_management', False) is True:
+                if not PhoneNumberStatus.objects.filter(name__iexact='Số mới nhập', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Số mới nhập',
+                        color='#CC6633',
+                        index=1,
+                        choose_by_default=False
+                    )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Số đạt', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Số đạt',
+                        color='#a3ce71',
+                        index=0,
+                        choose_by_default=False
+                    )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Đang nghi ngờ',
+                        color='#f59da9',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Đang nghi ngờ',
+                        color='#CC6633',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not PhoneNumberStatus.objects.filter(name__iexact='Đang chờ mở', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Đang chờ mở',
+                        color='#CC6633',
+                        index=0,
+                        choose_by_default=False
+                    )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Đã hủy', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Đã hủy',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Cảnh báo sai', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Cảnh báo sai',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Không xác định', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Không xác định',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not MainPhoneNumber.objects.filter(name__iexact='Không xác định', company_id=company.id).first():
+                    MainPhoneNumber.objects.create(
+                        company_id=company.id,
+                        name='Không xác định',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not PhoneNumberClient.objects.filter(name__iexact='Không xác định', company_id=company.id).first():
+                    PhoneNumberClient.objects.create(
+                        company_id=company.id,
+                        name='Không xác định',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not Provider.objects.filter(name__iexact='Không xác định', company_id=company.id).first():
+                    Provider.objects.create(
+                        company_id=company.id,
+                        name='Không xác định',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+                if not Legal.objects.filter(name__iexact='Không xác định', company_id=company.id).first():
+                    Legal.objects.create(
+                        company_id=company.id,
+                        name='Không xác định',
+                        color='#7a7980',
+                        index=0,
+                        choose_by_default=False
+                    )
+
+
         except IntegrityError as e:
-            raise ManageCreateCompanyDuplicated()
+            raise ManageCompanyDuplicated()
 
         return Company.objects.get(pk=kwargs['id'])
 
@@ -381,8 +581,8 @@ class CreateDepartmentService(BaseService):
             raise ManageCompanyNotFound()
 
         if Department.objects.filter(
-            company__id=company_id,
-            department_name=department_name,
+                company__id=company_id,
+                department_name=department_name,
         ).first():
             raise ManageDepartmentDuplicated()
 
@@ -463,9 +663,9 @@ class CreateRoleService(BaseService):
         utils.has_company_permisison(request.user, company_id=company_id)
 
         if Role.objects.filter(
-            company__id=company_id,
-            department__id=department_id,
-            role_name=role_name,
+                company__id=company_id,
+                department__id=department_id,
+                role_name=role_name,
         ).first():
             raise ManageRoleDuplicated()
 
@@ -958,4 +1158,3 @@ class FilterCustomerService(BaseService):
                     address__icontains=value,
                 )
         return query_set
-

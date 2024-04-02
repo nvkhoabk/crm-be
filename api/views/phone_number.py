@@ -5,7 +5,7 @@ from api.services import phone_number as phone_number_service
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from api.permissions import PhoneNumberReadPermission, PhoneNumberEditPermission
+from api.permissions import PhoneNumberReadPermission, PhoneNumberEditPermission, CallCenterAuthenticated
 
 
 class CreateMainPhoneNumberView(BaseAPIView):
@@ -875,3 +875,18 @@ class FilterPhoneNumberActivityView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=result, request=serializer.validated_data,
                                  serializer=phone_number_serializer.FilterPhoneNumberActivityResponseSerializer)
+
+
+class PushToQueueView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [CallCenterAuthenticated]
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='Push phone number to queue',
+        operation_description='Push phone number to queue'
+    )
+    def get(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.PushToQueueService()
+        service.serve(request, cookies, *args, **kwargs)
+        return self.get_response()

@@ -115,7 +115,6 @@ class ProductEditPermission(ModuleEditPermission):
 class CallCenterAuthenticated(permissions.BasePermission):
     def has_permission(self, request, view):
         secret = request.GET.get('secret', None)
-        return True
         return secret == 'Crm1ty@1305Fri'
 
 

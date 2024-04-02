@@ -365,7 +365,7 @@ class UpdatePhoneNumberRequestSerializer(serializers.Serializer):
     phone_number_status_id = serializers.IntegerField(required=False)
     pickup_date = serializers.DateField(required=False)
     brand = serializers.CharField(max_length=512, default='', required=False, allow_blank=True)
-    lock_provider = serializers.CharField(max_length=512, default='', required=False)
+    lock_provider = serializers.CharField(max_length=512, default='', required=False, allow_blank=True)
     lock_count = serializers.IntegerField(default=0, required=False)
     phone_number_avg_age = serializers.FloatField(default=0, required=False)
     cancel_date = serializers.DateField(allow_null=True, required=False)

@@ -7,7 +7,7 @@ from django.db.models import Q
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.models.data import ImportOrderRecords
-from api.models.organization import UserRole
+from api.models.organization import UserRole, Company
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
     PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity, PhoneNumberLockHistory
 from api.models.product import Product
@@ -27,6 +27,8 @@ from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
 import api.services.validate_error_code as vec
 import re
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class CreateMainPhoneNumberService(BaseService):
@@ -786,6 +788,7 @@ class UpdatePhoneNumberService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
+            trigger_update_phone_number_queue = False
             if kwargs.get('main_phone_number_id'):
                 phone_number.main_phone_number_id = kwargs['main_phone_number_id']
 
@@ -799,7 +802,14 @@ class UpdatePhoneNumberService(BaseService):
                 phone_number.phone_number_client_id = kwargs['phone_number_client_id']
 
             if kwargs.get('phone_number_status_id'):
+                old_status_id = phone_number.phone_number_status_id
+                new_status_id = kwargs['phone_number_status_id']
                 phone_number.phone_number_status_id = kwargs['phone_number_status_id']
+                checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
+                if old_status_id == checking_status.id or new_status_id == checking_status.id:
+                    trigger_update_phone_number_queue = True
 
             if kwargs.get('pickup_date'):
                 phone_number.pickup_date = kwargs['pickup_date']
@@ -852,9 +862,22 @@ class UpdatePhoneNumberService(BaseService):
 
             phone_number.save()
 
+            if trigger_update_phone_number_queue:
+                self.trigger_update_phone_number_queue()
+
             return phone_number
         except PhoneNumber.DoesNotExist:
             raise PhoneNumberNotFound()
+
+    def trigger_update_phone_number_queue(self):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'crm',
+            {
+                'type': 'trigger_update_phone_number_queue',
+                'message': ''
+            }
+        )
 
 
 class FilterPhoneNumberService(BaseService):
@@ -996,6 +1019,58 @@ class FilterPhoneNumberActivityService(BaseService):
                 ).order_by('-id')
 
         return query_set
+
+
+class PushToQueueService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        request_phone_number = request.GET.get('phone_number')
+        company_name = request.GET.get('company')
+        company = Company.objects.filter(name__iexact=company_name, deleted_at__isnull=True).first()
+        if not company:
+            return
+
+        phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, deleted_at__isnull=True).first()
+        if not phone_number:
+            main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định').first()
+            provider = Provider.objects.filter(name__iexact='Không xác định').first()
+            legal = Legal.objects.filter(name__iexact='Không xác định').first()
+            phone_number_client = PhoneNumberClient.objects.filter(name__iexact='Không xác định').first()
+            phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Không xác định').first()
+
+            if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
+                return
+
+            phone_number = PhoneNumber.objects.create(
+                company=company,
+                phone_number=request_phone_number,
+                main_phone_number=main_phone_number,
+                provider=provider,
+                legal=legal,
+                phone_number_client=phone_number_client,
+                phone_number_status=phone_number_status,
+                pickup_date=datetime.now(),
+                brand='',
+                lock_provider='',
+                lock_count=0,
+                phone_number_avg_age=0,
+                cancel_date=None,
+                init_payment_date=None,
+                open_payment_date=None,
+                operate_payment_date=None,
+                other_payment_date=None
+            )
+
+        phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ').first()
+        if not phone_number_status:
+            return
+        phone_number.phone_number_status = phone_number_status
+        service = UpdatePhoneNumberService()
+        User = get_user_model()
+        root_user = User.objects.get(username__iexact='root')
+        request.user.is_superuser = True
+        request.user.id = root_user.id
+
+        service.serve(request, cookies, *args, **vars(phone_number))
 
 
 class ImportPhoneNumberService(BaseService):
