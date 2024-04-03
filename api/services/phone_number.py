@@ -1029,13 +1029,19 @@ class PushToQueueService(BaseService):
         if not company:
             return
 
-        phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, deleted_at__isnull=True).first()
+        phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, company_id=company.id,
+                                                  deleted_at__isnull=True).first()
         if not phone_number:
-            main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định').first()
-            provider = Provider.objects.filter(name__iexact='Không xác định').first()
-            legal = Legal.objects.filter(name__iexact='Không xác định').first()
-            phone_number_client = PhoneNumberClient.objects.filter(name__iexact='Không xác định').first()
-            phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Không xác định').first()
+            main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                               deleted_at__isnull=True).first()
+            provider = Provider.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                               deleted_at__isnull=True).first()
+            legal = Legal.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                         deleted_at__isnull=True).first()
+            phone_number_client = PhoneNumberClient.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                                   deleted_at__isnull=True).first()
+            phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                                   deleted_at__isnull=True).first()
 
             if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
                 return
@@ -1060,7 +1066,8 @@ class PushToQueueService(BaseService):
                 other_payment_date=None
             )
 
-        phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ').first()
+        phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,
+                                                               deleted_at__isnull=True).first()
         if not phone_number_status:
             return
         phone_number.phone_number_status = phone_number_status
