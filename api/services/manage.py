@@ -309,6 +309,13 @@ class CreateCompanyService(BaseService):
                 )
                 PhoneNumberStatus.objects.create(
                     company_id=company.id,
+                    name='Số không đạt',
+                    color='#a3ce71',
+                    index=0,
+                    choose_by_default=False
+                )
+                PhoneNumberStatus.objects.create(
+                    company_id=company.id,
                     name='Đang nghi ngờ',
                     color='#f59da9',
                     index=0,
@@ -317,7 +324,7 @@ class CreateCompanyService(BaseService):
 
                 PhoneNumberStatus.objects.create(
                     company_id=company.id,
-                    name='Đang nghi ngờ',
+                    name='Đang bị khoá',
                     color='#CC6633',
                     index=0,
                     choose_by_default=False
@@ -432,6 +439,14 @@ class UpdateCompanyService(BaseService):
                         index=0,
                         choose_by_default=False
                     )
+                if not PhoneNumberStatus.objects.filter(name__iexact='Số không đạt', company_id=company.id).first():
+                    PhoneNumberStatus.objects.create(
+                        company_id=company.id,
+                        name='Số không đạt',
+                        color='#a3ce71',
+                        index=0,
+                        choose_by_default=False
+                    )
                 if not PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id).first():
                     PhoneNumberStatus.objects.create(
                         company_id=company.id,
@@ -441,10 +456,10 @@ class UpdateCompanyService(BaseService):
                         choose_by_default=False
                     )
 
-                if not PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id).first():
+                if not PhoneNumberStatus.objects.filter(name__iexact='Đang bị khoá', company_id=company.id).first():
                     PhoneNumberStatus.objects.create(
                         company_id=company.id,
-                        name='Đang nghi ngờ',
+                        name='Đang bị khoá',
                         color='#CC6633',
                         index=0,
                         choose_by_default=False
