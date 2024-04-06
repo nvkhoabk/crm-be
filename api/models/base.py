@@ -30,7 +30,7 @@ class ModelDiffMixin(object):
     def diff(self):
         d1 = self.__initial
         d2 = self._dict
-        diffs = [(k, (v, d2[k])) for k, v in d1.items() if v != d2[k]]
+        diffs = [(k, (self.to_string_if_need(v), self.to_string_if_need(d2[k]))) for k, v in d1.items() if v != d2[k]]
         return dict(diffs)
 
     @property
@@ -58,3 +58,9 @@ class ModelDiffMixin(object):
     def _dict(self):
         return model_to_dict(self, fields=[field.name for field in
                                            self._meta.fields])
+
+    def to_string_if_need(self, value):
+        if not isinstance(value, int):
+            return str(value)
+
+        return value

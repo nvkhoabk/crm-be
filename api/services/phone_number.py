@@ -798,8 +798,11 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('legal_id'):
                 phone_number.legal_id = kwargs['legal_id']
 
-            if kwargs.get('phone_number_client_id'):
+            if kwargs.get('phone_number_client_id', 0) != 0:
                 phone_number.phone_number_client_id = kwargs['phone_number_client_id']
+
+            if kwargs.get('client_use_date', '') != '':
+                phone_number.client_use_date = kwargs['client_use_date']
 
             if kwargs.get('phone_number_status_id'):
                 old_status_id = phone_number.phone_number_status_id
@@ -973,6 +976,24 @@ class FilterPhoneNumberService(BaseService):
                     )
 
         return query_set
+
+
+class BulkUpdateStatusService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        service = FilterPhoneNumberService()
+        phone_numbers = service.serve(request, cookies, *args, **kwargs)
+        status = kwargs.get('status', None)
+        if status is None:
+            return
+
+        for phone_number in phone_numbers:
+            phone_number.phone_number_status_id = status
+            phone_number.updated_at = datetime.now()
+            if phone_number.has_changed:
+                PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
+                                                   user_id=request.user.id, diff=phone_number.diff)
+            phone_number.save()
+        return phone_numbers
 
 
 class DeletePhoneNumberService(BaseService):

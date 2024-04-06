@@ -352,4 +352,6 @@ urlpatterns = [
      phone_number.FilterPhoneNumberActivityView.as_view(),
      name='phone_number.filter_phone_number_activity'),
     path('phone_number/push_to_queue/', phone_number.PushToQueueView.as_view(), name='phone_number.push_to_queue'),
+                  path('phone_number/bulk_update_status/', phone_number.BulkUpdatePhoneNumberStatusView.as_view(),
+                       name='phone_number.bulk_update_status'),
 ] + static('files/', document_root=Const.FILE_ROOT)

@@ -316,7 +316,8 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
         fields = ['id', 'phone_number', 'company', 'main_phone_number', 'provider', 'legal', 'phone_number_client',
                   'phone_number_status', 'pickup_date', 'brand', 'lock_provider', 'lock_count', 'phone_number_avg_age',
                   'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note',
-                  'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date']
+                  'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date',
+                  'client_use_date']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):
@@ -325,9 +326,10 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     main_phone_number_id = serializers.IntegerField()
     provider_id = serializers.IntegerField()
     legal_id = serializers.IntegerField()
-    phone_number_client_id = serializers.IntegerField()
+    phone_number_client_id = serializers.IntegerField(allow_null=True, required=False)
     phone_number_status_id = serializers.IntegerField()
     pickup_date = serializers.DateField()
+    client_use_date = serializers.DateField(allow_null=True, required=False)
     brand = serializers.CharField(max_length=512, default='', allow_blank=True)
     lock_provider = serializers.CharField(max_length=512, default='')
     lock_count = serializers.IntegerField(default=0)
@@ -361,9 +363,10 @@ class UpdatePhoneNumberRequestSerializer(serializers.Serializer):
     main_phone_number_id = serializers.IntegerField(required=False)
     provider_id = serializers.IntegerField(required=False)
     legal_id = serializers.IntegerField(required=False)
-    phone_number_client_id = serializers.IntegerField(required=False)
+    phone_number_client_id = serializers.IntegerField(allow_null=True, required=False)
     phone_number_status_id = serializers.IntegerField(required=False)
     pickup_date = serializers.DateField(required=False)
+    client_use_date = serializers.DateField(allow_null=True, required=False)
     brand = serializers.CharField(max_length=512, default='', required=False, allow_blank=True)
     lock_provider = serializers.CharField(max_length=512, default='', required=False, allow_blank=True)
     lock_count = serializers.IntegerField(default=0, required=False)
@@ -507,3 +510,12 @@ class FilterPhoneNumberActivityRequestSerializer(BasePagingSerializer):
 
 class FilterPhoneNumberActivityResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=PhoneNumberActivitySerializer())
+
+
+class BulkUpdatePhoneNumberStatusRequestSerializer(BasePagingSerializer):
+    filter = FilterPhoneNumberRequestParamSerializer()
+    status = serializers.IntegerField()
+
+
+class BulkUpdatePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
+    pass

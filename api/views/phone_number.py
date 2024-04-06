@@ -708,6 +708,29 @@ class FilterPhoneNumberView(BaseAPIView):
                                  serializer=phone_number_serializer.FilterPhoneNumberResponseSerializer)
 
 
+class BulkUpdatePhoneNumberStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.BulkUpdatePhoneNumberStatusRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='bulk update phone_number status',
+        operation_description='bulk update phone_number status api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.BulkUpdatePhoneNumberStatusResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.BulkUpdateStatusService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response()
+
+
 class DeletePhoneNumberView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
