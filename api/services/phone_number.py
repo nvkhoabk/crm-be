@@ -31,6 +31,27 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 
+def calculate_lock_information(phone_number):
+    locked_status = PhoneNumberStatus.objects.filter(name__iexact='Đang bị khoá', deleted_at__isnull=True,
+                                                     company=phone_number.company).first()
+    # active_status = PhoneNumberStatus.objects.filter(name__iexact='Số đạt', deleted_at__isnull=True,
+    #                                                  company=phone_number.company)
+
+    if phone_number.phone_number_status_id == locked_status.id and phone_number.lock_history_id == 0:
+        lock_history = PhoneNumberLockHistory.objects.create(company=phone_number.company,
+                                                             phone_number=phone_number,
+                                                             checking_lock_date=datetime.today(),
+                                                             confirm_lock_date=datetime.today())
+        phone_number.lock_history_id = lock_history.id
+        phone_number.lock_count += 1
+
+    if phone_number.phone_number_status_id != locked_status.id and phone_number.lock_history_id != 0:
+        history = PhoneNumberLockHistory.objects.get(pk=phone_number.lock_history_id)
+        history.unlock_lock_date = datetime.today()
+        history.save()
+        phone_number.lock_history_id = 0
+
+
 class CreateMainPhoneNumberService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -742,10 +763,14 @@ class CreatePhoneNumberService(BaseService):
 
                 if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                     raise PermissionDenied()
+            client_use_date = kwargs.get('client_use_date', None)
+            if client_use_date is not None:
+                kwargs['active_date'] = client_use_date
 
             return PhoneNumber.objects.create(
                 **kwargs
             )
+
         except IntegrityError as e:
             raise PhoneNumberDuplicated()
 
@@ -802,6 +827,8 @@ class UpdatePhoneNumberService(BaseService):
                 phone_number.phone_number_client_id = kwargs['phone_number_client_id']
 
             if kwargs.get('client_use_date', '') != '':
+                if not phone_number.active_date:
+                    phone_number.active_date = kwargs['client_use_date']
                 phone_number.client_use_date = kwargs['client_use_date']
 
             if kwargs.get('phone_number_status_id'):
@@ -811,8 +838,13 @@ class UpdatePhoneNumberService(BaseService):
                 checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
                                                          company_id=phone_number.company_id,
                                                          deleted_at__isnull=True)
+                cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
                 if old_status_id == checking_status.id or new_status_id == checking_status.id:
                     trigger_update_phone_number_queue = True
+                if new_status_id == cancel_status.id:
+                    phone_number.cancel_date = datetime.today()
 
             if kwargs.get('pickup_date'):
                 phone_number.pickup_date = kwargs['pickup_date']
@@ -863,6 +895,7 @@ class UpdatePhoneNumberService(BaseService):
                 PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                    user_id=request.user.id, diff=phone_number.diff)
 
+            calculate_lock_information(phone_number)
             phone_number.save()
 
             if trigger_update_phone_number_queue:
@@ -996,6 +1029,25 @@ class BulkUpdateStatusService(BaseService):
         return phone_numbers
 
 
+class UpdateListPhoneNumberStatusService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                id_list = kwargs.get('phone_number_id_list')
+
+                for phone_number_id in id_list:
+                    phone_number = PhoneNumber.objects.get(pk=phone_number_id)
+                    phone_number.phone_number_status_id = kwargs.get('phone_number_status_id')
+                    phone_number.updated_at = datetime.now()
+                    if phone_number.has_changed:
+                        PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
+                                                           user_id=request.user.id, diff=phone_number.diff)
+                    phone_number.save()
+
+        except PhoneNumber.DoesNotExist:
+            raise PhoneNumberNotFound()
+
+
 class DeletePhoneNumberService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -1046,6 +1098,11 @@ class PushToQueueService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         request_phone_number = request.GET.get('phone_number')
         company_name = request.GET.get('company')
+        number_in_distributor = request.GET.get('number_in_distributor')
+        number_left = request.GET.get('number_left')
+        distributor_name = request.GET.get('distributor_name')
+        lock_telco = request.GET.get('lock_telco')
+        proxy = request.GET.get('proxy')
         company = Company.objects.filter(name__iexact=company_name, deleted_at__isnull=True).first()
         if not company:
             return
@@ -1084,7 +1141,12 @@ class PushToQueueService(BaseService):
                 init_payment_date=None,
                 open_payment_date=None,
                 operate_payment_date=None,
-                other_payment_date=None
+                other_payment_date=None,
+                number_in_distributor=number_in_distributor,
+                number_left=number_left,
+                distributor_name=distributor_name,
+                lock_telco=lock_telco,
+                proxy=proxy
             )
 
         phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,

@@ -731,6 +731,30 @@ class BulkUpdatePhoneNumberStatusView(BaseAPIView):
         return self.get_response()
 
 
+class UpdateListPhoneNumberStatusView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.UpdateListPhoneNumberStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='UpdateListPhoneNumberStatus',
+        operation_description='UpdateListPhoneNumberStatus',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.UpdateListPhoneNumberStatusResponseSerializer,
+            exceptions.OrderNotFound.code: exceptions.OrderNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.UpdateListPhoneNumberStatusService()
+        results = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=phone_number_serializer.UpdateListPhoneNumberStatusResponseSerializer)
+
+
 class DeletePhoneNumberView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, PhoneNumberEditPermission]

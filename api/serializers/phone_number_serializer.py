@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from api.const import PRODUCT_PAYMENT_METHOD
 from api.models.phone_number import MainPhoneNumber, PhoneNumber, Provider, Legal, PhoneNumberStatus, PhoneNumberClient, \
@@ -311,13 +312,30 @@ class DeletePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
 ########
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
+    # def get_age(self, phone_number):
+    #     if phone_number.active_date is None:
+    #         return 0
+    #
+    #     if phone_number.cancel_date is None:
+    #         return (datetime.today() - phone_number.active_date).days + 1
+    #     return (phone_number.cancel_date - phone_number.active_date).days + 1
+    #
+
+    def get_lock_histories(self, phone_number):
+        history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number_id=phone_number.id).order_by(
+            'id')[:5]
+        return PhoneNumberLockHistorySerializer(history_list, many=True).data
+
+    lock_histories = serializers.SerializerMethodField(source='get_lock_histories')
+
     class Meta:
         model = PhoneNumber
         fields = ['id', 'phone_number', 'company', 'main_phone_number', 'provider', 'legal', 'phone_number_client',
                   'phone_number_status', 'pickup_date', 'brand', 'lock_provider', 'lock_count', 'phone_number_avg_age',
                   'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note',
                   'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date',
-                  'client_use_date']
+                  'client_use_date', 'lock_histories', 'number_in_distributor', 'number_left', 'distributor_name',
+                  'lock_telco', 'proxy']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):
@@ -401,7 +419,8 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
     provider_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     legal_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     phone_number_client_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
-    phone_number_status_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
+    phone_number_status_id_list = serializers.ListField(child=serializers.IntegerField(), required=False,
+                                                        allow_null=True)
     phone_number_avg_age = serializers.FloatField(required=False, allow_null=True)
     lock_count = serializers.IntegerField(required=False, allow_null=True)
     fee_type_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
@@ -518,4 +537,13 @@ class BulkUpdatePhoneNumberStatusRequestSerializer(BasePagingSerializer):
 
 
 class BulkUpdatePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class UpdateListPhoneNumberStatusRequestSerializer(serializers.Serializer):
+    phone_number_id_list = serializers.ListField(child=serializers.IntegerField())
+    phone_number_status_id = serializers.IntegerField()
+
+
+class UpdateListPhoneNumberStatusResponseSerializer(BaseResponseSerializer):
     pass

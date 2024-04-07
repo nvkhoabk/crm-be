@@ -66,7 +66,7 @@ class PhoneNumberStatus(BaseModel):
 
 class PhoneNumber(BaseModel, ModelDiffMixin):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=255, db_index=True, unique=True)
+    phone_number = models.CharField(max_length=255, db_index=True)
     main_phone_number = models.ForeignKey(MainPhoneNumber, on_delete=models.CASCADE)
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE)
     legal = models.ForeignKey(Legal, on_delete=models.CASCADE)
@@ -88,9 +88,17 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     operate_payment_date = models.DateField(null=True)
     other_payment_date = models.DateField(null=True)
     note = models.CharField(max_length=1048, default='')
+    lock_history_id = models.IntegerField(default=0)
+    active_date = models.DateField(null=True)
+    number_in_distributor = models.CharField(max_length=512, default='')
+    number_left = models.CharField(max_length=512, default='')
+    distributor_name = models.CharField(max_length=512, default='')
+    lock_telco = models.CharField(max_length=512, default='')
+    proxy = models.CharField(max_length=512, default='')
 
     class Meta:
         db_table = 'phone_numbers'
+        unique_together = ('company', 'phone_number')
 
 
 class PhoneNumberLockHistory(BaseModel):
