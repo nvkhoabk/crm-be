@@ -223,7 +223,6 @@ class AnnualOrderSerializer(serializers.ModelSerializer):
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
-
     product = ProductSerializer()
     annual_order = AnnualOrderSerializer(source='annualorder')
 
@@ -519,9 +518,11 @@ class ApprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
     accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
 
+
 class CancelApprovedPaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
     accountant_note = serializers.CharField(max_length=128, allow_null=True, allow_blank=True)
+
 
 class DisapprovePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id', required=True)
@@ -564,8 +565,10 @@ class FilterOrderDetailPaymentRequestSerializer(BasePagingSerializer):
     filter = FilterPaymentRequestParamSerializer()
     sum_field = serializers.CharField(max_length=128, default='value')
 
+
 class FilterOrderDetailPaymentResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=OrderDetailPaymentSerializer())
+
 
 class DeletePaymentRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text='Payment id')
@@ -646,5 +649,7 @@ class ExportOrderRequestRecordSerializer(serializers.ModelSerializer):
 
 class ExportOrderRequestSerializer(FilterOrderRequestParamSerializer):
     pass
+
+
 class ExportOrderResponseSerializer(BaseResponseSerializer):
     data = ExportOrderRequestRecordSerializer()

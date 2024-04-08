@@ -248,7 +248,6 @@ class DeleteProviderView(BaseAPIView):
                                  serializer=phone_number_serializer.DeleteProviderResponseSerializer)
 
 
-
 class CreateLegalView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
@@ -367,7 +366,6 @@ class DeleteLegalView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=result, request=request,
                                  serializer=phone_number_serializer.DeleteLegalResponseSerializer)
-
 
 
 class CreatePhoneNumberClientView(BaseAPIView):
@@ -490,7 +488,6 @@ class DeletePhoneNumberClientView(BaseAPIView):
                                  serializer=phone_number_serializer.DeletePhoneNumberClientResponseSerializer)
 
 
-
 class CreatePhoneNumberStatusView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
@@ -609,7 +606,6 @@ class DeletePhoneNumberStatusView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=result, request=request,
                                  serializer=phone_number_serializer.DeletePhoneNumberStatusResponseSerializer)
-
 
 
 class CreatePhoneNumberView(BaseAPIView):
@@ -779,7 +775,6 @@ class DeletePhoneNumberView(BaseAPIView):
                                  serializer=phone_number_serializer.DeletePhoneNumberResponseSerializer)
 
 
-
 class CreatePhoneNumberMonthlyFeeView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
@@ -937,3 +932,45 @@ class PushToQueueView(BaseAPIView):
         service = phone_number_service.PushToQueueService()
         service.serve(request, cookies, *args, **kwargs)
         return self.get_response()
+
+
+class ImportPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.ImportPhoneNumberRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='import phone number',
+        operation_description='Import phone number from excel file',
+        request_body=serializer_class,
+        responses={
+            0: phone_number_serializer.ImportPhoneNumberResponseSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.ImportPhoneNumberService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=phone_number_serializer.ImportPhoneNumberResponseSerializer)
+
+
+class ConfirmImportPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
+    serializer_class = phone_number_serializer.ConfirmImportPhoneNumberRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['Order'],
+        operation_id='confirm phone number',
+        operation_description='confirm import phone number from excel file',
+        request_body=serializer_class,
+        responses={
+            0: phone_number_serializer.ConfirmImportPhoneNumberRequestSerializer
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.ConfirmImportPhoneNumberService()
+        results = service.serve(request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=phone_number_serializer.ImportPhoneNumberResponseSerializer)

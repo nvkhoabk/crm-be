@@ -322,7 +322,8 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
     #
 
     def get_lock_histories(self, phone_number):
-        history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number_id=phone_number.id).order_by(
+        history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+                                                             phone_number_id=phone_number.id).order_by(
             'id')[:5]
         return PhoneNumberLockHistorySerializer(history_list, many=True).data
 
@@ -546,4 +547,50 @@ class UpdateListPhoneNumberStatusRequestSerializer(serializers.Serializer):
 
 
 class UpdateListPhoneNumberStatusResponseSerializer(BaseResponseSerializer):
+    pass
+
+
+class PhoneNumberFileSerializer(serializers.Serializer):
+    id = serializers.CharField(required=False)
+    phone_number = serializers.CharField(max_length=255)
+    main_phone_number = serializers.CharField()
+    provider = serializers.CharField()
+    legal = serializers.CharField()
+    phone_number_client = serializers.CharField(allow_null=True, required=False)
+    phone_number_status = serializers.CharField()
+    pickup_date = serializers.DateField()
+    cancel_date = serializers.DateField(allow_null=True)
+    init_fee = serializers.FloatField(default=0)
+    operate_fee = serializers.FloatField(default=0)
+    open_fee = serializers.FloatField(default=0)
+    other_fee = serializers.FloatField(default=0)
+    init_payment_date = serializers.DateField()
+    open_payment_date = serializers.DateField()
+    operate_payment_date = serializers.DateField()
+    other_payment_date = serializers.DateField()
+    note = serializers.CharField(max_length=1048, default='', allow_blank=True)
+    error_codes = serializers.ListField(child=serializers.IntegerField())
+    row_number = serializers.IntegerField()
+
+
+class ImportPhoneNumberRecordSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    rows = serializers.ListField(child=PhoneNumberFileSerializer())
+
+
+class ImportPhoneNumberResponseSerializer(BaseResponseSerializer):
+    data = ImportPhoneNumberRecordSerializer()
+
+
+class ImportPhoneNumberRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    file = serializers.FileField(allow_empty_file=False)
+
+
+class ConfirmImportPhoneNumberRequestSerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    id = serializers.IntegerField()
+
+
+class ConfirmImportPhoneNumberResponseSerializer(BaseResponseSerializer):
     pass

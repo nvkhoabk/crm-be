@@ -1207,15 +1207,15 @@ class ImportPhoneNumberService(BaseService):
             'phone_number_status': str(rows[6].value).strip(),
             'pickup_date': str(rows[7].value).strip(),
             'cancel_date': str(rows[8].value).strip(),
-            'init_fee': str(rows[8].value).strip(),
-            'operate_fee': str(rows[8].value).strip(),
-            'open_fee': str(rows[8].value).strip(),
-            'other_fee': str(rows[8].value).strip(),
-            'init_payment_date': str(rows[8].value).strip(),
-            'open_payment_date': str(rows[8].value).strip(),
-            'operate_payment_date': str(rows[8].value).strip(),
-            'other_payment_date': str(rows[8].value).strip(),
-            'note': str(rows[8].value).strip()
+            'init_fee': str(rows[9].value).strip(),
+            'operate_fee': str(rows[10].value).strip(),
+            'open_fee': str(rows[11].value).strip(),
+            'other_fee': str(rows[12].value).strip(),
+            'init_payment_date': str(rows[13].value).strip(),
+            'open_payment_date': str(rows[14].value).strip(),
+            'operate_payment_date': str(rows[15].value).strip(),
+            'other_payment_date': str(rows[16].value).strip(),
+            'note': str(rows[17].value).strip()
         }
 
     def validate_data(self, data, company_id):
@@ -1244,7 +1244,7 @@ class ImportPhoneNumberService(BaseService):
         return error_codes
 
     def validate_phone_format(self, row):
-        phone = str(row['phone']).strip()
+        phone = str(row['phone_number']).strip()
         if phone == '':
             return [vec.InvalidPhoneFormat.code]
 
@@ -1362,7 +1362,7 @@ class ImportPhoneNumberService(BaseService):
         if not init_fee.isnumeric():
             error_codes.append(vec.InitFeeIsNotNumeric.code)
 
-        if int(init_fee) == 0:
+        if float(init_fee) == 0:
             error_codes.append(vec.InitFeeIsZero.code)
 
         if operate_fee == '':
@@ -1371,7 +1371,7 @@ class ImportPhoneNumberService(BaseService):
         if not operate_fee.isnumeric():
             error_codes.append(vec.OperateFeeIsNotNumeric.code)
 
-        if int(operate_fee) == 0:
+        if float(operate_fee) == 0:
             error_codes.append(vec.OperateFeeIsZero.code)
 
         return error_codes
@@ -1420,7 +1420,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                                                                            company_id=kwargs['company_id']).first()
                         phone_number = PhoneNumber(
                             phone_number=data_record['phone_number'],
-                            main_phone_number=phone_number,
+                            main_phone_number=main_phone_number,
                             provider=provider,
                             legal=legal,
                             phone_number_client=phone_number_client,
