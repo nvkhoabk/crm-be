@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 
 from api.const import PAYMENT_STATUS
@@ -65,6 +67,16 @@ class PhoneNumberStatus(BaseModel):
 
 
 class PhoneNumber(BaseModel, ModelDiffMixin):
+    def set_lock_provider(self, provider):
+        current_lock = '{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}' if self.lock_provider == '' else self.lock_provider
+        current_lock = json.loads(current_lock)
+        if provider in current_lock:
+            current_lock[provider] = True
+            self.lock_provider = json.dumps(current_lock)
+            return
+
+        print('Not found provider')
+
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=255, db_index=True)
     main_phone_number = models.ForeignKey(MainPhoneNumber, on_delete=models.CASCADE)

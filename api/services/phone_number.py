@@ -1124,7 +1124,7 @@ class PushToQueueService(BaseService):
             if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
                 return
 
-            phone_number = PhoneNumber.objects.create(
+            phone_number = PhoneNumber(
                 company=company,
                 phone_number=request_phone_number,
                 main_phone_number=main_phone_number,
@@ -1134,7 +1134,7 @@ class PushToQueueService(BaseService):
                 phone_number_status=phone_number_status,
                 pickup_date=datetime.now(),
                 brand='',
-                lock_provider='',
+                lock_provider='{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}',
                 lock_count=0,
                 phone_number_avg_age=0,
                 cancel_date=None,
@@ -1149,6 +1149,15 @@ class PushToQueueService(BaseService):
                 proxy=proxy
             )
 
+            PhoneNumber.objects.create(phone_number)
+        else:
+            phone_number.number_in_distributor = number_in_distributor
+            phone_number.number_left = number_left
+            phone_number.distributor_name = distributor_name
+            phone_number.lock_telco = lock_telco
+            phone_number.proxy = proxy
+
+        phone_number.set_lock_provider(lock_telco)
         phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,
                                                                deleted_at__isnull=True).first()
         if not phone_number_status:
