@@ -1213,18 +1213,20 @@ class ImportPhoneNumberService(BaseService):
             'provider': str(rows[3].value).strip(),
             'legal': str(rows[4].value).strip(),
             'phone_number_client': str(rows[5].value).strip(),
-            'phone_number_status': str(rows[6].value).strip(),
-            'pickup_date': str(rows[7].value).strip(),
-            'cancel_date': str(rows[8].value).strip(),
-            'init_fee': str(rows[9].value).strip(),
-            'operate_fee': str(rows[10].value).strip(),
-            'open_fee': str(rows[11].value).strip(),
-            'other_fee': str(rows[12].value).strip(),
-            'init_payment_date': str(rows[13].value).strip(),
-            'open_payment_date': str(rows[14].value).strip(),
-            'operate_payment_date': str(rows[15].value).strip(),
-            'other_payment_date': str(rows[16].value).strip(),
-            'note': str(rows[17].value).strip()
+            'brand': str(rows[6].value).strip(),
+            'lock_provider': '',
+            'phone_number_status': str(rows[7].value).strip(),
+            'pickup_date': str(rows[8].value).strip(),
+            'cancel_date': str(rows[9].value).strip(),
+            'init_fee': str(rows[10].value).strip(),
+            'operate_fee': str(rows[11].value).strip(),
+            'open_fee': str(rows[12].value).strip(),
+            'other_fee': str(rows[13].value).strip(),
+            'init_payment_date': str(rows[14].value).strip(),
+            'open_payment_date': str(rows[15].value).strip(),
+            'operate_payment_date': str(rows[16].value).strip(),
+            'other_payment_date': str(rows[17].value).strip(),
+            'note': str(rows[18].value).strip()
         }
 
     def validate_data(self, data, company_id):
@@ -1271,7 +1273,7 @@ class ImportPhoneNumberService(BaseService):
         phone = str(row['phone_number']).strip()
 
         entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
-        if entity is None:
+        if entity is not None:
             return [vec.PhoneNumberDuplicated.code]
 
         return []
@@ -1368,7 +1370,7 @@ class ImportPhoneNumberService(BaseService):
         if init_fee == '':
             error_codes.append(vec.InitFeeIsEmpty.code)
 
-        if not init_fee.isnumeric():
+        if not self.isNumber(init_fee):
             error_codes.append(vec.InitFeeIsNotNumeric.code)
 
         if float(init_fee) == 0:
@@ -1377,7 +1379,7 @@ class ImportPhoneNumberService(BaseService):
         if operate_fee == '':
             error_codes.append(vec.OperateFeeIsEmpty.code)
 
-        if not operate_fee.isnumeric():
+        if not self.isNumber(operate_fee):
             error_codes.append(vec.OperateFeeIsNotNumeric.code)
 
         if float(operate_fee) == 0:
@@ -1385,6 +1387,12 @@ class ImportPhoneNumberService(BaseService):
 
         return error_codes
 
+    def isNumber(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
 
 class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
