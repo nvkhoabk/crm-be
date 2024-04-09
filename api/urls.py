@@ -356,6 +356,8 @@ urlpatterns = [
                        name='phone_number.bulk_update_status'),
     path('phone_number/update_list_phone_number_status/', phone_number.UpdateListPhoneNumberStatusView.as_view(),
        name='phone_number.update_list_phone_number_status'),
+    path('phone_number/get_statistic_phone_number/', phone_number.GetStatisticPhoneNumberView.as_view(),
+       name='phone_number.get_statistic_phone_number'),
     path('phone_number/import_phone_number/', phone_number.ImportPhoneNumberView.as_view(), name='phone_number.import_phone_number'),
     path('phone_number/confirm_import_phone_number/', phone_number.ConfirmImportPhoneNumberView.as_view(), name='phone_number.confirm_import_phone_number'),
 ] + static('files/', document_root=Const.FILE_ROOT)

@@ -727,6 +727,30 @@ class BulkUpdatePhoneNumberStatusView(BaseAPIView):
         return self.get_response()
 
 
+class GetStatisticPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.FilterPhoneNumberRequestSerializer
+    pagination_class = False
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='GetStatisticPhoneNumber',
+        operation_description='GetStatisticPhoneNumber',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.GetStatisticPhoneNumberResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.GetStatisticPhoneNumberService()
+        results = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=phone_number_serializer.GetStatisticPhoneNumberResponseSerializer)
+
+
 class UpdateListPhoneNumberStatusView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated]

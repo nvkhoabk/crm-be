@@ -107,6 +107,7 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     distributor_name = models.CharField(max_length=512, default='')
     lock_telco = models.CharField(max_length=512, default='')
     proxy = models.CharField(max_length=512, default='')
+    pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_column='pic_id')
 
     class Meta:
         db_table = 'phone_numbers'

@@ -7,7 +7,7 @@ from django.db.models import Q
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.models.data import ImportOrderRecords
-from api.models.organization import UserRole, Company
+from api.models.organization import UserRole, Company, Department, Role
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
     PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity, PhoneNumberLockHistory
 from api.models.product import Product
@@ -836,12 +836,19 @@ class UpdatePhoneNumberService(BaseService):
                 new_status_id = kwargs['phone_number_status_id']
                 phone_number.phone_number_status_id = kwargs['phone_number_status_id']
                 checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
-                                                                company_id=phone_number.company_id,
-                                                                deleted_at__isnull=True)
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
+                add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
                 cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
-                                                              company_id=phone_number.company_id,
-                                                              deleted_at__isnull=True)
-                if old_status_id == checking_status.id or new_status_id == checking_status.id:
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
+                trigger_status_list = [checking_status.id, add_new_status.id]
+                if old_status_id in trigger_status_list:
+                    phone_number.pic = request.user
+
+                if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
                     trigger_update_phone_number_queue = True
                 if new_status_id == cancel_status.id:
                     phone_number.cancel_date = datetime.today()
@@ -1061,6 +1068,65 @@ class ImportFeeService(BaseService):
             phone_number_obj.save()
 
 
+class GetStatisticPhoneNumberService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        service = FilterPhoneNumberService()
+        phone_numbers = service.serve(request, cookies, *args, **kwargs)
+
+        res = {
+            'age_avg': 0,
+            'total_init_fee': 0,
+            'total_operate_fee': 0,
+            'total_open_fee': 0,
+            'total_other_fee': 0,
+            'technical_staff': []
+        }
+
+        technical_staff_statistic = {}
+
+        departments = Department.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                                department_name='Phòng Kỹ Thuật');
+        if departments:
+            roles = Role.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                        department=departments.first())
+            user_roles = UserRole.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                                 role_id__in=roles.values_list('id', flat=True))
+            for user_role in user_roles:
+                technical_staff_statistic[user_role.user.username] = 0
+
+        for phone_number in phone_numbers:
+            if phone_number.pic and phone_number.pic.username in technical_staff_statistic:
+                technical_staff_statistic[phone_number.pic.username] += 1
+            res['total_init_fee'] += phone_number.init_fee
+            res['total_operate_fee'] += phone_number.operate_fee
+            res['total_open_fee'] += phone_number.operate_fee
+            res['total_other_fee'] += phone_number.other_fee
+            res['age_avg'] += self.calculate_age(phone_number)
+
+        if res['age_avg']:
+            res['age_avg'] = res['age_avg'] / len(phone_numbers)
+        for key, value in technical_staff_statistic.items():
+            res['technical_staff'].append({
+                'user': key,
+                'count': value
+            })
+
+        return res
+
+    def calculate_age(self, phone_number):
+        if not phone_number.active_date:
+            return 0
+
+        last_date = phone_number.cancel_date if phone_number.cancel_date else datetime.today()
+        return (last_date.date() - phone_number.active_date).days + 1
+
+
 class UpdateListPhoneNumberStatusService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -1190,6 +1256,7 @@ class PushToQueueService(BaseService):
             phone_number.proxy = proxy
 
         phone_number.set_lock_provider(lock_telco)
+        phone_number.save()
         phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,
                                                                deleted_at__isnull=True).first()
         if not phone_number_status:

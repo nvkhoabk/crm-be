@@ -550,6 +550,24 @@ class UpdateListPhoneNumberStatusResponseSerializer(BaseResponseSerializer):
     pass
 
 
+class TechnicalStaffStatisticSerializer(serializers.Serializer):
+    user = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class StatisticPhoneNumberSerializer(serializers.Serializer):
+    age_avg = serializers.FloatField()
+    total_init_fee = serializers.FloatField()
+    total_operate_fee = serializers.FloatField()
+    total_open_fee = serializers.FloatField()
+    total_other_fee = serializers.FloatField()
+    technical_staff = serializers.ListField(child=TechnicalStaffStatisticSerializer())
+
+
+class GetStatisticPhoneNumberResponseSerializer(BaseResponseSerializer):
+    data = StatisticPhoneNumberSerializer()
+
+
 class PhoneNumberFileSerializer(serializers.Serializer):
     id = serializers.CharField(required=False)
     phone_number = serializers.CharField(max_length=255)
