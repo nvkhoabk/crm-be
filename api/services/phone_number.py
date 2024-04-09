@@ -6,6 +6,7 @@ from django.db.models import Q
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.const import IMPORT_TYPE
 from api.models.data import ImportOrderRecords
 from api.models.organization import UserRole, Company, Department, Role
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
@@ -1296,11 +1297,11 @@ class ImportPhoneNumberService(BaseService):
                 row = worksheet.row(curr_row)
                 data_record = self.rowParser(row)
                 error_codes = []
-                if type == 'IMPORT_NEW':
+                if type == IMPORT_TYPE.IMPORT_NEW:
                     error_codes = self.validate_data(data_record, kwargs['company_id'])
-                if type == 'IMPORT_STATUS':
+                if type == IMPORT_TYPE.IMPORT_STATUS:
                     error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
-                if type == 'IMPORT_FEE':
+                if type == IMPORT_TYPE.IMPORT_FEE:
                     error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
                 if error_codes:
                     data_record['error_codes'] = error_codes
@@ -1552,17 +1553,17 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                     curr_row += 1
                     row = worksheet.row(curr_row)
                     data_record = self.rowParser(row)
-                    if type == 'IMPORT_NEW':
+                    if type == IMPORT_TYPE.IMPORT_NEW:
                         error_codes = self.validate_data(data_record, kwargs['company_id'])
                         if not error_codes:
                             self.import_new(args, cookies, create_phone_number_service, data_record, kwargs, request)
 
-                    if type == 'IMPORT_STATUS':
+                    if type == IMPORT_TYPE.IMPORT_STATUS:
                         error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
                         if not error_codes:
                             self.import_status(args, cookies, import_status_service, data_record, kwargs, request)
 
-                    if type == 'IMPORT_FEE':
+                    if type == IMPORT_TYPE.IMPORT_FEE:
                         error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
                         if not error_codes:
                             self.import_fee(args, cookies, import_fee_service, data_record, kwargs, request)
