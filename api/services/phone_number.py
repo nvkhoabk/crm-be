@@ -836,11 +836,11 @@ class UpdatePhoneNumberService(BaseService):
                 new_status_id = kwargs['phone_number_status_id']
                 phone_number.phone_number_status_id = kwargs['phone_number_status_id']
                 checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                                company_id=phone_number.company_id,
+                                                                deleted_at__isnull=True)
                 cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                              company_id=phone_number.company_id,
+                                                              deleted_at__isnull=True)
                 if old_status_id == checking_status.id or new_status_id == checking_status.id:
                     trigger_update_phone_number_queue = True
                 if new_status_id == cancel_status.id:
@@ -1029,6 +1029,38 @@ class BulkUpdateStatusService(BaseService):
         return phone_numbers
 
 
+class ImportStatusService(BaseService):
+    def serve(self, status, phone_number, company_id, request):
+        phone_number_obj = PhoneNumber.objects.get(phone_number__iexact=phone_number, company_id=company_id)
+        if phone_number_obj:
+            phone_number_obj.phone_number_status_id = status
+            phone_number_obj.updated_at = datetime.now()
+            if phone_number_obj.has_changed:
+                PhoneNumberActivity.objects.create(phone_number=phone_number_obj, company=phone_number_obj.company,
+                                                   user_id=request.user.id, diff=phone_number_obj.diff)
+            phone_number_obj.save()
+
+
+class ImportFeeService(BaseService):
+    def serve(self, data_record, company_id, request):
+        phone_number_obj = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
+                                                   company_id=company_id)
+        if phone_number_obj:
+            phone_number_obj.init_fee = data_record['init_fee']
+            phone_number_obj.open_fee = data_record['open_fee']
+            phone_number_obj.other_fee = data_record['other_fee']
+            phone_number_obj.operate_fee = data_record['operate_fee']
+            phone_number_obj.init_payment_date = data_record['init_payment_date']
+            phone_number_obj.operate_payment_date = data_record['operate_payment_date']
+            phone_number_obj.open_payment_date = data_record['open_payment_date']
+            phone_number_obj.other_payment_date = data_record['other_payment_date']
+            phone_number_obj.updated_at = datetime.now()
+            if phone_number_obj.has_changed:
+                PhoneNumberActivity.objects.create(phone_number=phone_number_obj, company=phone_number_obj.company,
+                                                   user_id=request.user.id, diff=phone_number_obj.diff)
+            phone_number_obj.save()
+
+
 class UpdateListPhoneNumberStatusService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
@@ -1180,6 +1212,8 @@ class ImportPhoneNumberService(BaseService):
             if 'company_id' in kwargs and kwargs['company_id'] != user_roles.first().company_id:
                 raise PermissionDenied()
 
+        type = kwargs['type']
+        kwargs.pop('type')
         record = ImportOrderRecords.objects.create(
             **kwargs
         )
@@ -1194,7 +1228,13 @@ class ImportPhoneNumberService(BaseService):
                 curr_row += 1
                 row = worksheet.row(curr_row)
                 data_record = self.rowParser(row)
-                error_codes = self.validate_data(data_record, kwargs['company_id'])
+                error_codes = []
+                if type == 'IMPORT_NEW':
+                    error_codes = self.validate_data(data_record, kwargs['company_id'])
+                if type == 'IMPORT_STATUS':
+                    error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
+                if type == 'IMPORT_FEE':
+                    error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
                 if error_codes:
                     data_record['error_codes'] = error_codes
                     data_record['row_number'] = curr_row
@@ -1243,6 +1283,21 @@ class ImportPhoneNumberService(BaseService):
         error_codes.extend(self.validate_fee(data))
         return error_codes
 
+    def validate_data_import_fee(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_phone_format(data))
+        error_codes.extend(self.validate_not_existed_phone(data, company_id))
+        error_codes.extend(self.validate_date(data))
+        error_codes.extend(self.validate_fee(data))
+        return error_codes
+
+    def validate_data_import_status(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_phone_format(data))
+        error_codes.extend(self.validate_not_existed_phone(data, company_id))
+        error_codes.extend(self.validate_phone_number_status(data, company_id))
+        return error_codes
+
     def validate_id(self, row):
         error_codes = []
         id_str = str(row['id']).strip()
@@ -1275,6 +1330,15 @@ class ImportPhoneNumberService(BaseService):
         entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
         if entity is not None:
             return [vec.PhoneNumberDuplicated.code]
+
+        return []
+
+    def validate_not_existed_phone(self, row, company_id):
+        phone = str(row['phone_number']).strip()
+
+        entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
+        if entity is None:
+            return [vec.PhoneNumberIsNotFound.code]
 
         return []
 
@@ -1312,7 +1376,7 @@ class ImportPhoneNumberService(BaseService):
     def validate_phone_number_client(self, row, company_id):
         phone_number_client = str(row['phone_number_client']).strip()
         entity = PhoneNumberClient.objects.filter(name__iexact=phone_number_client,
-                                      company_id=company_id).first()
+                                                  company_id=company_id).first()
 
         if entity is None:
             return [vec.PhoneNumberClientNotFound.code]
@@ -1394,6 +1458,7 @@ class ImportPhoneNumberService(BaseService):
         except ValueError:
             return False
 
+
 class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         if not request.user.is_superuser:
@@ -1403,12 +1468,14 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                 raise PermissionDenied()
 
         try:
+            type = kwargs['type']
             record = ImportOrderRecords.objects.get(
                 pk=kwargs.get('id')
             )
 
             create_phone_number_service = CreatePhoneNumberService()
-
+            import_status_service = ImportStatusService()
+            import_fee_service = ImportFeeService()
             with record.file.open('r') as excel_file:
                 workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
                 worksheet = workbook.sheet_by_index(0)
@@ -1418,48 +1485,70 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                     curr_row += 1
                     row = worksheet.row(curr_row)
                     data_record = self.rowParser(row)
-                    error_codes = self.validate_data(data_record, kwargs['company_id'])
-                    if not error_codes:
-                        main_phone_number = MainPhoneNumber.objects.filter(name=data_record['main_phone_number'],
-                                                                deleted_at__isnull=True,
-                                                                company_id=kwargs['company_id']).first()
-                        provider = Provider.objects.filter(name=data_record['provider'],
-                                                                           deleted_at__isnull=True,
-                                                                           company_id=kwargs['company_id']).first()
-                        legal = Legal.objects.filter(name=data_record['legal'],
-                                                                           deleted_at__isnull=True,
-                                                                           company_id=kwargs['company_id']).first()
-                        phone_number_client = PhoneNumberClient.objects.filter(name=data_record['phone_number_client'],
-                                                                           deleted_at__isnull=True,
-                                                                           company_id=kwargs['company_id']).first()
-                        phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
-                                                                           deleted_at__isnull=True,
-                                                                           company_id=kwargs['company_id']).first()
-                        phone_number = PhoneNumber(
-                            phone_number=data_record['phone_number'],
-                            main_phone_number=main_phone_number,
-                            provider=provider,
-                            legal=legal,
-                            phone_number_client=phone_number_client,
-                            phone_number_status=phone_number_status,
-                            pickup_date=data_record['pickup_date'],
-                            brand=data_record['brand'],
-                            lock_provider=data_record['lock_provider'],
-                            cancel_date=data_record['cancel_date'],
-                            init_fee=data_record['init_fee'],
-                            operate_fee=data_record['operate_fee'],
-                            open_fee=data_record['open_fee'],
-                            other_fee=data_record['other_fee'],
-                            init_payment_date=data_record['init_payment_date'],
-                            open_payment_date=data_record['open_payment_date'],
-                            operate_payment_date=data_record['operate_payment_date'],
-                            other_payment_date=data_record['other_payment_date'],
-                            note=data_record['note'],
-                            company_id=kwargs['company_id'],
-                            created_at=datetime.today().date())
+                    if type == 'IMPORT_NEW':
+                        error_codes = self.validate_data(data_record, kwargs['company_id'])
+                        if not error_codes:
+                            self.import_new(args, cookies, create_phone_number_service, data_record, kwargs, request)
 
-                        create_phone_number_service.serve(request, cookies, *args,
-                                                          **CreatePhoneNumberRequestSerializer(phone_number).data)
+                    if type == 'IMPORT_STATUS':
+                        error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
+                        if not error_codes:
+                            self.import_status(args, cookies, import_status_service, data_record, kwargs, request)
+
+                    if type == 'IMPORT_FEE':
+                        error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
+                        if not error_codes:
+                            self.import_fee(args, cookies, import_fee_service, data_record, kwargs, request)
 
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
+
+    def import_new(self, args, cookies, create_phone_number_service, data_record, kwargs, request):
+        main_phone_number = MainPhoneNumber.objects.filter(name=data_record['main_phone_number'],
+                                                           deleted_at__isnull=True,
+                                                           company_id=kwargs['company_id']).first()
+        provider = Provider.objects.filter(name=data_record['provider'],
+                                           deleted_at__isnull=True,
+                                           company_id=kwargs['company_id']).first()
+        legal = Legal.objects.filter(name=data_record['legal'],
+                                     deleted_at__isnull=True,
+                                     company_id=kwargs['company_id']).first()
+        phone_number_client = PhoneNumberClient.objects.filter(name=data_record['phone_number_client'],
+                                                               deleted_at__isnull=True,
+                                                               company_id=kwargs['company_id']).first()
+        phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
+                                                               deleted_at__isnull=True,
+                                                               company_id=kwargs['company_id']).first()
+        phone_number = PhoneNumber(
+            phone_number=data_record['phone_number'],
+            main_phone_number=main_phone_number,
+            provider=provider,
+            legal=legal,
+            phone_number_client=phone_number_client,
+            phone_number_status=phone_number_status,
+            pickup_date=data_record['pickup_date'],
+            brand=data_record['brand'],
+            lock_provider=data_record['lock_provider'],
+            cancel_date=data_record['cancel_date'],
+            init_fee=data_record['init_fee'],
+            operate_fee=data_record['operate_fee'],
+            open_fee=data_record['open_fee'],
+            other_fee=data_record['other_fee'],
+            init_payment_date=data_record['init_payment_date'],
+            open_payment_date=data_record['open_payment_date'],
+            operate_payment_date=data_record['operate_payment_date'],
+            other_payment_date=data_record['other_payment_date'],
+            note=data_record['note'],
+            company_id=kwargs['company_id'],
+            created_at=datetime.today().date())
+        create_phone_number_service.serve(request, cookies, *args,
+                                          **CreatePhoneNumberRequestSerializer(phone_number).data)
+
+    def import_status(self, args, cookies, import_status_service, data_record, kwargs, request):
+        phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
+                                                               deleted_at__isnull=True,
+                                                               company_id=kwargs['company_id']).first()
+        import_status_service.serve(phone_number_status, data_record['phone_number'], kwargs['company_id'], request)
+
+    def import_fee(self, args, cookies, import_fee_service, data_record, kwargs, request):
+        import_fee_service.serve(data_record, kwargs['company_id'], request)

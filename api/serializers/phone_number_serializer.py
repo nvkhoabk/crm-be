@@ -585,11 +585,13 @@ class ImportPhoneNumberResponseSerializer(BaseResponseSerializer):
 class ImportPhoneNumberRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     file = serializers.FileField(allow_empty_file=False)
+    type = serializers.CharField()
 
 
 class ConfirmImportPhoneNumberRequestSerializer(serializers.Serializer):
     company_id = serializers.IntegerField()
     id = serializers.IntegerField()
+    type = serializers.CharField()
 
 
 class ConfirmImportPhoneNumberResponseSerializer(BaseResponseSerializer):

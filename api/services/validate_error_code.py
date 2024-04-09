@@ -162,3 +162,7 @@ class OperateFeeIsNotNumeric:
 class OperateFeeIsZero:
     code = 33
     msg = ''
+
+class PhoneNumberIsNotFound:
+    code = 34
+    msg = 'Phone number is not found'
