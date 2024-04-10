@@ -785,6 +785,33 @@ class FilterSaleUserView(BaseAPIView):
         return self.get_response(results=users, request=serializer.validated_data, serializer=manage_serializer.FilterUserResponseSerializer)
 
 
+class FilterTechnicalUserView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = []
+    serializer_class = manage_serializer.FilterSaleUserRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['Manage User'],
+        operation_id='Filter technical user',
+        operation_description='Filter technical user',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: manage_serializer.FilterUserResponseSerializer,
+            exceptions.ManageCompanyNotFound.code: exceptions.ManageCompanyNotFound.msg,
+            exceptions.ManageDepartmentNotFound.code: exceptions.ManageDepartmentNotFound.msg,
+            exceptions.ManageRoleNotFound.code: exceptions.ManageRoleNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        filter_user_service = manage_service.FilterTechnicalUserService()
+        users = filter_user_service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=users, request=serializer.validated_data,
+                                 serializer=manage_serializer.FilterUserResponseSerializer)
+
+
 class UpdateUserView(BaseAPIView):
     authentication_classes = []
     permission_classes = []

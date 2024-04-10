@@ -1035,6 +1035,26 @@ class FilterSaleUserService(BaseService):
         return users
 
 
+class FilterTechnicalUserService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+        departments = Department.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                                department_name='Phòng Kỹ Thuật')
+        if departments:
+            roles = Role.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                        department=departments.first())
+            user_roles = UserRole.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+                                                 role_id__in=roles.values_list('id', flat=True))
+            users = User.objects.filter(id__in=user_roles.values_list('user__id', flat=True))
+            return users
+
+        return []
+
+
 class UpdateUserService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         with transaction.atomic():

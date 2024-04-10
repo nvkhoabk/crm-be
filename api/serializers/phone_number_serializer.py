@@ -336,7 +336,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                   'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note',
                   'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date',
                   'client_use_date', 'lock_histories', 'number_in_distributor', 'number_left', 'distributor_name',
-                  'lock_telco', 'proxy']
+                  'lock_telco', 'proxy', 'pic_id', 'active_date']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):
@@ -425,6 +425,7 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
     phone_number_avg_age = serializers.FloatField(required=False, allow_null=True)
     lock_count = serializers.IntegerField(required=False, allow_null=True)
     fee_type_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
+    pics = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
 
 
 class FilterPhoneNumberRequestSerializer(BasePagingSerializer):

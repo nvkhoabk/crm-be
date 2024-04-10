@@ -977,10 +977,17 @@ class FilterPhoneNumberService(BaseService):
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
-                   'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count']
+                   'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count',
+                   'pics']
         for key, value in params.items():
             if key not in filters:
                 continue
+
+            if key == 'pics' and value is not None and value:
+                if None in value:
+                    query_set = query_set.filter(Q(pic__isnull=True) | Q(pic__in=value))
+                else:
+                    query_set = query_set.filter(pic__in=value)
 
             if key == 'phone_number':
                 query_set = query_set.filter(
@@ -1016,7 +1023,7 @@ class FilterPhoneNumberService(BaseService):
                         lock_count__gt=5,
                     )
 
-        return query_set
+        return query_set.order_by('-id')
 
 
 class BulkUpdateStatusService(BaseService):
