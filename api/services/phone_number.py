@@ -1335,8 +1335,8 @@ class ImportPhoneNumberService(BaseService):
             'cancel_date': str(rows[9].value).strip(),
             'init_fee': str(rows[10].value).strip(),
             'operate_fee': str(rows[11].value).strip(),
-            'open_fee': str(rows[12].value).strip(),
-            'other_fee': str(rows[13].value).strip(),
+            'open_fee': str(rows[12].value).strip() if str(rows[12].value).strip() else 0,
+            'other_fee': str(rows[13].value).strip() if str(rows[13].value).strip() else 0,
             'init_payment_date': str(rows[14].value).strip(),
             'open_payment_date': str(rows[15].value).strip(),
             'operate_payment_date': str(rows[16].value).strip(),
@@ -1450,11 +1450,12 @@ class ImportPhoneNumberService(BaseService):
 
     def validate_phone_number_client(self, row, company_id):
         phone_number_client = str(row['phone_number_client']).strip()
-        entity = PhoneNumberClient.objects.filter(name__iexact=phone_number_client,
-                                                  company_id=company_id).first()
+        if phone_number_client:
+            entity = PhoneNumberClient.objects.filter(name__iexact=phone_number_client,
+                                                      company_id=company_id).first()
 
-        if entity is None:
-            return [vec.PhoneNumberClientNotFound.code]
+            if entity is None:
+                return [vec.PhoneNumberClientNotFound.code]
 
         return []
 
@@ -1479,23 +1480,22 @@ class ImportPhoneNumberService(BaseService):
     def validate_date(self, row):
         error_codes = []
         pickup_date = str(row['pickup_date']).strip()
-        cancel_date = str(row['cancel_date']).strip()
         init_payment_date = str(row['init_payment_date']).strip()
         operate_payment_date = str(row['operate_payment_date']).strip()
 
         if not self.validate_date_format_YYYYMMDD(pickup_date):
             error_codes.append(vec.PickupDateWrongFormat.code)
-        if not self.validate_date_format_YYYYMMDD(cancel_date):
-            error_codes.append(vec.CancelDateWrongFormat.code)
         if not self.validate_date_format_YYYYMMDD(init_payment_date):
             error_codes.append(vec.InitPaymentDateWrongFormat.code)
         if not self.validate_date_format_YYYYMMDD(operate_payment_date):
             error_codes.append(vec.OperatePaymentDateWrongFormat.code)
 
+        cancel_date = str(row['cancel_date']).strip()
+        if cancel_date and not self.validate_date_format_YYYYMMDD(cancel_date):
+            error_codes.append(vec.CancelDateWrongFormat.code)
         open_payment_date = str(row['open_payment_date']).strip()
         if open_payment_date and self.validate_date_format_YYYYMMDD(open_payment_date) == False:
             error_codes.append(vec.OpenPaymentDateWrongFormat.code)
-
         other_payment_date = str(row['other_payment_date']).strip()
         if other_payment_date and self.validate_date_format_YYYYMMDD(other_payment_date) == False:
             error_codes.append(vec.OpenPaymentDateWrongFormat.code)
