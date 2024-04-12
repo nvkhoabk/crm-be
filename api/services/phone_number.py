@@ -846,7 +846,10 @@ class UpdatePhoneNumberService(BaseService):
                 cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
                                                          company_id=phone_number.company_id,
                                                          deleted_at__isnull=True)
-                trigger_status_list = [checking_status.id, add_new_status.id]
+                retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                         company_id=phone_number.company_id,
+                                                         deleted_at__isnull=True)
+                trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
                 if old_status_id in trigger_status_list:
                     phone_number.pic = request.user
 
