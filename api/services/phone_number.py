@@ -14,7 +14,8 @@ from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumbe
 from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
-from api.serializers.phone_number_serializer import CreatePhoneNumberRequestSerializer
+from api.serializers.phone_number_serializer import CreatePhoneNumberRequestSerializer, \
+    CreatePhoneNumberMonthlyFeeRequestSerializer
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPhoneNumberDuplicated,
@@ -1302,14 +1303,17 @@ class ImportPhoneNumberService(BaseService):
             while curr_row < num_rows:
                 curr_row += 1
                 row = worksheet.row(curr_row)
-                data_record = self.rowParser(row)
                 error_codes = []
                 if type == IMPORT_TYPE.IMPORT_NEW:
+                    data_record = self.rowParser(row)
                     error_codes = self.validate_data(data_record, kwargs['company_id'])
                 if type == IMPORT_TYPE.IMPORT_STATUS:
+                    data_record = self.row_parser_import_status(row)
                     error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
                 if type == IMPORT_TYPE.IMPORT_FEE:
+                    data_record = self.row_parser_import_fee(row)
                     error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
+
                 if error_codes:
                     data_record['error_codes'] = error_codes
                     data_record['row_number'] = curr_row
@@ -1344,6 +1348,25 @@ class ImportPhoneNumberService(BaseService):
             'note': str(rows[18].value).strip()
         }
 
+    def row_parser_import_status(self, rows):
+        return {
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
+            'phone_number': str(rows[1].value).strip(),
+            'phone_number_status': str(rows[2].value).strip()
+        }
+
+
+    def row_parser_import_fee(self, rows):
+        return {
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
+            'phone_number': str(rows[1].value).strip(),
+            'payment_date': str(rows[2].value).strip(),
+            'on_net_fee': str(rows[3].value).strip(),
+            'off_net_fee': str(rows[4].value).strip(),
+            'billing_month': str(rows[5].value).strip() + '-01'
+        }
+
+
     def validate_data(self, data, company_id):
         error_codes = []
         error_codes.extend(self.validate_id(data))
@@ -1362,8 +1385,8 @@ class ImportPhoneNumberService(BaseService):
         error_codes = []
         error_codes.extend(self.validate_phone_format(data))
         error_codes.extend(self.validate_not_existed_phone(data, company_id))
-        error_codes.extend(self.validate_date(data))
-        error_codes.extend(self.validate_fee(data))
+        error_codes.extend(self.validate_monthly_fee_date(data))
+        error_codes.extend(self.validate_monthly_fee(data))
         return error_codes
 
     def validate_data_import_status(self, data, company_id):
@@ -1477,6 +1500,44 @@ class ImportPhoneNumberService(BaseService):
         except ValueError:
             return False
 
+    def validate_monthly_fee_date(self, row):
+        error_codes = []
+        payment_date = str(row['payment_date']).strip()
+        billing_month = str(row['billing_month']).strip()
+
+        if not self.validate_date_format_YYYYMMDD(payment_date):
+            error_codes.append(vec.PaymentDateWrongFormat.code)
+        if not self.validate_date_format_YYYYMMDD(billing_month):
+            error_codes.append(vec.BillingMonthWrongFormat.code)
+
+        return error_codes
+
+
+    def validate_monthly_fee(self, row):
+        error_codes = []
+        on_net_fee = str(row['on_net_fee']).strip()
+        off_net_fee = str(row['off_net_fee']).strip()
+        if on_net_fee == '':
+            error_codes.append(vec.OnNetFeeIsEmpty.code)
+
+        if not self.isNumber(on_net_fee):
+            error_codes.append(vec.OnNetFeeIsNotNumeric.code)
+
+        if float(on_net_fee) == 0:
+            error_codes.append(vec.OnNetFeeIsZero.code)
+
+        if off_net_fee == '':
+            error_codes.append(vec.OffNetFeeIsEmpty.code)
+
+        if not self.isNumber(off_net_fee):
+            error_codes.append(vec.OffNetFeeIsNotNumeric.code)
+
+        if float(off_net_fee) == 0:
+            error_codes.append(vec.OffNetFeeIsZero.code)
+
+        return error_codes
+
+
     def validate_date(self, row):
         error_codes = []
         pickup_date = str(row['pickup_date']).strip()
@@ -1549,8 +1610,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             )
 
             create_phone_number_service = CreatePhoneNumberService()
-            import_status_service = ImportStatusService()
-            import_fee_service = ImportFeeService()
+            create_fee_service = CreatePhoneNumberMonthlyFeeService()
             with record.file.open('r') as excel_file:
                 workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
                 worksheet = workbook.sheet_by_index(0)
@@ -1559,21 +1619,21 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                 while curr_row < num_rows:
                     curr_row += 1
                     row = worksheet.row(curr_row)
-                    data_record = self.rowParser(row)
                     if type == IMPORT_TYPE.IMPORT_NEW:
+                        data_record = self.rowParser(row)
                         error_codes = self.validate_data(data_record, kwargs['company_id'])
                         if not error_codes:
                             self.import_new(args, cookies, create_phone_number_service, data_record, kwargs, request)
-
                     if type == IMPORT_TYPE.IMPORT_STATUS:
+                        data_record = self.row_parser_import_status(row)
                         error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
                         if not error_codes:
-                            self.import_status(args, cookies, import_status_service, data_record, kwargs, request)
-
+                            self.import_status(args, cookies, data_record, kwargs, request)
                     if type == IMPORT_TYPE.IMPORT_FEE:
+                        data_record = self.row_parser_import_fee(row)
                         error_codes = self.validate_data_import_fee(data_record, kwargs['company_id'])
                         if not error_codes:
-                            self.import_fee(args, cookies, import_fee_service, data_record, kwargs, request)
+                            self.import_fee(args, cookies, create_fee_service, data_record, kwargs, request)
 
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
@@ -1619,11 +1679,26 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         create_phone_number_service.serve(request, cookies, *args,
                                           **CreatePhoneNumberRequestSerializer(phone_number).data)
 
-    def import_status(self, args, cookies, import_status_service, data_record, kwargs, request):
+    def import_status(self, args, cookies, data_record, kwargs, request):
         phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
                                                                deleted_at__isnull=True,
                                                                company_id=kwargs['company_id']).first()
-        import_status_service.serve(phone_number_status, data_record['phone_number'], kwargs['company_id'], request)
 
-    def import_fee(self, args, cookies, import_fee_service, data_record, kwargs, request):
-        import_fee_service.serve(data_record, kwargs['company_id'], request)
+        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'])
+        phone_number.phone_number_status = phone_number_status
+        service = UpdatePhoneNumberService()
+
+        service.serve(request, cookies, *args, **vars(phone_number))
+
+    def import_fee(self, args, cookies, create_montly_fee_service, data_record, kwargs, request):
+        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'])
+        new_fee = PhoneNumberMonthlyFee(
+            company_id=kwargs['company_id'],
+            phone_number=phone_number,
+            on_net_fee=data_record['on_net_fee'],
+            off_net_fee=data_record['off_net_fee'],
+            billing_month=data_record['billing_month'],
+            payment_date=data_record['payment_date'],
+        )
+
+        create_montly_fee_service.serve(request, cookies, *args, **CreatePhoneNumberMonthlyFeeRequestSerializer(new_fee).data)

@@ -166,3 +166,43 @@ class OperateFeeIsZero:
 class PhoneNumberIsNotFound:
     code = 34
     msg = 'Phone number is not found'
+
+
+class OnNetFeeIsEmpty:
+    code = 35
+    msg = ''
+
+
+class OnNetFeeIsNotNumeric:
+    code = 36
+    msg = ''
+
+
+class OnNetFeeIsZero:
+    code = 37
+    msg = ''
+
+
+class OffNetFeeIsEmpty:
+    code = 38
+    msg = ''
+
+
+class OffNetFeeIsNotNumeric:
+    code = 39
+    msg = ''
+
+
+class OffNetFeeIsZero:
+    code = 40
+    msg = ''
+
+
+class PaymentDateWrongFormat:
+    code = 41
+    msg = ''
+
+
+class BillingMonthWrongFormat:
+    code = 42
+    msg = ''
