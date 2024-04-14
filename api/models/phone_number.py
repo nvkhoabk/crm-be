@@ -121,6 +121,10 @@ class PhoneNumberLockHistory(BaseModel):
     confirm_lock_date = models.DateField(null=True)
     unlock_lock_date = models.DateField(null=True)
     cancel_date = models.DateField(null=True)
+    viettel_lock_date = models.DateField(null=True)
+    mobifone_lock_date = models.DateField(null=True)
+    vinaphone_lock_date = models.DateField(null=True)
+    other_lock_date = models.DateField(null=True)
 
     class Meta:
         db_table = 'phone_number_lock_histories'

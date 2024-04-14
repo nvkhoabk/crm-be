@@ -16,7 +16,8 @@ class PhoneNumberLockHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PhoneNumberLockHistory
         fields = ['id', 'phone_number', 'company', 'checking_lock_date', 'confirm_lock_date', 'unlock_lock_date',
-                  'cancel_date', 'created_at']
+                  'cancel_date', 'created_at', 'viettel_lock_date', 'mobifone_lock_date', 'vinaphone_lock_date',
+                  'other_lock_date']
 
 
 class MainPhoneNumberSerializer(serializers.ModelSerializer):
@@ -324,7 +325,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
     def get_lock_histories(self, phone_number):
         history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
                                                              phone_number_id=phone_number.id).order_by(
-            'id')[:5]
+            '-id')[:3]
         return PhoneNumberLockHistorySerializer(history_list, many=True).data
 
     lock_histories = serializers.SerializerMethodField(source='get_lock_histories')
@@ -336,7 +337,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                   'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note',
                   'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date',
                   'client_use_date', 'lock_histories', 'number_in_distributor', 'number_left', 'distributor_name',
-                  'lock_telco', 'proxy', 'pic_id', 'active_date']
+                  'lock_telco', 'proxy', 'pic_id', 'active_date', 'lock_history_id']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):
@@ -400,6 +401,10 @@ class UpdatePhoneNumberRequestSerializer(serializers.Serializer):
     operate_payment_date = serializers.DateField(allow_null=True, required=False)
     other_payment_date = serializers.DateField(allow_null=True, required=False)
     note = serializers.CharField(max_length=1048, required=False, default='', allow_blank=True)
+    viettel_lock_date = serializers.DateField(allow_null=True, required=False)
+    mobifone_lock_date = serializers.DateField(allow_null=True, required=False)
+    vinaphone_lock_date = serializers.DateField(allow_null=True, required=False)
+    other_lock_date = serializers.DateField(allow_null=True, required=False)
 
 
 class UpdatePhoneNumberResponseSerializer(BaseResponseSerializer):
@@ -531,6 +536,10 @@ class FilterPhoneNumberActivityRequestSerializer(BasePagingSerializer):
 
 class FilterPhoneNumberActivityResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=PhoneNumberActivitySerializer())
+
+
+class FilterPhoneNumberLockHistoryResponseSerializer(BaseResponseSerializer):
+    data = serializers.ListField(child=PhoneNumberLockHistorySerializer())
 
 
 class BulkUpdatePhoneNumberStatusRequestSerializer(BasePagingSerializer):

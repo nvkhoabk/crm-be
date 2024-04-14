@@ -36,8 +36,8 @@ from asgiref.sync import async_to_sync
 def calculate_lock_information(phone_number):
     locked_status = PhoneNumberStatus.objects.filter(name__iexact='Đang bị khoá', deleted_at__isnull=True,
                                                      company=phone_number.company).first()
-    # active_status = PhoneNumberStatus.objects.filter(name__iexact='Số đạt', deleted_at__isnull=True,
-    #                                                  company=phone_number.company)
+    active_status = PhoneNumberStatus.objects.filter(name__iexact='Số đã mở', deleted_at__isnull=True,
+                                                     company=phone_number.company).first()
 
     if phone_number.phone_number_status_id == locked_status.id and phone_number.lock_history_id == 0:
         lock_history = PhoneNumberLockHistory.objects.create(company=phone_number.company,
@@ -47,7 +47,7 @@ def calculate_lock_information(phone_number):
         phone_number.lock_history_id = lock_history.id
         phone_number.lock_count += 1
 
-    if phone_number.phone_number_status_id != locked_status.id and phone_number.lock_history_id != 0:
+    if phone_number.phone_number_status_id == active_status.id and phone_number.lock_history_id != 0:
         history = PhoneNumberLockHistory.objects.get(pk=phone_number.lock_history_id)
         history.unlock_lock_date = datetime.today()
         history.save()
@@ -908,6 +908,18 @@ class UpdatePhoneNumberService(BaseService):
                                                    user_id=request.user.id, diff=phone_number.diff)
 
             calculate_lock_information(phone_number)
+            if phone_number.lock_history_id != 0:
+                history = PhoneNumberLockHistory.objects.get(pk=phone_number.lock_history_id)
+                if kwargs.get('viettel_lock_date', None) is not None:
+                    history.viettel_lock_date = kwargs['viettel_lock_date']
+                if kwargs.get('mobifone_lock_date', None) is not None:
+                    history.mobifone_lock_date = kwargs['mobifone_lock_date']
+                if kwargs.get('vinaphone_lock_date', None) is not None:
+                    history.vinaphone_lock_date = kwargs['vinaphone_lock_date']
+                if kwargs.get('other_lock_date', None) is not None:
+                    history.other_lock_date = kwargs['other_lock_date']
+                history.save()
+
             phone_number.save()
 
             if trigger_update_phone_number_queue:
@@ -1189,6 +1201,31 @@ class FilterPhoneNumberActivityService(BaseService):
 
         query_set = PhoneNumberActivity.objects.filter(company_id=user_roles.first().company_id,
                                                        deleted_at__isnull=True)
+
+        filters = ['phone_number_id']
+        params = dict(kwargs.get('filter', []))
+        for key, value in params.items():
+            if key not in filters:
+                continue
+
+            if key == 'phone_number_id':
+                query_set = query_set.filter(
+                    phone_number_id=value,
+                ).order_by('-id')
+
+        return query_set
+
+
+class FilterPhoneNumberLockHistoryService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter = {
+            'user': request.user,
+            'deleted_at__isnull': True
+        }
+        user_roles = UserRole.objects.filter(**filter)
+
+        query_set = PhoneNumberLockHistory.objects.filter(company_id=user_roles.first().company_id,
+                                                          deleted_at__isnull=True)
 
         filters = ['phone_number_id']
         params = dict(kwargs.get('filter', []))
