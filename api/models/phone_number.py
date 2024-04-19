@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+from pytz import timezone
 
 from django.contrib.auth import get_user_model
 
@@ -7,6 +9,7 @@ from api.models.base import BaseModel, ModelDiffMixin
 from django.db import models
 
 from api.models.organization import Company
+from crm.settings import TIME_ZONE
 
 User = get_user_model()
 
@@ -72,6 +75,7 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
         current_lock = json.loads(current_lock)
         if provider in current_lock:
             current_lock[provider] = True
+            current_lock['enterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
             self.lock_provider = json.dumps(current_lock)
             return
 
@@ -101,6 +105,14 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     other_payment_date = models.DateField(null=True)
     note = models.CharField(max_length=1048, default='')
     lock_history_id = models.IntegerField(default=0)
+    viettel_lock_history_id = models.IntegerField(default=0)
+    mobifone_lock_history_id = models.IntegerField(default=0)
+    vinaphone_lock_history_id = models.IntegerField(default=0)
+    other_lock_history_id = models.IntegerField(default=0)
+    viettel_lock_count = models.IntegerField(default=0)
+    mobifone_lock_count = models.IntegerField(default=0)
+    vinaphone_lock_count = models.IntegerField(default=0)
+    other_lock_count = models.IntegerField(default=0)
     active_date = models.DateField(null=True)
     number_in_distributor = models.CharField(max_length=512, default='')
     number_left = models.CharField(max_length=512, default='')

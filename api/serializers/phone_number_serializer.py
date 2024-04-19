@@ -313,19 +313,11 @@ class DeletePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
 ########
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
-    # def get_age(self, phone_number):
-    #     if phone_number.active_date is None:
-    #         return 0
-    #
-    #     if phone_number.cancel_date is None:
-    #         return (datetime.today() - phone_number.active_date).days + 1
-    #     return (phone_number.cancel_date - phone_number.active_date).days + 1
-    #
-
     def get_lock_histories(self, phone_number):
-        history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
-                                                             phone_number_id=phone_number.id).order_by(
-            '-id')[:3]
+        id_list = [phone_number.lock_history_id, phone_number.viettel_lock_history_id,
+                   phone_number.mobifone_lock_history_id, phone_number.vinaphone_lock_history_id,
+                   phone_number.other_lock_history_id]
+        history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, id__in=id_list).order_by('-id')
         return PhoneNumberLockHistorySerializer(history_list, many=True).data
 
     lock_histories = serializers.SerializerMethodField(source='get_lock_histories')
@@ -337,7 +329,9 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                   'cancel_date', 'init_fee', 'operate_fee', 'open_fee', 'other_fee', 'created_at', 'note',
                   'init_payment_date', 'open_payment_date', 'operate_payment_date', 'other_payment_date',
                   'client_use_date', 'lock_histories', 'number_in_distributor', 'number_left', 'distributor_name',
-                  'lock_telco', 'proxy', 'pic_id', 'active_date', 'lock_history_id']
+                  'lock_telco', 'proxy', 'pic_id', 'active_date', 'lock_history_id', 'viettel_lock_history_id',
+                  'mobifone_lock_history_id', 'vinaphone_lock_history_id', 'other_lock_history_id',
+                  'viettel_lock_count', 'mobifone_lock_count', 'vinaphone_lock_count', 'other_lock_count']
 
 
 class CreatePhoneNumberRequestSerializer(serializers.Serializer):

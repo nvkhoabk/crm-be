@@ -1,12 +1,12 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import xlrd
 from django.db.models import Q
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
-from api.const import IMPORT_TYPE
+from api.const import IMPORT_TYPE, PHONE_NUMBER_PROVIDER
 from api.models.data import ImportOrderRecords
 from api.models.organization import UserRole, Company, Department, Role
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
@@ -32,26 +32,48 @@ import re
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+from crm.settings import TIME_ZONE
 
-def calculate_lock_information(phone_number):
+
+def calculate_lock_information(phone_number, params):
     locked_status = PhoneNumberStatus.objects.filter(name__iexact='Đang bị khoá', deleted_at__isnull=True,
                                                      company=phone_number.company).first()
     active_status = PhoneNumberStatus.objects.filter(name__iexact='Số đã mở', deleted_at__isnull=True,
                                                      company=phone_number.company).first()
 
     if phone_number.phone_number_status_id == locked_status.id and phone_number.lock_history_id == 0:
-        lock_history = PhoneNumberLockHistory.objects.create(company=phone_number.company,
-                                                             phone_number=phone_number,
-                                                             checking_lock_date=datetime.today(),
-                                                             confirm_lock_date=datetime.today())
-        phone_number.lock_history_id = lock_history.id
-        phone_number.lock_count += 1
+        PhoneNumberLockHistory.objects.create(company=phone_number.company,
+                                              phone_number=phone_number,
+                                              checking_lock_date=datetime.today(),
+                                              confirm_lock_date=datetime.today(),
+                                              viettel_lock_date=params.get('viettel_lock_date', None),
+                                              mobifone_lock_date=params.get('mobifone_lock_date', None),
+                                              vinaphone_lock_date=params.get('vinaphone_lock_date', None),
+                                              other_lock_date=params.get('other_lock_date', None))
 
     if phone_number.phone_number_status_id == active_status.id and phone_number.lock_history_id != 0:
         history = PhoneNumberLockHistory.objects.get(pk=phone_number.lock_history_id)
         history.unlock_lock_date = datetime.today()
         history.save()
         phone_number.lock_history_id = 0
+        phone_number.lock_provider = ''
+
+    lock_histories = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number)
+    phone_number.lock_count = lock_histories.count()
+    phone_number.viettel_lock_count = lock_histories.filter(viettel_lock_date__isnull=False).count()
+    phone_number.mobifone_lock_count = lock_histories.filter(mobifone_lock_date__isnull=False).count()
+    phone_number.vinaphone_lock_count = lock_histories.filter(vinaphone_lock_date__isnull=False).count()
+    phone_number.other_lock_count = lock_histories.filter(other_lock_date__isnull=False).count()
+
+    phone_number.lock_history_id = lock_histories.order_by('-id').first().id if phone_number.lock_count else 0
+    phone_number.viettel_lock_history_id = lock_histories.filter(viettel_lock_date__isnull=False).order_by(
+        '-id').first().id if phone_number.viettel_lock_count else 0
+    phone_number.mobifone_lock_history_id = lock_histories.filter(mobifone_lock_date__isnull=False).order_by(
+        '-id').first().id if phone_number.mobifone_lock_count else 0
+    phone_number.vinaphone_lock_history_id = lock_histories.filter(vinaphone_lock_date__isnull=False).order_by(
+        '-id').first().id if phone_number.vinaphone_lock_count else 0
+    phone_number.other_lock_history_id = lock_histories.filter(other_lock_date__isnull=False).order_by(
+        '-id').first().id if phone_number.other_lock_count else 0
 
 
 class CreateMainPhoneNumberService(BaseService):
@@ -907,18 +929,7 @@ class UpdatePhoneNumberService(BaseService):
                 PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                    user_id=request.user.id, diff=phone_number.diff)
 
-            calculate_lock_information(phone_number)
-            if phone_number.lock_history_id != 0:
-                history = PhoneNumberLockHistory.objects.get(pk=phone_number.lock_history_id)
-                if kwargs.get('viettel_lock_date', None) is not None:
-                    history.viettel_lock_date = kwargs['viettel_lock_date']
-                if kwargs.get('mobifone_lock_date', None) is not None:
-                    history.mobifone_lock_date = kwargs['mobifone_lock_date']
-                if kwargs.get('vinaphone_lock_date', None) is not None:
-                    history.vinaphone_lock_date = kwargs['vinaphone_lock_date']
-                if kwargs.get('other_lock_date', None) is not None:
-                    history.other_lock_date = kwargs['other_lock_date']
-                history.save()
+            calculate_lock_information(phone_number, kwargs)
 
             phone_number.save()
 
@@ -1271,8 +1282,7 @@ class PushToQueueService(BaseService):
             if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
                 return
 
-            phone_number = PhoneNumber(
-                company=company,
+            phone_number = PhoneNumber.objects.create(company=company,
                 phone_number=request_phone_number,
                 main_phone_number=main_phone_number,
                 provider=provider,
@@ -1293,10 +1303,7 @@ class PushToQueueService(BaseService):
                 number_left=number_left,
                 distributor_name=distributor_name,
                 lock_telco=lock_telco,
-                proxy=proxy
-            )
-
-            PhoneNumber.objects.create(phone_number)
+                proxy=proxy)
         else:
             phone_number.number_in_distributor = number_in_distributor
             phone_number.number_left = number_left

@@ -155,3 +155,10 @@ class IMPORT_TYPE:
     IMPORT_NEW = 'IMPORT_NEW'
     IMPORT_STATUS = 'IMPORT_STATUS'
     IMPORT_FEE = 'IMPORT_FEE'
+
+
+class PHONE_NUMBER_PROVIDER:
+    VIETTEL = 'Viettel'
+    MOBI = 'Mobifone'
+    VINA = 'Vinaphone'
+    OTHER = 'Other'
