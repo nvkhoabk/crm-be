@@ -860,17 +860,17 @@ class UpdatePhoneNumberService(BaseService):
                 new_status_id = kwargs['phone_number_status_id']
                 phone_number.phone_number_status_id = kwargs['phone_number_status_id']
                 checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                                company_id=phone_number.company_id,
+                                                                deleted_at__isnull=True)
                 add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                               company_id=phone_number.company_id,
+                                                               deleted_at__isnull=True)
                 cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                              company_id=phone_number.company_id,
+                                                              deleted_at__isnull=True)
                 retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
-                                                         company_id=phone_number.company_id,
-                                                         deleted_at__isnull=True)
+                                                              company_id=phone_number.company_id,
+                                                              deleted_at__isnull=True)
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
                 if old_status_id in trigger_status_list:
                     phone_number.pic = request.user
@@ -1004,8 +1004,8 @@ class FilterPhoneNumberService(BaseService):
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
-                   'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age', 'lock_count',
-                   'pics']
+                   'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
+                   'pics', 'lock_count_type']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -1040,15 +1040,45 @@ class FilterPhoneNumberService(BaseService):
             if key == 'phone_number_status_id_list' and value is not None and value:
                 query_set = query_set.filter(phone_number_status_id__in=value)
 
-            if key == 'lock_count' and value:
-                if value <= 5:
-                    query_set = query_set.filter(
-                        lock_count=value,
-                    )
-                else:
-                    query_set = query_set.filter(
-                        lock_count__gt=5,
-                    )
+            if key == 'lock_count_type' and value:
+                lock_count = params.get('lock_count', None)
+                if lock_count is not None:
+                    if PHONE_NUMBER_PROVIDER.VIETTEL in value:
+                        if lock_count <= 5:
+                            query_set = query_set.filter(
+                                viettel_lock_count=lock_count,
+                            )
+                        else:
+                            query_set = query_set.filter(
+                                viettel_lock_count__gt=5,
+                            )
+                    if PHONE_NUMBER_PROVIDER.MOBI in value:
+                        if lock_count <= 5:
+                            query_set = query_set.filter(
+                                mobifone_lock_count=lock_count,
+                            )
+                        else:
+                            query_set = query_set.filter(
+                                mobifone_lock_count__gt=5,
+                            )
+                    if PHONE_NUMBER_PROVIDER.VINA in value:
+                        if lock_count <= 5:
+                            query_set = query_set.filter(
+                                vinaphone_lock_count=lock_count,
+                            )
+                        else:
+                            query_set = query_set.filter(
+                                vinaphone_lock_count__gt=5,
+                            )
+                    if PHONE_NUMBER_PROVIDER.OTHER in value:
+                        if lock_count <= 5:
+                            query_set = query_set.filter(
+                                other_lock_count=lock_count,
+                            )
+                        else:
+                            query_set = query_set.filter(
+                                other_lock_count__gt=5,
+                            )
 
         return query_set.order_by('-id')
 
@@ -1283,27 +1313,27 @@ class PushToQueueService(BaseService):
                 return
 
             phone_number = PhoneNumber.objects.create(company=company,
-                phone_number=request_phone_number,
-                main_phone_number=main_phone_number,
-                provider=provider,
-                legal=legal,
-                phone_number_client=phone_number_client,
-                phone_number_status=phone_number_status,
-                pickup_date=datetime.now(),
-                brand='',
-                lock_provider='{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}',
-                lock_count=0,
-                phone_number_avg_age=0,
-                cancel_date=None,
-                init_payment_date=None,
-                open_payment_date=None,
-                operate_payment_date=None,
-                other_payment_date=None,
-                number_in_distributor=number_in_distributor,
-                number_left=number_left,
-                distributor_name=distributor_name,
-                lock_telco=lock_telco,
-                proxy=proxy)
+                                                      phone_number=request_phone_number,
+                                                      main_phone_number=main_phone_number,
+                                                      provider=provider,
+                                                      legal=legal,
+                                                      phone_number_client=phone_number_client,
+                                                      phone_number_status=phone_number_status,
+                                                      pickup_date=datetime.now(),
+                                                      brand='',
+                                                      lock_provider='{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}',
+                                                      lock_count=0,
+                                                      phone_number_avg_age=0,
+                                                      cancel_date=None,
+                                                      init_payment_date=None,
+                                                      open_payment_date=None,
+                                                      operate_payment_date=None,
+                                                      other_payment_date=None,
+                                                      number_in_distributor=number_in_distributor,
+                                                      number_left=number_left,
+                                                      distributor_name=distributor_name,
+                                                      lock_telco=lock_telco,
+                                                      proxy=proxy)
         else:
             phone_number.number_in_distributor = number_in_distributor
             phone_number.number_left = number_left
@@ -1399,9 +1429,9 @@ class ImportPhoneNumberService(BaseService):
         return {
             'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
             'phone_number': str(rows[1].value).strip(),
-            'phone_number_status': str(rows[2].value).strip()
+            'phone_number_status': str(rows[2].value).strip(),
+            'phone_number_client': str(rows[3].value).strip()
         }
-
 
     def row_parser_import_fee(self, rows):
         return {
@@ -1412,7 +1442,6 @@ class ImportPhoneNumberService(BaseService):
             'off_net_fee': str(rows[4].value).strip(),
             'billing_month': str(rows[5].value).strip() + '-01'
         }
-
 
     def validate_data(self, data, company_id):
         error_codes = []
@@ -1441,6 +1470,7 @@ class ImportPhoneNumberService(BaseService):
         error_codes.extend(self.validate_phone_format(data))
         error_codes.extend(self.validate_not_existed_phone(data, company_id))
         error_codes.extend(self.validate_phone_number_status(data, company_id))
+        error_codes.extend(self.validate_phone_number_client(data, company_id))
         return error_codes
 
     def validate_id(self, row):
@@ -1559,7 +1589,6 @@ class ImportPhoneNumberService(BaseService):
 
         return error_codes
 
-
     def validate_monthly_fee(self, row):
         error_codes = []
         on_net_fee = str(row['on_net_fee']).strip()
@@ -1583,7 +1612,6 @@ class ImportPhoneNumberService(BaseService):
             error_codes.append(vec.OffNetFeeIsZero.code)
 
         return error_codes
-
 
     def validate_date(self, row):
         error_codes = []
@@ -1731,14 +1759,21 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                                                                deleted_at__isnull=True,
                                                                company_id=kwargs['company_id']).first()
 
-        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'])
-        phone_number.phone_number_status = phone_number_status
-        service = UpdatePhoneNumberService()
+        phone_number_client = PhoneNumberClient.objects.filter(name=data_record['phone_number_client'],
+                                                               deleted_at__isnull=True,
+                                                               company_id=kwargs['company_id']).first()
 
+        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
+                                               company_id=kwargs['company_id'])
+        phone_number.phone_number_status = phone_number_status
+        phone_number.phone_number_client = phone_number_client
+
+        service = UpdatePhoneNumberService()
         service.serve(request, cookies, *args, **vars(phone_number))
 
     def import_fee(self, args, cookies, create_montly_fee_service, data_record, kwargs, request):
-        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'])
+        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
+                                               company_id=kwargs['company_id'])
         new_fee = PhoneNumberMonthlyFee(
             company_id=kwargs['company_id'],
             phone_number=phone_number,
@@ -1748,4 +1783,5 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             payment_date=data_record['payment_date'],
         )
 
-        create_montly_fee_service.serve(request, cookies, *args, **CreatePhoneNumberMonthlyFeeRequestSerializer(new_fee).data)
+        create_montly_fee_service.serve(request, cookies, *args,
+                                        **CreatePhoneNumberMonthlyFeeRequestSerializer(new_fee).data)

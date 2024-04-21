@@ -423,6 +423,7 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
                                                         allow_null=True)
     phone_number_avg_age = serializers.FloatField(required=False, allow_null=True)
     lock_count = serializers.IntegerField(required=False, allow_null=True)
+    lock_count_type = serializers.ListField(child=serializers.CharField(), default=[0], required=False)
     fee_type_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     pics = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
 

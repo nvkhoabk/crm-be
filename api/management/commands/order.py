@@ -8,14 +8,16 @@ from django.db import transaction
 from django.db.models import Sum, Q, F
 from pytz import timezone
 
-from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE
+from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE, PHONE_NUMBER_PROVIDER
 from api.models.call_center import CallLog
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
 from api.models.notification import Notification
+from api.models.phone_number import PhoneNumber, PhoneNumberLockHistory
 from api.models.system_configuration import DataStatus, DataChannel
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment, \
     recalculate_payment_order_detail
+from api.services.phone_number import calculate_lock_information
 from api.utils.date import get_last_of_month, get_first_of_month
 from api.utils.order_detail import update_charge_date_order_detail
 from api.utils.phone import classify_telecom_number
@@ -340,6 +342,24 @@ class Command(BaseCommand):
             if call_log.provider != old_provider:
                 print("Changed " + str(call_log.id))
 
+    def fix_lock_date_phone_number(self):
+        phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True, lock_history_id__gt=0)
+        for pn in phone_numbers:
+            print('Processing ' + pn.phone_number + ' with provider: ' + pn.lock_provider)
+            lock = PhoneNumberLockHistory.objects.get(pk=pn.lock_history_id)
+            current_lock = json.loads(pn.lock_provider)
+            if current_lock[PHONE_NUMBER_PROVIDER.VIETTEL]:
+                lock.viettel_lock_date = lock.created_at.date()
+            if current_lock[PHONE_NUMBER_PROVIDER.MOBI]:
+                lock.mobifone_lock_date = lock.created_at.date()
+            if current_lock[PHONE_NUMBER_PROVIDER.VINA]:
+                lock.vinaphone_lock_date = lock.created_at.date()
+            if current_lock[PHONE_NUMBER_PROVIDER.OTHER]:
+                lock.other_lock_date = lock.created_at.date()
+            lock.save()
+            calculate_lock_information(pn, {})
+            pn.save()
+
     def handle(self, *args, **options):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
@@ -349,6 +369,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.fix_lock_date_phone_number()
         # self.recalculate_provider()
         # self.fix_dstchannel()
         # self.fix_call_log_missing()
