@@ -206,3 +206,66 @@ class PaymentDateWrongFormat:
 class BillingMonthWrongFormat:
     code = 42
     msg = ''
+
+
+class MovingNewStatusWrong:
+    code = 43
+    msg = ''
+
+
+class MovingMonitoringStatusWrong:
+    code = 44
+    msg = ''
+
+
+class MovingRetestStatusWrong:
+    code = 45
+    msg = ''
+
+
+class MovingWaitingCancelStatusWrong:
+    code = 46
+    msg = ''
+
+
+class MovingNotUseStatusWrong:
+    code = 47
+    msg = ''
+
+
+class UseWrongStatusForTech:
+    code = 48
+    msg = ''
+
+
+class ViettelLockDateWrongFormat:
+    code = 49
+    msg = ''
+
+class MobiLockDateWrongFormat:
+    code = 50
+    msg = ''
+
+class VinaLockDateWrongFormat:
+    code = 51
+    msg = ''
+
+class OtherLockDateWrongFormat:
+    code = 52
+    msg = ''
+
+class ViettelUnLockDateWrongFormat:
+    code = 53
+    msg = ''
+
+class MobiUnLockDateWrongFormat:
+    code = 54
+    msg = ''
+
+class VinaUnLockDateWrongFormat:
+    code = 55
+    msg = ''
+
+class OtherUnLockDateWrongFormat:
+    code = 56
+    msg = ''

@@ -2,6 +2,7 @@ import csv
 import json
 import math
 import mimetypes
+from urllib import parse
 from wsgiref.util import FileWrapper
 from datetime import datetime
 import pandas as pd
@@ -616,6 +617,26 @@ class OutgoingCallService(BaseService):
 
 
 class CallAnsweredService(BaseService):
+    def serve_get(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            phone = parse.unquote(request.GET.get('phone', None))
+            extension = parse.unquote(request.GET.get('extension', None))
+            calldate = parse.unquote(request.GET.get('calldate', None))
+            duration = parse.unquote(request.GET.get('duration', None))
+            status = parse.unquote(request.GET.get('status', None))
+            recording = parse.unquote(request.GET.get('recording', None))
+            billsec = parse.unquote(request.GET.get('billsec', 0))
+            accountcode = parse.unquote(request.GET.get('accountcode', ''))
+            ip = parse.unquote(request.GET.get('ip', ''))
+            dstchannel = parse.unquote(request.GET.get('dstchannel', ''))
+            userfield = parse.unquote(request.GET.get('userfield', ''))
+            callid = request.GET.get('callid', '')
+
+            insert_call_answered.delay(phone, extension, calldate, duration, status, recording, billsec, accountcode,
+                                       ip, dstchannel, userfield, callid)
+        except Exception as e:
+            cache.log_error(request.GET.get('callid', 'None_callid') + '_' + str(e))
+
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             extension = kwargs.get('extension', None)
@@ -633,7 +654,7 @@ class CallAnsweredService(BaseService):
                                         kwargs.get('status', None), kwargs.get('recording', None),
                                         kwargs.get('billsec', 0), kwargs.get('accountcode', ''),
                                         kwargs.get('ip', ''), kwargs.get('dstchannel', ''),
-                                        kwargs.get('userfield', ''))
+                                        kwargs.get('userfield', ''), request.GET.get('callid', ''))
             # call_log = CallLog.objects.filter(extension=kwargs.get('extension', None), phone=kwargs.get('phone', None),
             #                                   status__isnull=True).order_by('-created_at')
             # if not call_log:

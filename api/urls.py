@@ -334,6 +334,10 @@ urlpatterns = [
        name='phone_number.update_phone_number'),
     path('phone_number/delete_phone_number/', phone_number.DeletePhoneNumberView.as_view(),
        name='phone_number.delete_phone_number'),
+    path('phone_number/check_phone_number/', phone_number.CheckPhoneNumberView.as_view(),
+       name='phone_number.check_phone_number'),
+    path('phone_number/export_phone_number/', phone_number.ExportPhoneNumberView.as_view(),
+       name='phone_number.export_phone_number'),
 
     path('phone_number/create_phone_number_monthly_fee/',
        phone_number.CreatePhoneNumberMonthlyFeeView.as_view(),
@@ -364,4 +368,8 @@ urlpatterns = [
        name='phone_number.get_statistic_phone_number'),
     path('phone_number/import_phone_number/', phone_number.ImportPhoneNumberView.as_view(), name='phone_number.import_phone_number'),
     path('phone_number/confirm_import_phone_number/', phone_number.ConfirmImportPhoneNumberView.as_view(), name='phone_number.confirm_import_phone_number'),
+    path('phone_number/filter_phone_number_technical_activity/', phone_number.FilterPhoneNumberTechnicalActivityView.as_view(),
+       name='phone_number.filter_phone_number_technical_activity'),
+    path('phone_number/revert_phone_number_technical_activity/', phone_number.RevertPhoneNumberTechnicalActivityView.as_view(),
+       name='phone_number.revert_phone_number_technical_activity'),
 ] + static('files/', document_root=Const.FILE_ROOT)

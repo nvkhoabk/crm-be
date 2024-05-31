@@ -305,6 +305,83 @@ class Command(BaseCommand):
             else:
                 print('Cannot get data for callid: ' + call_log.callid)
 
+    def fix_call_log_wrong(self):
+        crm = open('crm.csv', 'r')
+        crm_lines = crm.readlines()
+        cdr = open('cdr.csv', 'r')
+        cdr_lines = cdr.readlines()
+        url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid=1709258120.35581337&fromdate=2024-02-01 00:00:00'
+        session = requests.Session()
+        session.auth = ('ITY', 'Crm1ty@1305Fri')
+
+        print('Processing crm')
+        for line in crm_lines:
+            try:
+                callid = line.split(',')[2]
+                url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-02-01 00:00:00'.format(
+                    callid)
+                response = session.get(url)
+                call_log = CallLog.objects.get(callid=callid, deleted_at__isnull=True)
+                # Print the response
+                response_json = response.json()
+                if len(response_json['cdr']) == 1:
+                    data = response_json['cdr'][0]
+                    call_log.calldate = datetime.strptime(data['calldate'], '%Y-%m-%d %H:%M:%S')
+                    call_log.duration = int(data['duration'])
+                    call_log.billsec = int(data['billsec'])
+                    call_log.status = data['status']
+                    call_log.recording = data['recordingfile']
+                    call_log.accountcode = data['accountcode']
+                    call_log.ip = data['ip']
+                    call_log.dstchannel = data['dstchannel']
+                    call_log.userfield = data['userfield']
+                    call_log.extension = data['extension']
+                    call_log.phone = data['phone']
+                    call_log.provider = classify_telecom_number(call_log.dstchannel)
+                    call_log.chargeable_time = call_center_utils.calculate_chargeable_time(call_log)
+                    call_log.save()
+                else:
+                    print('Cannot get data for callid: ' + call_log.callid)
+            except Exception as e:
+                print('Exception: ' + str(e))
+
+        print('Processing cdr')
+        for line in cdr_lines:
+            try:
+                callid = line.split(',')[2]
+                url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-02-01 00:00:00'.format(
+                    callid)
+                response = session.get(url)
+                call_logs = CallLog.objects.filter(callid=callid, deleted_at__isnull=True)
+                if call_logs:
+                    call_log = call_logs.first()
+                else:
+                    call_log = CallLog.objects.create(callid=callid, extension="")
+
+                # Print the response
+                response_json = response.json()
+                if len(response_json['cdr']) == 1:
+                    data = response_json['cdr'][0]
+                    call_log.calldate = datetime.strptime(data['calldate'], '%Y-%m-%d %H:%M:%S')
+                    call_log.duration = int(data['duration'])
+                    call_log.billsec = int(data['billsec'])
+                    call_log.status = data['status']
+                    call_log.recording = data['recordingfile']
+                    call_log.accountcode = data['accountcode']
+                    call_log.ip = data['ip']
+                    call_log.dstchannel = data['dstchannel']
+                    call_log.userfield = data['userfield']
+                    call_log.extension = data['extension']
+                    call_log.phone = data['phone']
+                    call_log.provider = classify_telecom_number(call_log.dstchannel)
+                    call_log.chargeable_time = call_center_utils.calculate_chargeable_time(call_log)
+                    call_log.save()
+                else:
+                    print('Cannot get data for callid: ' + call_log.callid)
+            except Exception as e:
+                print('Exception: ' + str(e))
+
+
     def fix_dstchannel(self):
         import pandas as pd
 
@@ -372,7 +449,7 @@ class Command(BaseCommand):
         # self.fix_lock_date_phone_number()
         # self.recalculate_provider()
         # self.fix_dstchannel()
-        # self.fix_call_log_missing()
+        # self.fix_call_log_wrong()
         # self.migrate_call_log()
         # self.initialize_charge_date()
         # self.fix_annual_order_generation()

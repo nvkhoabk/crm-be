@@ -389,3 +389,8 @@ class PhoneNumberActivityDuplicated(APIException):
 class PhoneNumberActivityNotFound(APIException):
     code = 9016
     msg = 'PhoneNumberActivity is not found'
+
+
+class InvalidInpputDate(APIException):
+    code = 9017
+    msg = 'InvalidInpputDate'

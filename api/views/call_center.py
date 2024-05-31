@@ -513,6 +513,11 @@ class CallAnsweredView(BaseAPIView):
         service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response()
 
+    def get(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = call_center_service.CallAnsweredService()
+        service.serve_get(request, cookies, *args, **serializer.validated_data)
+        return self.get_response()
+
 
 class UploadExtFile(BaseAPIView):
     authentication_classes = []

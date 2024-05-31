@@ -1022,3 +1022,98 @@ class ConfirmImportPhoneNumberView(BaseAPIView):
         results = service.serve(request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=results, request=request,
                                  serializer=phone_number_serializer.ImportPhoneNumberResponseSerializer)
+
+
+class CheckPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated, PhoneNumberEditPermission]
+    serializer_class = phone_number_serializer.CheckPhoneNumberRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='Check phone_number',
+        operation_description='Check phone_number api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.CheckPhoneNumberResponseSerializer,
+            exceptions.PhoneNumberNotFound.code: exceptions.PhoneNumberNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.CheckPhoneNumberService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=request,
+                                 serializer=phone_number_serializer.CheckPhoneNumberResponseSerializer)
+
+
+class FilterPhoneNumberTechnicalActivityView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.FilterPhoneNumberTechnicalActivityRequestParamSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['PhoneNumberTechnicalActivity'],
+        operation_id='Filter PhoneNumberTechnicalActivity',
+        operation_description='Filter PhoneNumberTechnicalActivity api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.FilterPhoneNumberTechnicalActivityResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.FilterPhoneNumberTechnicalActivityService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.FilterPhoneNumberTechnicalActivityResponseSerializer)
+
+
+class RevertPhoneNumberTechnicalActivityView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.RevertPhoneNumberTechnicalActivityRequestSerializer
+    pagination_class = False
+
+    @swagger_auto_schema(
+        tags=['PhoneNumberTechnicalActivity'],
+        operation_id='Filter PhoneNumberTechnicalActivity',
+        operation_description='Revert PhoneNumberTechnicalActivity api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.RevertPhoneNumberTechnicalActivityResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.RevertPhoneNumberTechnicalActivityService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.RevertPhoneNumberTechnicalActivityResponseSerializer)
+
+
+class ExportPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.ExportPhoneNumberRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['ExportPhoneNumber'],
+        operation_id='Export phone number',
+        operation_description='Export phone number api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.ExportPhoneNumberResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.ExportPhoneNumberService()
+        record = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=record, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.ExportPhoneNumberResponseSerializer)

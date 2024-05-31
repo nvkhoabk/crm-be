@@ -329,14 +329,6 @@ class CreateCompanyService(BaseService):
                     index=0,
                     choose_by_default=False
                 )
-
-                PhoneNumberStatus.objects.create(
-                    company_id=company.id,
-                    name='Đang chờ mở',
-                    color='#CC6633',
-                    index=0,
-                    choose_by_default=False
-                )
                 PhoneNumberStatus.objects.create(
                     company_id=company.id,
                     name='Đã hủy',
@@ -465,14 +457,6 @@ class UpdateCompanyService(BaseService):
                         choose_by_default=False
                     )
 
-                if not PhoneNumberStatus.objects.filter(name__iexact='Đang chờ mở', company_id=company.id).first():
-                    PhoneNumberStatus.objects.create(
-                        company_id=company.id,
-                        name='Đang chờ mở',
-                        color='#CC6633',
-                        index=0,
-                        choose_by_default=False
-                    )
                 if not PhoneNumberStatus.objects.filter(name__iexact='Đã hủy', company_id=company.id).first():
                     PhoneNumberStatus.objects.create(
                         company_id=company.id,

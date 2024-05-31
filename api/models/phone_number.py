@@ -75,9 +75,24 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
         current_lock = json.loads(current_lock)
         if provider in current_lock:
             current_lock[provider] = True
-            current_lock['enterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
+            if provider == 'Viettel':
+                self.viettel_using_status = 'LOCK'
+                current_lock['viettelEnterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
+
+            if provider == 'Mobifone':
+                self.mobifone_using_status = 'LOCK'
+                current_lock['mobifoneEnterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
+
+            if provider == 'Vinaphone':
+                self.vinaphone_using_status = 'LOCK'
+                current_lock['vinaphoneEnterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
+
+            if provider == 'Other':
+                self.other_using_status = 'LOCK'
+                current_lock['otherEnterDate'] = datetime.now(timezone(TIME_ZONE)).date().strftime('%Y-%m-%d')
             self.lock_provider = json.dumps(current_lock)
             return
+
 
         print('Not found provider')
 
@@ -120,6 +135,16 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     lock_telco = models.CharField(max_length=512, default='')
     proxy = models.CharField(max_length=512, default='')
     pic = models.ForeignKey(User, on_delete=models.CASCADE, null=True, db_column='pic_id')
+    viettel_using_status = models.CharField(max_length=512, default='')
+    mobifone_using_status = models.CharField(max_length=512, default='')
+    vinaphone_using_status = models.CharField(max_length=512, default='')
+    other_using_status = models.CharField(max_length=512, default='')
+    viettel_unlocking_status = models.CharField(max_length=512, default='')
+    mobifone_unlocking_status = models.CharField(max_length=512, default='')
+    vinaphone_unlocking_status = models.CharField(max_length=512, default='')
+    other_unlocking_status = models.CharField(max_length=512, default='')
+    provider_cancel_date = models.DateField(null=True)
+    last_technical_activity_id = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'phone_numbers'
@@ -164,9 +189,45 @@ class PhoneNumberActivity(BaseModel):
         db_table = 'phone_number_activities'
 
 
-# class ImportPhoneNumberRecords(BaseModel):
-#     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-#     file = models.FileField(upload_to='uploads/%Y/%m/%d/')
-#
-#     class Meta:
-#         db_table = 'import_order_records'
+class PhoneNumberTechnicalActivity(BaseModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    phone_number = models.ForeignKey(PhoneNumber, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    viettel_using_status = models.CharField(max_length=512, default='')
+    mobifone_using_status = models.CharField(max_length=512, default='')
+    vinaphone_using_status = models.CharField(max_length=512, default='')
+    other_using_status = models.CharField(max_length=512, default='')
+    viettel_unlocking_status = models.CharField(max_length=512, default='')
+    mobifone_unlocking_status = models.CharField(max_length=512, default='')
+    vinaphone_unlocking_status = models.CharField(max_length=512, default='')
+    other_unlocking_status = models.CharField(max_length=512, default='')
+    viettel_lock_date = models.DateField(null=True)
+    mobifone_lock_date = models.DateField(null=True)
+    vinaphone_lock_date = models.DateField(null=True)
+    other_lock_date = models.DateField(null=True)
+    viettel_unlock_date = models.DateField(null=True)
+    mobifone_unlock_date = models.DateField(null=True)
+    vinaphone_unlock_date = models.DateField(null=True)
+    other_unlock_date = models.DateField(null=True)
+    phone_number_status = models.ForeignKey(PhoneNumberStatus, on_delete=models.CASCADE)
+    old_viettel_using_status = models.CharField(max_length=512, default='')
+    old_mobifone_using_status = models.CharField(max_length=512, default='')
+    old_vinaphone_using_status = models.CharField(max_length=512, default='')
+    old_other_using_status = models.CharField(max_length=512, default='')
+    old_viettel_unlocking_status = models.CharField(max_length=512, default='')
+    old_mobifone_unlocking_status = models.CharField(max_length=512, default='')
+    old_vinaphone_unlocking_status = models.CharField(max_length=512, default='')
+    old_other_unlocking_status = models.CharField(max_length=512, default='')
+    old_viettel_lock_date = models.DateField(null=True)
+    old_mobifone_lock_date = models.DateField(null=True)
+    old_vinaphone_lock_date = models.DateField(null=True)
+    old_other_lock_date = models.DateField(null=True)
+    old_viettel_unlock_date = models.DateField(null=True)
+    old_mobifone_unlock_date = models.DateField(null=True)
+    old_vinaphone_unlock_date = models.DateField(null=True)
+    old_other_unlock_date = models.DateField(null=True)
+    old_phone_number_status_id = models.IntegerField()
+
+    class Meta:
+        db_table = 'phone_number_technical_activities'
+
