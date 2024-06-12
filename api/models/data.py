@@ -211,6 +211,7 @@ class Order(BaseModel):
     customer_email = models.CharField(max_length=256, default='')
     created_by = models.CharField(max_length=64, default='')
     updated_by = models.CharField(max_length=64, default='')
+    monthly_order_amount = models.FloatField(default=0)
 
     class Meta:
         db_table = 'orders'

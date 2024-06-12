@@ -13,7 +13,7 @@ from api.models.call_center import CallLog
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
 from api.models.notification import Notification
-from api.models.phone_number import PhoneNumber, PhoneNumberLockHistory
+from api.models.phone_number import PhoneNumber, PhoneNumberLockHistory, PhoneNumberClient
 from api.models.system_configuration import DataStatus, DataChannel
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment, \
     recalculate_payment_order_detail
@@ -279,11 +279,11 @@ class Command(BaseCommand):
 
     def fix_call_log_missing(self):
         url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid=1709258120.35581337&fromdate=2024-02-01 00:00:00'
-        call_logs = CallLog.objects.filter(status__isnull=True, created_at__gte='2024-02-01')
+        call_logs = CallLog.objects.filter(status__isnull=True, created_at__gte='2024-05-01')
         session = requests.Session()
         session.auth = ('ITY', 'Crm1ty@1305Fri')
         for call_log in call_logs:
-            url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-02-01 00:00:00'.format(call_log.callid)
+            url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-02-05 00:00:00'.format(call_log.callid)
             response = session.get(url)
 
             # Print the response
@@ -437,6 +437,19 @@ class Command(BaseCommand):
             calculate_lock_information(pn, {})
             pn.save()
 
+    def init_phone_number_client(self):
+        clients = PhoneNumberClient.objects.filter()
+        for client in clients:
+            order = Order.objects.filter(company_id=17, deleted_at__isnull=True, pic__isnull=False,
+                                         customer_name__icontains=client.name).order_by('-id').first()
+            print('Checking ' + client.name)
+            if order:
+                print(order.pic_id)
+                print(order.pic.username)
+                # client.pic_id = order.pic_id
+                # client.save()
+
+
     def handle(self, *args, **options):
         self.initializer_logger()
         processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
@@ -446,6 +459,8 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.init_phone_number_client()
+        # self.fix_call_log_missing()
         # self.fix_lock_date_phone_number()
         # self.recalculate_provider()
         # self.fix_dstchannel()
@@ -458,4 +473,4 @@ class Command(BaseCommand):
         # self.migrate_payments()
         # self.migrate_payment_date()
         # self.migrate_order_detail_payment()
-        #s elf.fix_order_detail_list_in_payment()
+        # self.fix_order_detail_list_in_payment()

@@ -589,7 +589,31 @@ class FilterOrderService(BaseService):
                 if ORDER_DETAIL_TYPE.ANNUAL_BUY in value:
                     query_set = query_set.filter(annual_due_date__isnull=False)
 
-        return query_set.order_by('-created_at')
+        query_set = query_set.order_by('-created_at')
+        if 'charge_from_date' in params and 'charge_to_date' in params and params['charge_from_date'] and params[
+            'charge_to_date']:
+            monthly_order_details = MonthlyOrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                      order_detail__deleted_at__isnull=True,
+                                                                      month__gte=params['charge_from_date'],
+                                                                      month__lte=params['charge_to_date'],
+                                                                      order_detail__order_id__in=query_set.values_list(
+                                                                          'id', flat=True))
+            query_set = query_set.filter(id__in=monthly_order_details.values_list('order_detail__order_id', flat=True))
+            amount_map = self.make_monthly_order_amount_map(monthly_order_details)
+            for order in query_set:
+                if order.id in amount_map:
+                    order.monthly_order_amount = amount_map[order.id]
+
+        return query_set
+
+    def make_monthly_order_amount_map(self, monthly_order_details):
+        res_map = dict()
+        for monthly_order_detail in monthly_order_details:
+            if monthly_order_detail.order_detail.order_id not in res_map:
+                res_map[monthly_order_detail.order_detail.order_id] = monthly_order_detail.amount
+            else:
+                res_map[monthly_order_detail.order_detail.order_id] += monthly_order_detail.amount
+        return res_map
 
 
 class DeleteOrderService(BaseService):

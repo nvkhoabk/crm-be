@@ -53,6 +53,7 @@ class PhoneNumberClient(BaseModel):
     index = models.IntegerField(default=0)
     color = models.CharField(max_length=32)
     choose_by_default = models.BooleanField(default=False)
+    pic = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, db_column='pic_id')
 
     class Meta:
         db_table = 'phone_number_clients'

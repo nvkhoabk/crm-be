@@ -1152,7 +1152,7 @@ class FilterPhoneNumberService(BaseService):
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
                    'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
                    'pics', 'lock_count_type', 'viettel_using_status', 'mobifone_using_status', 'vinaphone_using_status',
-                   'other_using_status']
+                   'other_using_status', 'sale_pics']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -1162,6 +1162,18 @@ class FilterPhoneNumberService(BaseService):
                     query_set = query_set.filter(Q(pic__isnull=True) | Q(pic__in=value))
                 else:
                     query_set = query_set.filter(pic__in=value)
+
+            if key == 'sale_pics' and value is not None and value:
+                phone_numeber_clients = PhoneNumberClient.objects.filter(deleted_at__isnull=True)
+                if None in value:
+                    phone_numeber_clients = phone_numeber_clients.filter(Q(pic__isnull=True) | Q(pic__in=value))
+
+                    query_set = query_set.filter(Q(phone_number_client_id__isnull=True) | Q(
+                        phone_number_client_id__in=phone_numeber_clients.values_list('id', flat=True)))
+                else:
+                    phone_numeber_clients = phone_numeber_clients.filter(pic__in=value)
+                    query_set = query_set.filter(
+                        phone_number_client_id__in=phone_numeber_clients.values_list('id', flat=True))
 
             if key == 'phone_number':
                 query_set = query_set.filter(
@@ -1462,8 +1474,8 @@ class GetStatisticPhoneNumberService(BaseService):
         if not phone_number.active_date:
             return 0
 
-        last_date = phone_number.cancel_date if phone_number.cancel_date else datetime.today()
-        return (last_date.date() - phone_number.active_date).days + 1
+        last_date = phone_number.cancel_date if phone_number.cancel_date else datetime.today().date()
+        return (last_date - phone_number.active_date).days + 1
 
 
 class UpdateListPhoneNumberStatusService(BaseService):

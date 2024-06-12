@@ -196,9 +196,16 @@ class DeleteLegalResponseSerializer(BaseResponseSerializer):
 
 
 class PhoneNumberClientSerializer(serializers.ModelSerializer):
+    def get_pic_name(self, client):
+        if client.pic is None:
+            return ''
+        return User.objects.get(pk=client.pic_id).username
+
+    pic_name = serializers.SerializerMethodField(source='get_pic')
+
     class Meta:
         model = PhoneNumberClient
-        fields = ['id', 'name', 'company', 'index', 'color', 'created_at', 'choose_by_default']
+        fields = ['id', 'name', 'company', 'index', 'color', 'pic_id', 'pic_name', 'created_at', 'choose_by_default']
 
 
 class CreatePhoneNumberClientRequestSerializer(serializers.Serializer):
@@ -501,6 +508,7 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
     lock_count_type = serializers.ListField(child=serializers.CharField(), default=[0], required=False)
     fee_type_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     pics = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
+    sale_pics = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
     viettel_using_status = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
     mobifone_using_status = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
     vinaphone_using_status = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)

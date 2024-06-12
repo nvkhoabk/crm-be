@@ -116,11 +116,17 @@ class AuthGetUserInfoService(BaseService):
                     if permission not in response['menu']:
                         response['menu'].append(permission)
 
+        # Sale user can view phone number manager
+        if MODULES.DATA_MANAGEMENT_FOR_SALE in response['menu']:
+            response['menu'].append(MODULES.PHONE_NUMBER_MANAGER)
+
         response['phone_number'] = True
         if company and not company.enable_phone_number_management:
             response['phone_number'] = False
-            response['menu'].remove(MODULES.PHONE_NUMBER_MANAGER)
-            response['menu'].remove(MODULES.PHONE_NUMBER_TECHNICAL)
+            if MODULES.PHONE_NUMBER_MANAGER in response['menu']:
+                response['menu'].remove(MODULES.PHONE_NUMBER_MANAGER)
+            if MODULES.PHONE_NUMBER_TECHNICAL in response['menu']:
+                response['menu'].remove(MODULES.PHONE_NUMBER_TECHNICAL)
 
         response['call_center'] = {
             'ext': None,
