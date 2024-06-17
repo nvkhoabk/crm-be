@@ -124,9 +124,9 @@ def get_package(company_id):
 
 def _init_call_center_minute_month(month, cache_key):
     first_of_month = get_first_of_month(month)
-    last_of_month = get_last_of_month(month)
+    first_next_month = get_last_of_month(month) + relativedelta(days=1)
     call_logs = CallLog.objects.filter(deleted_at__isnull=True, calldate__gte=first_of_month,
-                                       calldate__lte=last_of_month, chargeable_time__gt=0,
+                                       calldate__lt=first_next_month, chargeable_time__gt=0,
                                        direction=CALL_DIRECTION.OUTGOING)
     call_center_minute = dict()
     for call_log in call_logs:

@@ -989,13 +989,18 @@ class UpdatePhoneNumberService(BaseService):
                                                               company_id=phone_number.company_id,
                                                               deleted_at__isnull=True)
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
-                if old_status_id in trigger_status_list:
-                    phone_number.pic = request.user
-
-                if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
+                if old_status_id == new_status_id and old_status_id == checking_status.id:
                     trigger_update_phone_number_queue = True
-                if new_status_id == cancel_status.id:
-                    phone_number.cancel_date = datetime.today()
+                else:
+                    if old_status_id in trigger_status_list:
+                        phone_number.pic = request.user
+
+                        if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
+                            trigger_update_phone_number_queue = True
+                        if new_status_id == cancel_status.id:
+                            phone_number.cancel_date = datetime.today()
+                    else:
+                        trigger_update_phone_number_queue = True
 
             if kwargs.get('pickup_date'):
                 phone_number.pickup_date = kwargs['pickup_date']

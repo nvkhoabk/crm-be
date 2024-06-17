@@ -3,6 +3,7 @@ Celery tasks
 """
 import json
 import time
+from datetime import datetime
 
 import requests
 from celery import shared_task
@@ -19,6 +20,7 @@ from api.utils.phone import classify_telecom_number
 from crm import settings
 import redis
 from crm.celery import app
+from django.utils.timezone import make_aware
 
 # connect to our Redis instance
 # redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
@@ -97,7 +99,7 @@ def insert_call_answered(phone, extension, calldate, duration, status, recording
     print('Running: {}-{}-{}-{}-{}-{}-{}-{}-{}-{}'.format(phone, extension, calldate, duration, status, recording, billsec, accountcode, ip, dstchannel))
     call_log = call_log.first()
 
-    call_log.calldate = calldate
+    call_log.calldate = make_aware(datetime.strptime(calldate, '%Y-%m-%d %H:%M:%S'))
     call_log.duration = int(duration)
     call_log.status = status
     call_log.recording = recording

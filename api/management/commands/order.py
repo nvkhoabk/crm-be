@@ -8,7 +8,8 @@ from django.db import transaction
 from django.db.models import Sum, Q, F
 from pytz import timezone
 
-from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE, PHONE_NUMBER_PROVIDER
+from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE, PHONE_NUMBER_PROVIDER, \
+    CALL_DIRECTION
 from api.models.call_center import CallLog
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
@@ -449,6 +450,57 @@ class Command(BaseCommand):
                 # client.pic_id = order.pic_id
                 # client.save()
 
+    def fix_call_log_wrong(self):
+        from django.utils.timezone import make_aware
+        input = ['1716277957.5810315',
+                 '1716277954.5810301',
+                 '1716277944.5810222',
+                 '1716277941.5810194',
+                 '1716170284.5528155',
+                 '1716169273.5523514',
+                 '1714812173.3583208',
+                 '1714812171.3583200',
+                 '1714725831.3408343',
+                 '1714725830.3408330']
+        session = requests.Session()
+        session.auth = ('ITY', 'Crm1ty@1305Fri')
+
+        print('Processing crm')
+        for line in input:
+            try:
+                callid = line
+                url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&callid={}&fromdate=2024-04-31 00:00:00'.format(
+                    callid)
+                response = session.get(url)
+                # Print the response
+                response_json = response.json()
+                if len(response_json['cdr']) == 1:
+                    data = response_json['cdr'][0]
+                    call_log = CallLog.objects.filter(callid=callid, deleted_at__isnull=True).first()
+                    if call_log is None:
+                        call_log = CallLog(callid=data['callid'], phone=data['phone'],
+                                           extension=data['extension'])
+                        call_log.direction = CALL_DIRECTION.OUTGOING
+
+                    call_log.calldate = make_aware(datetime.strptime(data['calldate'], '%Y-%m-%d %H:%M:%S'))
+                    call_log.duration = int(data['duration'])
+                    call_log.billsec = int(data['billsec'])
+                    call_log.status = data['status']
+                    call_log.recording = data['recordingfile']
+                    call_log.accountcode = data['accountcode']
+                    call_log.ip = data['ip']
+                    call_log.dstchannel = data['dstchannel']
+                    call_log.userfield = data['userfield']
+                    call_log.extension = data['extension']
+                    call_log.phone = data['phone']
+                    call_log.provider = classify_telecom_number(call_log.dstchannel)
+                    call_log.chargeable_time = call_center_utils.calculate_chargeable_time(call_log)
+                    call_log.save()
+            except Exception as e:
+                print('Exception: ' + str(e))
+
+
+
 
     def handle(self, *args, **options):
         self.initializer_logger()
@@ -459,6 +511,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.fix_call_log_wrong()
         # self.init_phone_number_client()
         # self.fix_call_log_missing()
         # self.fix_lock_date_phone_number()
