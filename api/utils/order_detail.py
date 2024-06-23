@@ -78,26 +78,28 @@ def create_monthly_order_detail(order_detail):
 
 def get_percent_months(start_date, end_date):
     if start_date.year == end_date.year and start_date.month == end_date.month:
-        rate = (end_date - start_date).days / (get_last_of_month(start_date) - get_first_of_month(start_date)).days
-        return [floor_rate(rate)]
+        return [1]
 
     percent_months = [1] * ((end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1)
-    rate = (get_last_of_month(start_date) - start_date).days / (
+    rate = ((get_last_of_month(start_date) - start_date).days + 1) / (
             get_last_of_month(start_date) - get_first_of_month(start_date)).days
     percent_months[0] = floor_rate(rate)
 
-    rate = (end_date - get_first_of_month(end_date)).days / (
+    rate = ((end_date - get_first_of_month(end_date)).days + 1) / (
             get_last_of_month(end_date) - get_first_of_month(end_date)).days
     percent_months[-1] = floor_rate(rate)
     return percent_months
 
 
 def floor_rate(rate):
-    if rate <= 0.33:
+    if rate < 0.165:
+        return 0
+    if rate >= 0.165 and rate < 0.42:
         return 0.33
-
-    if 0.33 < rate <= 0.5:
+    if rate >= 0.42 and rate < 0.6:
         return 0.5
-
-    if rate > 0.5:
+    if rate >= 0.6 and rate < 0.75:
+        return 0.67
+    if rate > 0.75:
         return 1
+

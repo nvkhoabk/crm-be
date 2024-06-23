@@ -735,12 +735,12 @@ class UpdateOrderDetailService(BaseService):
                     company_id=user_roles.first().company_id
                 )
 
-            if order_detail.type == ORDER_DETAIL_TYPE.ANNUAL_BUY:
-                order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
-                                                                          order_detail_id=order_detail.id)
-                for order_detail_payment in order_detail_payments:
-                    if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
-                        raise DeleteApprovedOrderDetail()
+            update_monthly_order_detail = False
+            order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
+                                                                      order_detail_id=order_detail.id)
+            for order_detail_payment in order_detail_payments:
+                if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                    raise DeleteApprovedOrderDetail()
 
             if kwargs.get('product_id'):
                 order_detail.product_id = kwargs['product_id']
@@ -784,8 +784,10 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('annual_remaining_payment_amount'):
                 order_detail.annual_remaining_payment_amount = kwargs['annual_remaining_payment_amount']
 
-            if kwargs.get('total_payment_amount'):
+            if kwargs.get('total_payment_amount', None) is not None and kwargs.get(
+                    'total_payment_amount') != order_detail.total_payment_amount:
                 order_detail.total_payment_amount = kwargs['total_payment_amount']
+                update_monthly_order_detail = True
 
             if kwargs.get('renew_date'):
                 order_detail.renew_date = kwargs['renew_date']
@@ -793,13 +795,16 @@ class UpdateOrderDetailService(BaseService):
             if kwargs.get('payment_date'):
                 order_detail.payment_date = kwargs['payment_date']
 
-            if kwargs.get('addition_fee'):
+            if kwargs.get('addition_fee', None) is not None and kwargs.get('addition_fee') != order_detail.addition_fee:
                 order_detail.addition_fee = kwargs['addition_fee']
 
             if kwargs.get('charge_from_date') != order_detail.charge_from_date or kwargs.get(
                     'charge_to_date') != order_detail.charge_to_date:
                 order_detail.charge_from_date = kwargs['charge_from_date']
                 order_detail.charge_to_date = kwargs['charge_to_date']
+                update_monthly_order_detail = True
+
+            if update_monthly_order_detail:
                 update_charge_date_order_detail(order_detail)
 
             order_detail.save()

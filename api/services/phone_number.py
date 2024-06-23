@@ -1903,13 +1903,13 @@ class ImportPhoneNumberService(BaseService):
             return [vec.PhoneNumberStatusNotFound.code]
 
         if phone_number.phone_number_status.name == 'Số mới nhập':
-            if entity.name != 'Số đạt' or entity.name != 'Số không đạt':
+            if entity.name != 'Số đạt' and entity.name != 'Số không đạt':
                 error_codes.append(vec.MovingNewStatusWrong.code)
         elif phone_number.phone_number_status.name == 'Đang nghi ngờ':
-            if entity.name != 'Đang bị khoá' or entity.name != 'Cảnh báo sai':
+            if entity.name != 'Đang bị khoá' and entity.name != 'Cảnh báo sai':
                 error_codes.append(vec.MovingMonitoringStatusWrong.code)
         elif phone_number.phone_number_status.name == 'Test sau mở':
-            if entity.name != 'Đang bị khoá' or entity.name != 'Số đã mở':
+            if entity.name != 'Đang bị khoá' and entity.name != 'Số đã mở':
                 error_codes.append(vec.MovingRetestStatusWrong.code)
         elif phone_number.phone_number_status.name == 'Chờ hủy':
             if entity.name != 'Xác nhận hủy':

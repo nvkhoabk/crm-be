@@ -20,7 +20,7 @@ from api.services.data import create_order_detail_history, recalculate_order, re
     recalculate_payment_order_detail
 from api.services.phone_number import calculate_lock_information
 from api.utils.date import get_last_of_month, get_first_of_month
-from api.utils.order_detail import update_charge_date_order_detail
+from api.utils.order_detail import update_charge_date_order_detail, recalcuate_monthly_order_detail_by_payment
 from api.utils.phone import classify_telecom_number
 from crm.settings import TIME_ZONE
 import logging
@@ -245,15 +245,13 @@ class Command(BaseCommand):
                     payment.order_detail_list = json.dumps([0])
                 payment.save()
 
-    def initialize_charge_date(self):
-        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, charge_to_date__isnull=True)
+    def fix_montly_order_detail(self):
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, charge_to_date__isnull=False,
+                                                   company_id=17).exclude(charge_from_date='2023-08-01')
         for order_detail in order_details:
             print("Processing: ", order_detail.id)
-            order_detail.charge_from_date = datetime(year=2023, month=8, day=1)
-            order_detail.charge_to_date = datetime(year=2023, month=8, day=31)
-            order_detail.save()
             update_charge_date_order_detail(order_detail)
-            recalculate_order_details_by_payment(order_detail)
+            recalcuate_monthly_order_detail_by_payment(order_detail)
 
     def fix_data_channels(self):
         orders = Order.objects.filter(deleted_at__isnull=True, company_id=26)
@@ -503,14 +501,15 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        self.initializer_logger()
-        processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
-            options['date'], '%Y%m%d').date()
+        # self.initializer_logger()
+        # processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
+        #     options['date'], '%Y%m%d').date()
+        #
+        # self.process_annual_buy(processing_date)
+        # self.calculate_debt_status_order(processing_date)
+        # self.notify_renew_date(processing_date)
 
-        self.process_annual_buy(processing_date)
-        self.calculate_debt_status_order(processing_date)
-        self.notify_renew_date(processing_date)
-
+        self.fix_montly_order_detail()
         # self.fix_call_log_wrong()
         # self.init_phone_number_client()
         # self.fix_call_log_missing()

@@ -1,13 +1,32 @@
-version: '2.1'
+version: '3.8'
 
 services:
+  crm_db:
+    image: mysql:8.0
+    container_name: mysql8
+    ports:
+      - '3306:3306'
+    environment:
+       MYSQL_DATABASE: 'crm_db'
+       MYSQL_PASSWORD: 'root'
+       MYSQL_ROOT_PASSWORD: '123456aA@'
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=root --execute \"SHOW DATABASES;\""
+      interval: 200s
+      timeout: 20s
+      retries: 10
+    volumes:
+      - mysql-data:/var/lib/mysql
   redis:
       image: redis:7
       ports:
         - "6379:6379"
+volumes:
+  mysql-data:
   # web:
   #   build: .
-  #   command: python3 manage.py runserver 0.0.0.0:8001 
+  #   command: python3 manage.py runserver 0.0.0.0:8001
   #   volumes:
   #     - '.:/src'
   #   ports:
@@ -17,4 +36,4 @@ services:
   #       condition: service_healthy
   #   links:
   #     - crm_db
-  
+
