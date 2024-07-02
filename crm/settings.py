@@ -24,8 +24,6 @@ SECRET_KEY = '@d+t=4=)f3vj3n1yc6evrkrfb!r=59@p6$sm=y_u=tk5$_ya3w'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Allowed host
-ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -105,7 +103,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'crm_db',
-        'HOST': '115.146.123.8',
+        'HOST': '103.229.40.142',
         'PORT': '3306',
         'USER': 'crm_be',
         'PASSWORD': '123456aA@',
@@ -152,6 +150,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://115.146.123.8:8000',
     'http://crm.ity.vn',
     'https://crm.ity.vn',
+    'https://103.229.40.142'
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
@@ -162,12 +161,13 @@ CORS_ALLOWED_ORIGINS = [
     'http://crm.ity.vn',
     'https://crm.ity.vn',
     'https://115.146.123.8',
+    'https://103.229.40.142'
 ]
 
 SESSION_COOKIE_SAMESITE = None
 CRSF_COOKIE_SAMESITE = None
 
-ALLOWED_HOSTS = ['115.146.123.8', 'localhost', '127.0.0.1', 'crm.ity.vn']
+ALLOWED_HOSTS = ['115.146.123.8', 'localhost', '127.0.0.1', 'crm.ity.vn', '103.229.40.142']
 
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'

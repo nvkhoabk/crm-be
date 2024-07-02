@@ -163,6 +163,7 @@ class PhoneNumberLockHistory(BaseModel):
     mobifone_lock_date = models.DateField(null=True)
     vinaphone_lock_date = models.DateField(null=True)
     other_lock_date = models.DateField(null=True)
+    send_provider_date = models.DateField(null=True)
 
     class Meta:
         db_table = 'phone_number_lock_histories'

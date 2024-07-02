@@ -505,6 +505,12 @@ class FilterOrderService(BaseService):
                 'order_id', flat=True)
             query_set = query_set.filter(id__in=order_list)
 
+        if 0 not in params['product_id_list']:
+            order_list = OrderDetail.objects.filter(product_id__in=params['product_id_list'],
+                                                       deleted_at__isnull=True).values_list(
+                'order_id', flat=True)
+            query_set = query_set.filter(id__in=order_list)
+
         for key, value in items:
             if key not in filters:
                 continue

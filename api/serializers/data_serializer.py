@@ -198,6 +198,7 @@ class FilterOrderRequestParamSerializer(serializers.Serializer):
     order_types = serializers.ListField(required=False, allow_null=True, child=serializers.CharField())
     charge_from_date = serializers.DateField(required=False, allow_null=True)
     charge_to_date = serializers.DateField(required=False, allow_null=True)
+    product_id_list = serializers.ListField(child=serializers.IntegerField(), default=[0])
 
 
 class FilterOrderRequestSerializer(BasePagingSerializer):

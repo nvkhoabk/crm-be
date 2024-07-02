@@ -18,7 +18,7 @@ class PhoneNumberLockHistorySerializer(serializers.ModelSerializer):
         model = PhoneNumberLockHistory
         fields = ['id', 'phone_number', 'company', 'checking_lock_date', 'confirm_lock_date', 'unlock_lock_date',
                   'cancel_date', 'created_at', 'viettel_lock_date', 'mobifone_lock_date', 'vinaphone_lock_date',
-                  'other_lock_date']
+                  'other_lock_date', 'send_provider_date']
 
 
 class MainPhoneNumberSerializer(serializers.ModelSerializer):

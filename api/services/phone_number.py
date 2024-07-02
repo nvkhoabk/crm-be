@@ -1056,17 +1056,37 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('other_using_status'):
                 phone_number.other_using_status = kwargs['other_using_status']
 
-            if kwargs.get('viettel_unlocking_status'):
+            if kwargs.get('viettel_unlocking_status', None) and kwargs.get('viettel_unlocking_status', None) != phone_number.viettel_unlocking_status:
                 phone_number.viettel_unlocking_status = kwargs['viettel_unlocking_status']
+                if phone_number.viettel_unlocking_status != 'AVAILABLE':
+                    lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.viettel_lock_history_id).first()
+                    if lock:
+                        lock.send_provider_date = datetime.today()
+                        lock.save()
 
-            if kwargs.get('mobifone_unlocking_status'):
+            if kwargs.get('mobifone_unlocking_status', None) and kwargs.get('mobifone_unlocking_status', None) != phone_number.mobifone_unlocking_status:
                 phone_number.mobifone_unlocking_status = kwargs['mobifone_unlocking_status']
+                if phone_number.mobifone_unlocking_status != 'AVAILABLE':
+                    lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.mobifone_lock_history_id).first()
+                    if lock:
+                        lock.send_provider_date = datetime.today()
+                        lock.save()
 
-            if kwargs.get('vinaphone_unlocking_status'):
+            if kwargs.get('vinaphone_unlocking_status', None) and kwargs.get('vinaphone_unlocking_status', None) != phone_number.vinaphone_unlocking_status:
                 phone_number.vinaphone_unlocking_status = kwargs['vinaphone_unlocking_status']
+                if phone_number.vinaphone_unlocking_status != 'AVAILABLE':
+                    lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.vinaphone_lock_history_id).first()
+                    if lock:
+                        lock.send_provider_date = datetime.today()
+                        lock.save()
 
-            if kwargs.get('other_unlocking_status'):
+            if kwargs.get('other_unlocking_status', None) and kwargs.get('other_unlocking_status', None) != phone_number.other_unlocking_status:
                 phone_number.other_unlocking_status = kwargs['other_unlocking_status']
+                if phone_number.other_unlocking_status != 'AVAILABLE':
+                    lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.other_lock_history_id).first()
+                    if lock:
+                        lock.send_provider_date = datetime.today()
+                        lock.save()
 
             if kwargs.get('note', None) is not None:
                 phone_number.note = kwargs['note']
