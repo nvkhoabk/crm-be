@@ -1117,3 +1117,27 @@ class ExportPhoneNumberView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=record, request=serializer.validated_data,
                                  serializer=phone_number_serializer.ExportPhoneNumberResponseSerializer)
+
+
+class CopyPhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.FilterPhoneNumberRequestSerializer
+    pagination_class = False
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='copy phone number',
+        operation_description='Copy phone number api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.CopyPhoneNumberResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.CopyPhoneNumberService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=result, request=serializer.validated_data,
+                                 serializer=phone_number_serializer.CopyPhoneNumberResponseSerializer)

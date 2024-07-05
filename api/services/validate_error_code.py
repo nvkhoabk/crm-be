@@ -269,3 +269,7 @@ class VinaUnLockDateWrongFormat:
 class OtherUnLockDateWrongFormat:
     code = 56
     msg = ''
+
+class ClientUseDateWrongFormat:
+    code = 57
+    msg = ''

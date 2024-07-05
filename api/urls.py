@@ -372,4 +372,6 @@ urlpatterns = [
        name='phone_number.filter_phone_number_technical_activity'),
     path('phone_number/revert_phone_number_technical_activity/', phone_number.RevertPhoneNumberTechnicalActivityView.as_view(),
        name='phone_number.revert_phone_number_technical_activity'),
+    path('phone_number/copy_phone_number/', phone_number.CopyPhoneNumberView.as_view(),
+       name='phone_number.copy_phone_number'),
 ] + static('files/', document_root=Const.FILE_ROOT)

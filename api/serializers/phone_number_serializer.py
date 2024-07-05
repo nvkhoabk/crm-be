@@ -328,6 +328,35 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
         history_list = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, id__in=id_list).order_by('-id')
         return PhoneNumberLockHistorySerializer(history_list, many=True).data
 
+    def get_last_viettel_unlock_date(self, phone_number):
+        lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+            viettel_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+        if lock:
+            return lock.first().unlock_lock_date
+        return None
+    def get_last_mobifone_unlock_date(self, phone_number):
+        lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+            mobifone_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+        if lock:
+            return lock.first().unlock_lock_date
+        return None
+    def get_last_vinaphone_unlock_date(self, phone_number):
+        lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+            vinaphone_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+        if lock:
+            return lock.first().unlock_lock_date
+        return None
+    def get_last_other_unlock_date(self, phone_number):
+        lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+            other_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+        if lock:
+            return lock.first().unlock_lock_date
+        return None
+
+    last_viettel_unlock_date = serializers.SerializerMethodField(source='get_last_viettel_unlock_date')
+    last_mobifone_unlock_date = serializers.SerializerMethodField(source='get_last_mobifone_unlock_date')
+    last_vinaphone_unlock_date = serializers.SerializerMethodField(source='get_last_vinaphone_unlock_date')
+    last_other_unlock_date = serializers.SerializerMethodField(source='get_last_other_unlock_date')
     lock_histories = serializers.SerializerMethodField(source='get_lock_histories')
 
     class Meta:
@@ -342,7 +371,9 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                   'viettel_lock_count', 'mobifone_lock_count', 'vinaphone_lock_count', 'other_lock_count',
                   'updated_at', 'viettel_using_status', 'mobifone_using_status', 'vinaphone_using_status',
                   'other_using_status', 'viettel_unlocking_status', 'mobifone_unlocking_status',
-                  'vinaphone_unlocking_status', 'other_unlocking_status', 'provider_cancel_date']
+                  'vinaphone_unlocking_status', 'other_unlocking_status', 'provider_cancel_date',
+                  'last_viettel_unlock_date', 'last_mobifone_unlock_date', 'last_vinaphone_unlock_date',
+                  'last_other_unlock_date']
 
 
 class PhoneNumberTechnicalActivitySerializer(serializers.ModelSerializer):
@@ -757,3 +788,7 @@ class ExportPhoneNumberRequestSerializer(FilterPhoneNumberRequestParamSerializer
 
 class ExportPhoneNumberResponseSerializer(BaseResponseSerializer):
     data = ExportOrderRequestRecordSerializer()
+
+
+class CopyPhoneNumberResponseSerializer(BaseResponseSerializer):
+    data = serializers.CharField()

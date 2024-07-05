@@ -450,7 +450,7 @@ class Command(BaseCommand):
                 # client.save()
 
     def get_lock_status(self, lock_status):
-        if lock_status == 'Đã gửi NCC':
+        if lock_status == 'Đã gửi nhà cung cấp':
             return 'SENT_PROVIDER'
         if lock_status == 'Đã mở':
             return 'OPENED'
@@ -459,7 +459,7 @@ class Command(BaseCommand):
         return 'AVAILABLE'
     def update_phone_number_info(self, phone, using_providers, lock_provider, lock_date,
                                                       open_provider, open_date, lock_status, send_provider_date,
-                                                      cancel_date):
+                                                      cancel_date, client_use_date):
         phone_number = PhoneNumber.objects.filter(phone_number__icontains=phone).first()
         VIETTEL = 'Viettel'
         MOBIFONE = 'Mobifone'
@@ -484,51 +484,66 @@ class Command(BaseCommand):
                                                              vinaphone_lock_date=None,
                                                              other_lock_date=None)
                 if lock_provider.strip() == VIETTEL:
-                    lock.viettel_lock_date = datetime.strptime(lock_date.strip(), '%d/%m/%Y')
+                    lock.viettel_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if open_date.strip():
-                        lock.unlock_lock_date = datetime.strptime(open_date.strip(), '%d/%m/%Y')
+                        lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
                         phone_number.viettel_using_status = 'OPEN'
                     else:
                         phone_number.viettel_using_status = 'LOCK'
                         if send_provider_date.strip():
-                            lock.send_provider_date = datetime.strptime(send_provider_date.strip(), '%d/%m/%Y')
+                            lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if lock_status:
                         phone_number.viettel_unlocking_status = self.get_lock_status(lock_status)
                 if lock_provider.strip() == VINAPHONE:
-                    lock.vinaphone_lock_date = datetime.strptime(lock_date.strip(), '%d/%m/%Y')
+                    lock.vinaphone_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if open_date.strip():
-                        lock.unlock_lock_date = datetime.strptime(open_date.strip(), '%d/%m/%Y')
+                        lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
                         phone_number.vinaphone_using_status = 'OPEN'
                     else:
                         phone_number.vinaphone_using_status = 'LOCK'
                         if send_provider_date.strip():
-                            lock.send_provider_date = datetime.strptime(send_provider_date.strip(), '%d/%m/%Y')
+                            lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if lock_status:
                         phone_number.vinaphone_unlocking_status = self.get_lock_status(lock_status)
                 if lock_provider.strip() == MOBIFONE:
-                    lock.mobifone_lock_date = datetime.strptime(lock_date.strip(), '%d/%m/%Y')
+                    lock.mobifone_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if open_date.strip():
-                        lock.unlock_lock_date = datetime.strptime(open_date.strip(), '%d/%m/%Y')
+                        lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
                         phone_number.mobifone_using_status = 'OPEN'
                     else:
                         phone_number.mobifone_using_status = 'LOCK'
                         if send_provider_date.strip():
-                            lock.send_provider_date = datetime.strptime(send_provider_date.strip(), '%d/%m/%Y')
+                            lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''), '%d/%m/%Y')
                     if lock_status:
                         phone_number.mobifone_unlocking_status = self.get_lock_status(lock_status)
                 lock.save()
             if cancel_date:
                 status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy').first()
-                phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip(), '%d/%m/%Y')
+                phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''), '%d/%m/%Y')
                 if status:
                     phone_number.phone_number_status_id = status.id
+            if client_use_date:
+                phone_number.client_use_date = datetime.strptime(client_use_date.strip().replace(' ', ''), '%d/%m/%Y')
+                if not phone_number.active_date:
+                    phone_number.active_date = phone_number.client_use_date
 
             update_lock_count(phone_number)
             phone_number.save()
         else:
             print('Khong tim thay: {}'.format(phone))
 
-
+    def fix_pickup_date(self, phone, pickup_date):
+        phone_number = PhoneNumber.objects.filter(phone_number__icontains=phone).first()
+        VIETTEL = 'Viettel'
+        MOBIFONE = 'Mobifone'
+        VINAPHONE = 'Vinaphone'
+        if phone_number:
+            print(pickup_date)
+            if pickup_date:
+                phone_number.pickup_date = datetime.strptime(pickup_date.strip().replace(' ', ''), '%Y-%m-%d')
+            phone_number.save()
+        else:
+            print('Khong tim thay: {}'.format(phone))
     def migrate_phone_number(self):
         workbook = xlrd.open_workbook('input.xlsx', encoding_override='utf-8')
         worksheet = workbook.sheet_by_index(0)
@@ -547,9 +562,12 @@ class Command(BaseCommand):
             lock_status = str(rows[7].value).strip()
             send_provider_date = str(rows[8].value).strip()
             cancel_date = str(rows[9].value).strip()
+            client_use_date = str(rows[10].value).strip()
+            # print('{}*{}*{}*{}'.format(phone_number, send_provider_date, cancel_date, pickup_date))
+            # self.fix_pickup_date(phone_number, send_provider_date)
             self.update_phone_number_info(phone_number, using_providers, lock_provider, lock_date,
                                                       open_provider, open_date, lock_status, send_provider_date,
-                                                      cancel_date)
+                                                      cancel_date, client_use_date)
 
     def fix_call_log_wrong1(self):
         from django.utils.timezone import make_aware
@@ -612,7 +630,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
-        #self.migrate_phone_number()
+        # self.migrate_phone_number()
         # self.fix_montly_order_detail()
         # self.fix_call_log_wrong()
         # self.init_phone_number_client()

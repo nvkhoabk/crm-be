@@ -1044,19 +1044,28 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('other_payment_date'):
                 phone_number.other_payment_date = kwargs['other_payment_date']
 
-            if kwargs.get('viettel_using_status'):
+            if kwargs.get('viettel_using_status', None) != phone_number.viettel_using_status:
+                if kwargs.get('viettel_using_status', None) == 'USING':
+                    phone_number.pic = request.user
                 phone_number.viettel_using_status = kwargs['viettel_using_status']
 
-            if kwargs.get('mobifone_using_status'):
+            if kwargs.get('mobifone_using_status', None) != phone_number.mobifone_using_status:
+                if kwargs.get('mobifone_using_status', None) == 'USING':
+                    phone_number.pic = request.user
                 phone_number.mobifone_using_status = kwargs['mobifone_using_status']
 
-            if kwargs.get('vinaphone_using_status'):
+            if kwargs.get('vinaphone_using_status', None) != phone_number.vinaphone_using_status:
+                if kwargs.get('vinaphone_using_status', None) == 'USING':
+                    phone_number.pic = request.user
                 phone_number.vinaphone_using_status = kwargs['vinaphone_using_status']
 
-            if kwargs.get('other_using_status'):
+            if kwargs.get('other_using_status', None) != phone_number.other_using_status:
+                if kwargs.get('other_using_status', None) == 'USING':
+                    phone_number.pic = request.user
                 phone_number.other_using_status = kwargs['other_using_status']
 
-            if kwargs.get('viettel_unlocking_status', None) and kwargs.get('viettel_unlocking_status', None) != phone_number.viettel_unlocking_status:
+            if kwargs.get('viettel_unlocking_status', None) and kwargs.get('viettel_unlocking_status',
+                                                                           None) != phone_number.viettel_unlocking_status:
                 phone_number.viettel_unlocking_status = kwargs['viettel_unlocking_status']
                 if phone_number.viettel_unlocking_status != 'AVAILABLE':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.viettel_lock_history_id).first()
@@ -1064,7 +1073,8 @@ class UpdatePhoneNumberService(BaseService):
                         lock.send_provider_date = datetime.today()
                         lock.save()
 
-            if kwargs.get('mobifone_unlocking_status', None) and kwargs.get('mobifone_unlocking_status', None) != phone_number.mobifone_unlocking_status:
+            if kwargs.get('mobifone_unlocking_status', None) and kwargs.get('mobifone_unlocking_status',
+                                                                            None) != phone_number.mobifone_unlocking_status:
                 phone_number.mobifone_unlocking_status = kwargs['mobifone_unlocking_status']
                 if phone_number.mobifone_unlocking_status != 'AVAILABLE':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.mobifone_lock_history_id).first()
@@ -1072,7 +1082,8 @@ class UpdatePhoneNumberService(BaseService):
                         lock.send_provider_date = datetime.today()
                         lock.save()
 
-            if kwargs.get('vinaphone_unlocking_status', None) and kwargs.get('vinaphone_unlocking_status', None) != phone_number.vinaphone_unlocking_status:
+            if kwargs.get('vinaphone_unlocking_status', None) and kwargs.get('vinaphone_unlocking_status',
+                                                                             None) != phone_number.vinaphone_unlocking_status:
                 phone_number.vinaphone_unlocking_status = kwargs['vinaphone_unlocking_status']
                 if phone_number.vinaphone_unlocking_status != 'AVAILABLE':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.vinaphone_lock_history_id).first()
@@ -1080,7 +1091,8 @@ class UpdatePhoneNumberService(BaseService):
                         lock.send_provider_date = datetime.today()
                         lock.save()
 
-            if kwargs.get('other_unlocking_status', None) and kwargs.get('other_unlocking_status', None) != phone_number.other_unlocking_status:
+            if kwargs.get('other_unlocking_status', None) and kwargs.get('other_unlocking_status',
+                                                                         None) != phone_number.other_unlocking_status:
                 phone_number.other_unlocking_status = kwargs['other_unlocking_status']
                 if phone_number.other_unlocking_status != 'AVAILABLE':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.other_lock_history_id).first()
@@ -1391,8 +1403,18 @@ class RevertPhoneNumberTechnicalActivityService(BaseService):
 
         update_lock_count(phone_number)
         phone_number.save()
+        self.trigger_update_phone_number_queue()
         return phone_number
 
+    def trigger_update_phone_number_queue(self):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'crm',
+            {
+                'type': 'trigger_update_phone_number_queue',
+                'message': ''
+            }
+        )
 
 class BulkUpdateStatusService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -1736,7 +1758,8 @@ class ImportPhoneNumberService(BaseService):
             'open_payment_date': str(rows[15].value).strip(),
             'operate_payment_date': str(rows[16].value).strip(),
             'other_payment_date': str(rows[17].value).strip(),
-            'note': str(rows[18].value).strip()
+            'note': str(rows[18].value).strip(),
+            'client_use_date': str(rows[19].value).strip(),
         }
 
     def row_parser_import_status(self, rows):
@@ -2035,6 +2058,9 @@ class ImportPhoneNumberService(BaseService):
         other_payment_date = str(row['other_payment_date']).strip()
         if other_payment_date and self.validate_date_format_YYYYMMDD(other_payment_date) == False:
             error_codes.append(vec.OpenPaymentDateWrongFormat.code)
+        client_use_date = str(row['client_use_date']).strip()
+        if client_use_date and self.validate_date_format_YYYYMMDD(client_use_date) == False:
+            error_codes.append(vec.ClientUseDateWrongFormat.code)
 
         return error_codes
 
@@ -2154,6 +2180,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             open_payment_date=data_record['open_payment_date'],
             operate_payment_date=data_record['operate_payment_date'],
             other_payment_date=data_record['other_payment_date'],
+            client_use_date=data_record['client_use_date'],
             note=data_record['note'],
             company_id=kwargs['company_id'],
             created_at=datetime.today().date())
@@ -2539,3 +2566,12 @@ class ExportPhoneNumberService(BaseService):
             phone_number.active_date.__str__() if phone_number.active_date is not None else '',
             phone_number.provider_cancel_date.__str__() if phone_number.provider_cancel_date is not None else '',
             phone_number.created_at.astimezone(timezone(TIME_ZONE)).__str__()]
+
+
+class CopyPhoneNumberService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        filter_phone_number_service = FilterPhoneNumberService()
+        phone_numbers = filter_phone_number_service.serve(request, cookies, *args, **kwargs)
+        number_list = list(phone_numbers.values_list('phone_number', flat=True))
+        return '\r\n'.join(number_list)
+
