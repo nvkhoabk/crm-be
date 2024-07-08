@@ -1141,3 +1141,52 @@ class CopyPhoneNumberView(BaseAPIView):
             request, cookies, *args, **serializer.validated_data)
         return self.get_response(results=result, request=serializer.validated_data,
                                  serializer=phone_number_serializer.CopyPhoneNumberResponseSerializer)
+
+
+
+class UpdateListPhoneNumberStatusForTechView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.UpdateListPhoneNumberStatusRequestSerializer
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='UpdateListPhoneNumberStatus ForTech',
+        operation_description='UpdateListPhoneNumberStatus ForTech',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.UpdateListPhoneNumberStatusResponseSerializer,
+            exceptions.OrderNotFound.code: exceptions.OrderNotFound.msg,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.UpdateListPhoneNumberStatusForTechService()
+        results = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response(results=results, request=request,
+                                 serializer=phone_number_serializer.UpdateListPhoneNumberStatusResponseSerializer)
+
+
+
+class BulkUpdatePhoneNumberStatusForTechView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    serializer_class = phone_number_serializer.BulkUpdatePhoneNumberStatusRequestSerializer
+    pagination_class = True
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='bulk update phone_number status ForTech',
+        operation_description='bulk update phone_number status ForTech api',
+        request_body=serializer_class,
+        responses={
+            status.HTTP_201_CREATED: None,
+            0: phone_number_serializer.BulkUpdatePhoneNumberStatusResponseSerializer,
+        }
+    )
+    def post(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.BulkUpdateStatusForTechService()
+        result = service.serve(
+            request, cookies, *args, **serializer.validated_data)
+        return self.get_response()

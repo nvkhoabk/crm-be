@@ -374,4 +374,8 @@ urlpatterns = [
        name='phone_number.revert_phone_number_technical_activity'),
     path('phone_number/copy_phone_number/', phone_number.CopyPhoneNumberView.as_view(),
        name='phone_number.copy_phone_number'),
+    path('phone_number/update_list_phone_number_status_for_tech/', phone_number.UpdateListPhoneNumberStatusForTechView.as_view(),
+       name='phone_number.update_list_phone_number_status_for_tech'),
+    path('phone_number/bulk_update_status_for_tech/', phone_number.BulkUpdatePhoneNumberStatusForTechView.as_view(),
+                       name='phone_number.bulk_update_status_for_tech'),
 ] + static('files/', document_root=Const.FILE_ROOT)

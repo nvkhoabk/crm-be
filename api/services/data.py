@@ -605,10 +605,7 @@ class FilterOrderService(BaseService):
                                                                       order_detail__order_id__in=query_set.values_list(
                                                                           'id', flat=True))
             if 0 not in params['product_id_list']:
-                order_detail_list = OrderDetail.objects.filter(product_id__in=params['product_id_list'],
-                                                        deleted_at__isnull=True).values_list(
-                    'id', flat=True)
-                monthly_order_details.filter(order_detail_id__in=order_detail_list)
+                monthly_order_details = monthly_order_details.filter(order_detail__product_id__in=params['product_id_list'])
             query_set = query_set.filter(id__in=monthly_order_details.values_list('order_detail__order_id', flat=True))
             amount_map = self.make_monthly_order_amount_map(monthly_order_details)
             for order in query_set:

@@ -394,3 +394,8 @@ class PhoneNumberActivityNotFound(APIException):
 class InvalidInpputDate(APIException):
     code = 9017
     msg = 'InvalidInpputDate'
+
+
+class InvalidPhoneNumberStatus(APIException):
+    code = 10001
+    msg = 'InvalidPhoneNumberStatus'

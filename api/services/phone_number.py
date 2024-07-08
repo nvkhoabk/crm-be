@@ -25,7 +25,7 @@ from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPho
                                      PhoneNumberStatusNotFound, PhoneNumberStatusDuplicated,
                                      PhoneNumberMonthlyFeeNotFound, PhoneNumberMonthlyFeeDuplicated,
                                      PhoneNumberNotFound, PhoneNumberDuplicated, ImportRecordNotFound,
-                                     InvalidInpputDate, )
+                                     InvalidInpputDate, InvalidPhoneNumberStatus, )
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError, transaction
 from groups_manager.models import Group, GroupType, Member
@@ -1067,7 +1067,7 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('viettel_unlocking_status', None) and kwargs.get('viettel_unlocking_status',
                                                                            None) != phone_number.viettel_unlocking_status:
                 phone_number.viettel_unlocking_status = kwargs['viettel_unlocking_status']
-                if phone_number.viettel_unlocking_status != 'AVAILABLE':
+                if phone_number.viettel_unlocking_status == 'SENT_PROVIDER':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.viettel_lock_history_id).first()
                     if lock:
                         lock.send_provider_date = datetime.today()
@@ -1076,7 +1076,7 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('mobifone_unlocking_status', None) and kwargs.get('mobifone_unlocking_status',
                                                                             None) != phone_number.mobifone_unlocking_status:
                 phone_number.mobifone_unlocking_status = kwargs['mobifone_unlocking_status']
-                if phone_number.mobifone_unlocking_status != 'AVAILABLE':
+                if phone_number.mobifone_unlocking_status == 'SENT_PROVIDER':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.mobifone_lock_history_id).first()
                     if lock:
                         lock.send_provider_date = datetime.today()
@@ -1085,7 +1085,7 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('vinaphone_unlocking_status', None) and kwargs.get('vinaphone_unlocking_status',
                                                                              None) != phone_number.vinaphone_unlocking_status:
                 phone_number.vinaphone_unlocking_status = kwargs['vinaphone_unlocking_status']
-                if phone_number.vinaphone_unlocking_status != 'AVAILABLE':
+                if phone_number.vinaphone_unlocking_status == 'SENT_PROVIDER':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.vinaphone_lock_history_id).first()
                     if lock:
                         lock.send_provider_date = datetime.today()
@@ -1094,7 +1094,7 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('other_unlocking_status', None) and kwargs.get('other_unlocking_status',
                                                                          None) != phone_number.other_unlocking_status:
                 phone_number.other_unlocking_status = kwargs['other_unlocking_status']
-                if phone_number.other_unlocking_status != 'AVAILABLE':
+                if phone_number.other_unlocking_status == 'SENT_PROVIDER':
                     lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.other_lock_history_id).first()
                     if lock:
                         lock.send_provider_date = datetime.today()
@@ -1415,6 +1415,7 @@ class RevertPhoneNumberTechnicalActivityService(BaseService):
                 'message': ''
             }
         )
+
 
 class BulkUpdateStatusService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -2575,3 +2576,143 @@ class CopyPhoneNumberService(BaseService):
         number_list = list(phone_numbers.values_list('phone_number', flat=True))
         return '\r\n'.join(number_list)
 
+
+class BulkUpdateStatusForTechService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        service = FilterPhoneNumberService()
+        phone_numbers = service.serve(request, cookies, *args, **kwargs)
+        status = kwargs.get('status', None)
+        service = CheckPhoneNumberService()
+        if status is None:
+            return
+        with transaction.atomic():
+            for phone_number in phone_numbers:
+                if not self.validate_status(status, phone_number):
+                    raise InvalidPhoneNumberStatus()
+
+                payload = self.create_payload(phone_number, status)
+                if payload:
+                    service.serve(request, cookies, *args, **payload)
+
+        return phone_numbers
+
+    def create_payload(self, phone_number, status_id):
+        phone_number_status = PhoneNumberStatus.objects.filter(deleted_at__isnull=True, id=status_id).first()
+        if not phone_number_status:
+            return None
+
+        payload = {
+            'id': phone_number.id,
+            'phone_number_status_id': phone_number_status.id,
+            'viettel_lock_date': None,
+            'mobifone_lock_date': None,
+            'vinaphone_lock_date': None,
+            'other_lock_date': None,
+            'viettel_unlock_date': None,
+            'mobifone_unlock_date': None,
+            'vinaphone_unlock_date': None,
+            'other_unlock_date': None
+        }
+
+        if phone_number_status.name == 'Đang bị khoá':
+            payload['viettel_lock_date'] = self.get_lock_date(phone_number, PHONE_NUMBER_PROVIDER.VIETTEL)
+            payload['mobifone_lock_date'] = self.get_lock_date(phone_number, PHONE_NUMBER_PROVIDER.MOBI)
+            payload['vinaphone_lock_date'] = self.get_lock_date(phone_number, PHONE_NUMBER_PROVIDER.VINA)
+            payload['other_lock_date'] = self.get_lock_date(phone_number, PHONE_NUMBER_PROVIDER.OTHER)
+        elif phone_number_status.name == 'Số đã mở':
+            payload['viettel_unlock_date'] = self.get_unlock_date(phone_number, PHONE_NUMBER_PROVIDER.VIETTEL)
+            payload['mobifone_unlock_date'] = self.get_unlock_date(phone_number, PHONE_NUMBER_PROVIDER.MOBI)
+            payload['vinaphone_unlock_date'] = self.get_unlock_date(phone_number, PHONE_NUMBER_PROVIDER.VINA)
+            payload['other_unlock_date'] = self.get_unlock_date(phone_number, PHONE_NUMBER_PROVIDER.OTHER)
+
+        return payload
+
+    def get_unlock_date(self, phone_number, type):
+        return datetime.today().strftime('%Y-%m-%d')
+
+    def get_lock_date(self, phone_number, type):
+        lock_date = None
+        if type == PHONE_NUMBER_PROVIDER.VIETTEL:
+            history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+                                                            id=phone_number.viettel_lock_history_id).first()
+            if history.unlock_lock_date is None:
+                lock_date = history.viettel_lock_date
+            if lock_date is None:
+                lock_provider_json = json.loads(phone_number.lock_provider)
+                if 'Viettel' in lock_provider_json and 'viettelEnterDate' in lock_provider_json and lock_provider_json[
+                    'Viettel']:
+                    lock_date = lock_provider_json['viettelEnterDate']
+        if type == PHONE_NUMBER_PROVIDER.VINA:
+            history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+                                                            id=phone_number.vinaphone_lock_history_id).first()
+            if history.unlock_lock_date is None:
+                lock_date = history.vinaphone_lock_date
+            if lock_date is None:
+                lock_provider_json = json.loads(phone_number.lock_provider)
+                if 'Vinaphone' in lock_provider_json and 'vinaphoneEnterDate' in lock_provider_json and lock_provider_json[
+                    'Vinaphone']:
+                    lock_date = lock_provider_json['vinaphoneEnterDate']
+        if type == PHONE_NUMBER_PROVIDER.MOBI:
+            history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+                                                            id=phone_number.mobifone_lock_history_id).first()
+            if history.unlock_lock_date is None:
+                lock_date = history.mobifone_lock_date
+            if lock_date is None:
+                lock_provider_json = json.loads(phone_number.lock_provider)
+                if 'Mobifone' in lock_provider_json and 'mobifoneEnterDate' in lock_provider_json and lock_provider_json[
+                    'Mobifone']:
+                    lock_date = lock_provider_json['mobifoneEnterDate']
+        if type == PHONE_NUMBER_PROVIDER.OTHER:
+            history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+                                                            id=phone_number.other_lock_history_id).first()
+            if history.unlock_lock_date is None:
+                lock_date = history.other_lock_date
+            if lock_date is None:
+                lock_provider_json = json.loads(phone_number.lock_provider)
+                if 'Other' in lock_provider_json and 'viettelEnterDate' in lock_provider_json and lock_provider_json[
+                    'Other']:
+                    lock_date = lock_provider_json['otherEnterDate']
+
+        if lock_date is None:
+            lock_date = datetime.today().strftime('%Y-%m-%d')
+
+        return lock_date
+
+    def validate_status(self, status_id, phone_number):
+        status = PhoneNumberStatus.objects.filter(deleted_at__isnull=True, id=status_id).first()
+        if status:
+            if phone_number.phone_number_status.name == 'Đang nghi ngờ':
+                return status.name == 'Đang bị khoá' or status.name == 'Cảnh báo sai'
+
+            if phone_number.phone_number_status.name == 'Test sau mở':
+                return status.name == 'Đang bị khoá' or status.name == 'Số đã mở'
+
+            if phone_number.phone_number_status.name == 'Chờ hủy':
+                return status.name == 'Xác nhận hủy'
+
+            if phone_number.phone_number_status.name == 'Số mới nhập':
+                return status.name == 'Số đạt' or status.name == 'Số không đạt'
+
+            if phone_number.phone_number_status.name == 'Không được sử dụng':
+                return status.name == 'Xác nhận không sử dụng'
+        return True
+
+
+class UpdateListPhoneNumberStatusForTechService(BulkUpdateStatusForTechService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        try:
+            service = CheckPhoneNumberService()
+            with transaction.atomic():
+                id_list = kwargs.get('phone_number_id_list')
+
+                for phone_number_id in id_list:
+                    phone_number = PhoneNumber.objects.get(pk=phone_number_id)
+                    if not self.validate_status(kwargs.get('phone_number_status_id'), phone_number):
+                        raise InvalidPhoneNumberStatus()
+
+                    payload = self.create_payload(phone_number, kwargs.get('phone_number_status_id'))
+                    if payload:
+                        service.serve(request, cookies, *args, **payload)
+
+        except PhoneNumber.DoesNotExist:
+            raise PhoneNumberNotFound()
