@@ -1170,7 +1170,7 @@ class FilterCustomerService(BaseService):
                 )
             if key == 'phone':
                 query_set = query_set.filter(
-                    phone__icontains=value,
+                    phone__iexact=value,
                 )
             if key == 'address':
                 query_set = query_set.filter(

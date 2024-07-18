@@ -909,7 +909,7 @@ class GetCustomerView(BaseAPIView):
 
 class UpdateCustomerView(BaseAPIView):
     authentication_classes = []
-    permission_classes = [SuperAdminPermission]
+    permission_classes = [IsAuthenticated]
     serializer_class = manage_serializer.UpdateCustomerRequestSerializer
 
     @swagger_auto_schema(

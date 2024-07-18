@@ -103,7 +103,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'crm_db',
-        'HOST': '103.229.40.142',
+        'HOST': '103.252.0.165',
         'PORT': '3306',
         'USER': 'crm_be',
         'PASSWORD': '123456aA@',

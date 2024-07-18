@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, date as date_type
 from pytz import timezone
 import pandas as pd
 import xlrd
@@ -16,7 +16,7 @@ from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
 from api.serializers.phone_number_serializer import CreatePhoneNumberRequestSerializer, \
-    CreatePhoneNumberMonthlyFeeRequestSerializer
+    CreatePhoneNumberMonthlyFeeRequestSerializer, CheckPhoneNumberRequestSerializer
 from api.services import utils
 from rest_framework.exceptions import PermissionDenied
 from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPhoneNumberDuplicated,
@@ -2592,7 +2592,9 @@ class BulkUpdateStatusForTechService(BaseService):
 
                 payload = self.create_payload(phone_number, status)
                 if payload:
-                    service.serve(request, cookies, *args, **payload)
+                    serializer = CheckPhoneNumberRequestSerializer(data=payload)
+                    serializer.is_valid()
+                    service.serve(request, cookies, *args, **serializer.validated_data)
 
         return phone_numbers
 
@@ -2631,50 +2633,64 @@ class BulkUpdateStatusForTechService(BaseService):
         return datetime.today().strftime('%Y-%m-%d')
 
     def get_lock_date(self, phone_number, type):
+        lock_provider_json = {}
+        if phone_number.lock_provider:
+            lock_provider_json = json.loads(phone_number.lock_provider)
         lock_date = None
         if type == PHONE_NUMBER_PROVIDER.VIETTEL:
+            if phone_number.viettel_using_status != 'LOCK':
+                return None
+
             history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
                                                             id=phone_number.viettel_lock_history_id).first()
-            if history.unlock_lock_date is None:
+            if history and history.unlock_lock_date is None:
                 lock_date = history.viettel_lock_date
             if lock_date is None:
-                lock_provider_json = json.loads(phone_number.lock_provider)
                 if 'Viettel' in lock_provider_json and 'viettelEnterDate' in lock_provider_json and lock_provider_json[
                     'Viettel']:
                     lock_date = lock_provider_json['viettelEnterDate']
         if type == PHONE_NUMBER_PROVIDER.VINA:
+            if phone_number.vinaphone_using_status != 'LOCK':
+                return None
+
             history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
                                                             id=phone_number.vinaphone_lock_history_id).first()
-            if history.unlock_lock_date is None:
+            if history and history.unlock_lock_date is None:
                 lock_date = history.vinaphone_lock_date
             if lock_date is None:
-                lock_provider_json = json.loads(phone_number.lock_provider)
-                if 'Vinaphone' in lock_provider_json and 'vinaphoneEnterDate' in lock_provider_json and lock_provider_json[
-                    'Vinaphone']:
+                if 'Vinaphone' in lock_provider_json and 'vinaphoneEnterDate' in lock_provider_json and \
+                        lock_provider_json['Vinaphone']:
                     lock_date = lock_provider_json['vinaphoneEnterDate']
         if type == PHONE_NUMBER_PROVIDER.MOBI:
+            if phone_number.mobifone_using_status != 'LOCK':
+                return None
+
             history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
                                                             id=phone_number.mobifone_lock_history_id).first()
-            if history.unlock_lock_date is None:
+            if history and history.unlock_lock_date is None:
                 lock_date = history.mobifone_lock_date
             if lock_date is None:
-                lock_provider_json = json.loads(phone_number.lock_provider)
-                if 'Mobifone' in lock_provider_json and 'mobifoneEnterDate' in lock_provider_json and lock_provider_json[
-                    'Mobifone']:
+                if 'Mobifone' in lock_provider_json and 'mobifoneEnterDate' in lock_provider_json and \
+                        lock_provider_json['Mobifone']:
                     lock_date = lock_provider_json['mobifoneEnterDate']
         if type == PHONE_NUMBER_PROVIDER.OTHER:
+            if phone_number.other_using_status != 'LOCK':
+                return None
+
             history = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
                                                             id=phone_number.other_lock_history_id).first()
-            if history.unlock_lock_date is None:
+            if history and history.unlock_lock_date is None:
                 lock_date = history.other_lock_date
             if lock_date is None:
-                lock_provider_json = json.loads(phone_number.lock_provider)
-                if 'Other' in lock_provider_json and 'viettelEnterDate' in lock_provider_json and lock_provider_json[
+                if 'Other' in lock_provider_json and 'otherEnterDate' in lock_provider_json and lock_provider_json[
                     'Other']:
                     lock_date = lock_provider_json['otherEnterDate']
 
         if lock_date is None:
-            lock_date = datetime.today().strftime('%Y-%m-%d')
+            lock_date = datetime.now().strftime('%Y-%m-%d')
+
+        if not isinstance(lock_date, str):
+            lock_date = lock_date.strftime('%Y-%m-%d')
 
         return lock_date
 
@@ -2712,7 +2728,9 @@ class UpdateListPhoneNumberStatusForTechService(BulkUpdateStatusForTechService):
 
                     payload = self.create_payload(phone_number, kwargs.get('phone_number_status_id'))
                     if payload:
-                        service.serve(request, cookies, *args, **payload)
+                        serializer = CheckPhoneNumberRequestSerializer(data=payload)
+                        serializer.is_valid()
+                        service.serve(request, cookies, *args, **serializer.validated_data)
 
         except PhoneNumber.DoesNotExist:
             raise PhoneNumberNotFound()

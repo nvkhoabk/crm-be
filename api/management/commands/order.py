@@ -450,7 +450,7 @@ class Command(BaseCommand):
                 # client.save()
 
     def get_lock_status(self, lock_status):
-        if lock_status == 'Đã gửi nhà cung cấp':
+        if lock_status == 'Đã gửi nhà cung cấp' or lock_status == 'Đã gửi NCC':
             return 'SENT_PROVIDER'
         if lock_status == 'Đã mở':
             return 'OPENED'
@@ -465,15 +465,6 @@ class Command(BaseCommand):
         MOBIFONE = 'Mobifone'
         VINAPHONE = 'Vinaphone'
         if phone_number:
-            provider_list = using_providers.split(',')
-            for provider in provider_list:
-                if provider.strip() == VIETTEL:
-                    phone_number.viettel_using_status = 'USING'
-                if provider.strip() == VINAPHONE:
-                    phone_number.vinaphone_using_status = 'USING'
-                if provider.strip() == MOBIFONE:
-                    phone_number.mobifone_using_status = 'USING'
-
             if lock_provider:
                 lock = PhoneNumberLockHistory.objects.create(company=phone_number.company,
                                                              phone_number=phone_number,
@@ -517,6 +508,16 @@ class Command(BaseCommand):
                     if lock_status:
                         phone_number.mobifone_unlocking_status = self.get_lock_status(lock_status)
                 lock.save()
+
+            provider_list = using_providers.split(',')
+            for provider in provider_list:
+                if provider.strip() == VIETTEL:
+                    phone_number.viettel_using_status = 'USING'
+                if provider.strip() == VINAPHONE:
+                    phone_number.vinaphone_using_status = 'USING'
+                if provider.strip() == MOBIFONE:
+                    phone_number.mobifone_using_status = 'USING'
+
             if cancel_date:
                 status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy').first()
                 phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''), '%d/%m/%Y')
@@ -553,6 +554,7 @@ class Command(BaseCommand):
         while curr_row < num_rows:
             curr_row += 1
             rows = worksheet.row(curr_row)
+            print(len(rows))
             phone_number = str(rows[1].value).strip()
             using_providers = str(rows[2].value).strip()
             lock_provider = str(rows[3].value).strip()
@@ -563,7 +565,7 @@ class Command(BaseCommand):
             send_provider_date = str(rows[8].value).strip()
             cancel_date = str(rows[9].value).strip()
             client_use_date = str(rows[10].value).strip()
-            # print('{}*{}*{}*{}'.format(phone_number, send_provider_date, cancel_date, pickup_date))
+            print('{}*{}'.format(phone_number, using_providers))
             # self.fix_pickup_date(phone_number, send_provider_date)
             self.update_phone_number_info(phone_number, using_providers, lock_provider, lock_date,
                                                       open_provider, open_date, lock_status, send_provider_date,
@@ -622,15 +624,15 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        self.initializer_logger()
-        processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
-            options['date'], '%Y%m%d').date()
+        # self.initializer_logger()
+        # processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
+        #     options['date'], '%Y%m%d').date()
+        #
+        # self.process_annual_buy(processing_date)
+        # self.calculate_debt_status_order(processing_date)
+        # self.notify_renew_date(processing_date)
 
-        self.process_annual_buy(processing_date)
-        self.calculate_debt_status_order(processing_date)
-        self.notify_renew_date(processing_date)
-
-        # self.migrate_phone_number()
+        self.migrate_phone_number()
         # self.fix_montly_order_detail()
         # self.fix_call_log_wrong()
         # self.init_phone_number_client()
