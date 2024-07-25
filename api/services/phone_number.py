@@ -997,10 +997,10 @@ class UpdatePhoneNumberService(BaseService):
 
                         if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
                             trigger_update_phone_number_queue = True
-                        if new_status_id == cancel_status.id:
-                            phone_number.cancel_date = datetime.today()
                     else:
                         trigger_update_phone_number_queue = True
+                if new_status_id == cancel_status.id:
+                    phone_number.cancel_date = datetime.today()
 
             if kwargs.get('pickup_date'):
                 phone_number.pickup_date = kwargs['pickup_date']
@@ -1417,21 +1417,60 @@ class RevertPhoneNumberTechnicalActivityService(BaseService):
         )
 
 
-class BulkUpdateStatusService(BaseService):
+class BulkUpdateStatusService(UpdatePhoneNumberService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         service = FilterPhoneNumberService()
         phone_numbers = service.serve(request, cookies, *args, **kwargs)
         status = kwargs.get('status', None)
         if status is None:
             return
+        if phone_numbers.first() is None:
+            return phone_numbers
+
+        trigger_update_phone_number_queue = False
+        checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                        company_id=phone_numbers.first().company_id,
+                                                        deleted_at__isnull=True)
+        add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                       company_id=phone_numbers.first().company_id,
+                                                       deleted_at__isnull=True)
+        cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
+                                                      company_id=phone_numbers.first().company_id,
+                                                      deleted_at__isnull=True)
+        retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                      company_id=phone_numbers.first().company_id,
+                                                      deleted_at__isnull=True)
+        provider_cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã gửi nhà cung cấp hủy',
+                                                      company_id=phone_numbers.first().company_id,
+                                                      deleted_at__isnull=True)
+        trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
 
         for phone_number in phone_numbers:
+            old_status_id = phone_number.phone_number_status_id
+            new_status_id = status
+            if old_status_id == new_status_id and old_status_id == checking_status.id:
+                trigger_update_phone_number_queue = True
+            else:
+                if old_status_id in trigger_status_list:
+                    phone_number.pic = request.user
+
+                    if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
+                        trigger_update_phone_number_queue = True
+                else:
+                    trigger_update_phone_number_queue = True
+            if new_status_id == cancel_status.id:
+                phone_number.cancel_date = datetime.today()
+            if new_status_id == provider_cancel_status.id:
+                phone_number.provider_cancel_date = datetime.today()
+
             phone_number.phone_number_status_id = status
             phone_number.updated_at = datetime.now()
             if phone_number.has_changed:
                 PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                    user_id=request.user.id, diff=phone_number.diff)
             phone_number.save()
+        if trigger_update_phone_number_queue:
+            self.trigger_update_phone_number_queue()
         return phone_numbers
 
 
@@ -1526,20 +1565,58 @@ class GetStatisticPhoneNumberService(BaseService):
         return (last_date - phone_number.active_date).days + 1
 
 
-class UpdateListPhoneNumberStatusService(BaseService):
+class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             with transaction.atomic():
                 id_list = kwargs.get('phone_number_id_list')
 
-                for phone_number_id in id_list:
-                    phone_number = PhoneNumber.objects.get(pk=phone_number_id)
-                    phone_number.phone_number_status_id = kwargs.get('phone_number_status_id')
+                phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True, id__in=id_list)
+                trigger_update_phone_number_queue = False
+                checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                                company_id=phone_numbers.first().company_id,
+                                                                deleted_at__isnull=True)
+                add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                               company_id=phone_numbers.first().company_id,
+                                                               deleted_at__isnull=True)
+                cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
+                                                              company_id=phone_numbers.first().company_id,
+                                                              deleted_at__isnull=True)
+                retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                              company_id=phone_numbers.first().company_id,
+                                                              deleted_at__isnull=True)
+                provider_cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã gửi nhà cung cấp hủy',
+                                                              company_id=phone_numbers.first().company_id,
+                                                              deleted_at__isnull=True)
+                trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+
+                for phone_number in phone_numbers:
+                    old_status_id = phone_number.phone_number_status_id
+                    new_status_id = kwargs.get('phone_number_status_id')
+                    if old_status_id == new_status_id and old_status_id == checking_status.id:
+                        trigger_update_phone_number_queue = True
+                    else:
+                        if old_status_id in trigger_status_list:
+                            phone_number.pic = request.user
+
+                            if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
+                                trigger_update_phone_number_queue = True
+                        else:
+                            trigger_update_phone_number_queue = True
+                    if new_status_id == cancel_status.id:
+                        phone_number.cancel_date = datetime.today()
+                    if new_status_id == provider_cancel_status.id:
+                        phone_number.provider_cancel_date = datetime.today()
+
+                    phone_number.phone_number_status_id = new_status_id
                     phone_number.updated_at = datetime.now()
                     if phone_number.has_changed:
                         PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                            user_id=request.user.id, diff=phone_number.diff)
                     phone_number.save()
+
+            if trigger_update_phone_number_queue:
+                self.trigger_update_phone_number_queue()
 
         except PhoneNumber.DoesNotExist:
             raise PhoneNumberNotFound()
@@ -2379,6 +2456,15 @@ class CheckPhoneNumberService(BaseService):
                             phone_number.vinaphone_using_status = 'OPEN'
                         if phone_number.other_using_status == 'LOCK' and kwargs.get('other_lock_date', None) is None:
                             phone_number.other_using_status = 'OPEN'
+
+                        if kwargs.get('viettel_lock_date', None):
+                            phone_number.viettel_using_status = 'LOCK'
+                        if kwargs.get('mobifone_lock_date', None):
+                            phone_number.mobifone_using_status = 'LOCK'
+                        if kwargs.get('vinaphone_lock_date', None):
+                            phone_number.vinaphone_using_status = 'LOCK'
+                        if kwargs.get('other_lock_date', None):
+                            phone_number.other_using_status = 'LOCK'
 
                 if old_status_id == retest_status.id and new_status_id == lock.id:
                     if phone_number.viettel_unlocking_status == 'OPENED':
