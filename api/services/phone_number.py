@@ -1845,7 +1845,8 @@ class ImportPhoneNumberService(BaseService):
             'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
             'phone_number': str(rows[1].value).strip(),
             'phone_number_status': str(rows[2].value).strip(),
-            'phone_number_client': str(rows[3].value).strip()
+            'phone_number_client': str(rows[3].value).strip(),
+            'open_provider': str(rows[4].value).strip()
         }
 
     def row_parser_import_status_for_tech(self, rows):
@@ -2278,6 +2279,14 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                                                company_id=kwargs['company_id'])
         phone_number.phone_number_status = phone_number_status
         phone_number.phone_number_client = phone_number_client
+        if data_record['open_provider'].lower() == 'Viettel'.lower():
+            phone_number.viettel_using_status = 'OPEN'
+        if data_record['open_provider'].lower() == 'Mobifone'.lower():
+            phone_number.mobifone_using_status = 'OPEN'
+        if data_record['open_provider'].lower() == 'Vinaphone'.lower():
+            phone_number.vinaphone_using_status = 'OPEN'
+        if data_record['open_provider'].lower() == 'Other'.lower():
+            phone_number.other_using_status = 'OPEN'
 
         service = UpdatePhoneNumberService()
         service.serve(request, cookies, *args, **vars(phone_number))
