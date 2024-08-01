@@ -12,6 +12,7 @@ from api.common.cookies import Cookies
 from api.const import ORDER_PAYMENT_STATUS, ORDER_DETAIL_TYPE
 from api.models.data import OrderDetail, Payment, Order, MonthlyOrderDetail
 from api.models.organization import UserRole
+from api.models.product import Product
 from api.models.system_configuration import DataStatus, DataSubStatus
 from api.services.data import FilterOrderService
 
@@ -41,14 +42,26 @@ class FilterReportService(BaseService):
                 continue
 
             if key == 'order' and value is not None:
+                charge_from_date = value['charge_from_date']
+                charge_to_date = value['charge_to_date']
+                value.pop('charge_from_date')
+                value.pop('charge_to_date')
                 order_service = FilterOrderService()
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
+                using_product_list = False
                 if 0 not in params['product_id_list']:
-                    filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
-                                                                   type=ORDER_DETAIL_TYPE.NEW_BUY,
-                                                                   product_id__in=params['product_id_list']).values_list(
-                        'order_id', flat=True)
-                    orders = orders.filter(id__in=filter_by_product)
+                    checked_list_id = Product.objects.filter(deleted_at__isnull=True,
+                                                             company_id=user_roles.first().company_id).values_list('id',
+                                                                                                                   flat=True)
+                    for id in checked_list_id:
+                        if id not in params['product_id_list']:
+                            filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,
+                                                                           product_id__in=params[
+                                                                               'product_id_list']).values_list(
+                                'order_id', flat=True)
+                            orders = orders.filter(id__in=filter_by_product)
+                            using_product_list = True
+                            break
                 data_status = DataStatus.objects.filter(company_id=user_roles.first().company_id, name__iexact='Đã hủy',
                                                         deleted_at__isnull=True).first()
                 if value.get('pics', None) is not None:
@@ -62,15 +75,13 @@ class FilterReportService(BaseService):
                     orders = orders.exclude(data_status_id=data_status.id)
 
                 order_details = self.collect_order_details(orders, value['payment_from_date'],
-                                                           value['payment_to_date'], params['product_id_list'])
-
-                charge_from_date = value['charge_from_date']
-                charge_to_date = value['charge_to_date']
+                                                           value['payment_to_date'], params['product_id_list'],
+                                                           using_product_list)
 
         report = dict()
 
         order_total_map = self.get_order_total_map(orders)
-        orders = orders.filter(due_date__isnull=False)
+        #orders = orders.filter(due_date__isnull=False)
         amount_map = self.get_amount_map(order_details, orders, charge_from_date, charge_to_date)
         confirmed_order_map = self.get_confirmed_order_map(orders)
         report_null_pic = self.calculate_report(sales, report, order_total_map, amount_map, confirmed_order_map,
@@ -91,11 +102,12 @@ class FilterReportService(BaseService):
 
         return reports
 
-    def collect_order_details(self, orders, payment_from_date, payment_to_date, product_id_list):
-        order_details = OrderDetail.objects.filter(order__in=orders, deleted_at__isnull=True,
-                                                   type=ORDER_DETAIL_TYPE.NEW_BUY)
+    def collect_order_details(self, orders, payment_from_date, payment_to_date, product_id_list, using_product_list):
+        # filter deleted product
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, product__deleted_at__isnull=True,
+                                                   order_id__in=orders.values_list('id', flat=True))
 
-        if 0 not in product_id_list:
+        if 0 not in product_id_list and using_product_list:
             order_details = order_details.filter(product_id__in=product_id_list)
 
         if payment_from_date and payment_to_date:
@@ -113,7 +125,7 @@ class FilterReportService(BaseService):
         if len(order_details) == 0:
             return dict()
 
-        order_details = order_details.filter(order__in=orders)
+        #order_details = order_details.filter(order__in=orders)
 
         monthly_order_details = MonthlyOrderDetail.objects.filter(
             deleted_at__isnull=True,
@@ -122,6 +134,14 @@ class FilterReportService(BaseService):
 
         if charge_from_date and charge_to_date:
             monthly_order_details = monthly_order_details.filter(month__gte=charge_from_date, month__lte=charge_to_date)
+
+        debug_monthly_order_details = monthly_order_details.values('order_detail__order_id').order_by(
+            '-order_detail__order_id').annotate(
+            charged_amount=Sum('charged_amount'), total_amount=Sum('amount'),
+            total_waiting_approval_debt=Sum('waiting_approval_amount'))
+        for r in debug_monthly_order_details:
+            if r['charged_amount']:
+                print('{}-{}'.format(r['order_detail__order_id'], r['charged_amount']))
 
         monthly_order_details = monthly_order_details.values('order_detail__order__pic__username').order_by(
             'order_detail__order__pic__username').annotate(

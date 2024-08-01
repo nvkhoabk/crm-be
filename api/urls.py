@@ -378,4 +378,5 @@ urlpatterns = [
        name='phone_number.update_list_phone_number_status_for_tech'),
     path('phone_number/bulk_update_status_for_tech/', phone_number.BulkUpdatePhoneNumberStatusForTechView.as_view(),
                        name='phone_number.bulk_update_status_for_tech'),
+    path('phone_number/use_phone_number/', phone_number.UsePhoneNumberView.as_view(), name='phone_number.use_phone_number')
 ] + static('files/', document_root=Const.FILE_ROOT)

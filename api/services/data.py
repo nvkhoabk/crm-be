@@ -21,6 +21,7 @@ from api.models.data import CrawlData, Order, Customer, OrderDetail, OrderHistor
     RemainingPayment, MonthlyOrderDetail
 from api.models.notification import Notification
 from api.models.organization import UserRole, Permission, Role
+from api.models.product import Product
 from api.models.system_configuration import DataStatus, DataSubStatus, DataChannel, DataSource
 from api.serializers.data_serializer import ImportOrderDataRequestSerializer, CreateOrderRequestSerializer
 from api.services import utils
@@ -490,26 +491,60 @@ class FilterOrderService(BaseService):
         params = dict(kwargs.get('filter', []))
         items = params.items()
 
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, product__deleted_at__isnull=True)
+        filter_by_order_detail = False
         if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params[
             'data_to_date']:
-            order_list = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
-                                                    created_at__lte=params['data_to_date'],
-                                                    deleted_at__isnull=True).values_list('order_id', flat=True)
-            query_set = query_set.filter(id__in=order_list)
+            order_details = order_details.filter(created_at__gte=params['data_from_date'],
+                                                 created_at__lte=params['data_to_date'])
+            # order_details = OrderDetail.objects.filter(created_at__gte=params['data_from_date'],
+            #                                         created_at__lte=params['data_to_date'],
+            #                                         deleted_at__isnull=True).values_list('order_id', flat=True)
+            # query_set = query_set.filter(id__in=order_list)
 
         if 'payment_from_date' in params and 'payment_to_date' in params and params['payment_from_date'] and params[
             'payment_to_date']:
-            order_list = OrderDetail.objects.filter(payment_date__gte=params['payment_from_date'],
-                                                    payment_date__lte=params['payment_to_date'],
-                                                    deleted_at__isnull=True).values_list(
-                'order_id', flat=True)
-            query_set = query_set.filter(id__in=order_list)
+            order_details = order_details.filter(payment_date__gte=params['payment_from_date'],
+                                                 payment_date__lte=params['payment_to_date'])
+            
+            # order_list = OrderDetail.objects.filter(payment_date__gte=params['payment_from_date'],
+            #                                         payment_date__lte=params['payment_to_date'],
+            #                                         deleted_at__isnull=True).values_list(
+            #     'order_id', flat=True)
+            # query_set = query_set.filter(id__in=order_list)
+
+        filter_by_product = False
+        products = Product.objects.filter(deleted_at__isnull=True)
+        if 'order_types' in params and params['order_types']:
+            if ORDER_DETAIL_TYPE.NEW_BUY in params['order_types'] and ORDER_DETAIL_TYPE.ANNUAL_BUY not in params[
+                'order_types']:
+                products = products.filter(payment_method='DEBIT')
+                filter_by_product = True
+                # order_list = OrderDetail.objects.filter(product__payment_method='DEBIT',
+                #                                         deleted_at__isnull=True).values_list(
+                #     'order_id', flat=True)
+                # query_set = query_set.filter(id__in=order_list)
+
+            if ORDER_DETAIL_TYPE.ANNUAL_BUY in params['order_types'] and ORDER_DETAIL_TYPE.NEW_BUY not in params[
+                'order_types']:
+                products = products.filter(payment_method='CREDIT')
+                filter_by_product = True
+                # order_list = OrderDetail.objects.filter(product__payment_method='CREDIT',
+                #                                         deleted_at__isnull=True).values_list(
+                #     'order_id', flat=True)
+                # query_set = query_set.filter(id__in=order_list)
 
         if 0 not in params['product_id_list']:
-            order_list = OrderDetail.objects.filter(product_id__in=params['product_id_list'],
-                                                       deleted_at__isnull=True).values_list(
-                'order_id', flat=True)
-            query_set = query_set.filter(id__in=order_list)
+            checked_list_id = Product.objects.filter(deleted_at__isnull=True, company_id=user_roles.first().company_id).values_list('id', flat=True)
+            for id in checked_list_id:
+                if id not in params['product_id_list']:
+                    products = products.filter(id__in=params['product_id_list'])
+                    filter_by_product = True
+                    break
+            # order_list = OrderDetail.objects.filter(product_id__in=params['product_id_list'],
+            #                                         deleted_at__isnull=True).values_list(
+            #     'order_id', flat=True)
+            # query_set = query_set.filter(id__in=order_list)
 
         for key, value in items:
             if key not in filters:
@@ -588,24 +623,48 @@ class FilterOrderService(BaseService):
             if key == 'debt_status' and value is not None:
                 query_set = query_set.filter(debt_status=value)
 
-            if key == 'order_types' and value is not None and value:
-                if ORDER_DETAIL_TYPE.NEW_BUY in value:
-                    query_set = query_set.filter(due_date__isnull=False)
+            # if key == 'order_types' and value is not None and value:
+            #     if ORDER_DETAIL_TYPE.NEW_BUY in value and ORDER_DETAIL_TYPE.ANNUAL_BUY not in value:
+            #         query_set = query_set.filter(due_date__isnull=False)
+            #
+            #     if ORDER_DETAIL_TYPE.ANNUAL_BUY in value and ORDER_DETAIL_TYPE.NEW_BUY not in value:
+            #         query_set = query_set.filter(annual_due_date__isnull=False)
 
-                if ORDER_DETAIL_TYPE.ANNUAL_BUY in value:
-                    query_set = query_set.filter(annual_due_date__isnull=False)
+        if filter_by_product:
+            order_details = order_details.filter(product_id__in=products.values_list('id', flat=True))
+            filter_by_order_detail = True
+            
+        if filter_by_order_detail:
+            query_set = query_set.filter(id__in=order_details.values_list('order_id', flat=True))
 
         query_set = query_set.order_by('-created_at')
         if 'charge_from_date' in params and 'charge_to_date' in params and params['charge_from_date'] and params[
             'charge_to_date']:
             monthly_order_details = MonthlyOrderDetail.objects.filter(deleted_at__isnull=True,
-                                                                      order_detail__deleted_at__isnull=True,
                                                                       month__gte=params['charge_from_date'],
-                                                                      month__lte=params['charge_to_date'],
-                                                                      order_detail__order_id__in=query_set.values_list(
-                                                                          'id', flat=True))
-            if 0 not in params['product_id_list']:
-                monthly_order_details = monthly_order_details.filter(order_detail__product_id__in=params['product_id_list'])
+                                                                      month__lte=params['charge_to_date'])
+
+            if filter_by_order_detail:
+                monthly_order_details = monthly_order_details.filter(
+                    order_detail_id__in=order_details.values_list('id', flat=True))
+            else:
+                monthly_order_details = monthly_order_details.filter(
+                    order_detail__deleted_at__isnull=True,
+                    order_detail__product__deleted_at__isnull=True,
+                    order_detail__order_id__in=query_set.values_list('id', flat=True))
+            # if 'order_types' in params and params['order_types']:
+            #     if ORDER_DETAIL_TYPE.NEW_BUY in params['order_types'] and ORDER_DETAIL_TYPE.ANNUAL_BUY not in params[
+            #         'order_types']:
+            #         monthly_order_details = monthly_order_details.filter(order_detail__product__payment_method='DEBIT')
+            #
+            #     if ORDER_DETAIL_TYPE.ANNUAL_BUY in params['order_types'] and ORDER_DETAIL_TYPE.NEW_BUY not in params[
+            #         'order_types']:
+            #         monthly_order_details = monthly_order_details.filter(order_detail__product__payment_method='CREDIT')
+
+
+            # if 0 not in params['product_id_list']:
+            #     monthly_order_details = monthly_order_details.filter(
+            #         order_detail__product_id__in=params['product_id_list'])
             query_set = query_set.filter(id__in=monthly_order_details.values_list('order_detail__order_id', flat=True))
             amount_map = self.make_monthly_order_amount_map(monthly_order_details)
             for order in query_set:

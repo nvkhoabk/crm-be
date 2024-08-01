@@ -982,6 +982,21 @@ class PushToQueueView(BaseAPIView):
         return self.get_response()
 
 
+class UsePhoneNumberView(BaseAPIView):
+    authentication_classes = []
+    permission_classes = [CallCenterAuthenticated]
+
+    @swagger_auto_schema(
+        tags=['PhoneNumber'],
+        operation_id='Use phone number',
+        operation_description='Use phone number'
+    )
+    def get(self, request, serializer=None, cookies=None, *args, **kwargs):
+        service = phone_number_service.UsePhoneNumberService()
+        service.serve(request, cookies, *args, **kwargs)
+        return self.get_response()
+
+
 class ImportPhoneNumberView(BaseAPIView):
     authentication_classes = []
     permission_classes = [IsAuthenticated]

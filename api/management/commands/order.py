@@ -564,7 +564,7 @@ class Command(BaseCommand):
             lock_status = str(rows[7].value).strip()
             send_provider_date = str(rows[8].value).strip()
             cancel_date = str(rows[9].value).strip()
-            client_use_date = str(rows[10].value).strip()
+            client_use_date = '' #str(rows[10].value).strip()
             print('{}*{}'.format(phone_number, using_providers))
             # self.fix_pickup_date(phone_number, send_provider_date)
             self.update_phone_number_info(phone_number, using_providers, lock_provider, lock_date,
@@ -624,15 +624,15 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        # self.initializer_logger()
-        # processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
-        #     options['date'], '%Y%m%d').date()
-        #
-        # self.process_annual_buy(processing_date)
-        # self.calculate_debt_status_order(processing_date)
-        # self.notify_renew_date(processing_date)
+        self.initializer_logger()
+        processing_date = datetime.now(timezone(TIME_ZONE)).date() if options['date'] == '' else datetime.strptime(
+            options['date'], '%Y%m%d').date()
 
-        self.migrate_phone_number()
+        self.process_annual_buy(processing_date)
+        self.calculate_debt_status_order(processing_date)
+        self.notify_renew_date(processing_date)
+
+        # self.migrate_phone_number()
         # self.fix_montly_order_detail()
         # self.fix_call_log_wrong()
         # self.init_phone_number_client()

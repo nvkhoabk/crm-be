@@ -246,6 +246,10 @@ class OrderDetail(BaseModel):
     class Meta:
         db_table = 'order_details'
         index_together = ('order', 'type')
+        indexes = [
+            models.Index(fields=['deleted_at', 'product_id'], name='od_product_deleted_at_idx'),
+            models.Index(fields=['product_id'], name='order_detail_product_idx'),
+        ]
 
 
 class OrderHistory(BaseModel):
@@ -323,6 +327,7 @@ class MonthlyOrderDetail(BaseModel):
 
     class Meta:
         db_table = 'monthly_order_details'
+        indexes = [models.Index(fields=['month'], name='mod_month_idx')]
 
 class AnnualOrder(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True)

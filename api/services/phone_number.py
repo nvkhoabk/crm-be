@@ -1045,22 +1045,22 @@ class UpdatePhoneNumberService(BaseService):
                 phone_number.other_payment_date = kwargs['other_payment_date']
 
             if kwargs.get('viettel_using_status', None) != phone_number.viettel_using_status:
-                if kwargs.get('viettel_using_status', None) == 'USING':
+                if kwargs.get('viettel_using_status', None) == 'USING' and not request.user.is_superuser:
                     phone_number.pic = request.user
                 phone_number.viettel_using_status = kwargs['viettel_using_status']
 
             if kwargs.get('mobifone_using_status', None) != phone_number.mobifone_using_status:
-                if kwargs.get('mobifone_using_status', None) == 'USING':
+                if kwargs.get('mobifone_using_status', None) == 'USING' and not request.user.is_superuser:
                     phone_number.pic = request.user
                 phone_number.mobifone_using_status = kwargs['mobifone_using_status']
 
             if kwargs.get('vinaphone_using_status', None) != phone_number.vinaphone_using_status:
-                if kwargs.get('vinaphone_using_status', None) == 'USING':
+                if kwargs.get('vinaphone_using_status', None) == 'USING' and not request.user.is_superuser:
                     phone_number.pic = request.user
                 phone_number.vinaphone_using_status = kwargs['vinaphone_using_status']
 
             if kwargs.get('other_using_status', None) != phone_number.other_using_status:
-                if kwargs.get('other_using_status', None) == 'USING':
+                if kwargs.get('other_using_status', None) == 'USING' and not request.user.is_superuser:
                     phone_number.pic = request.user
                 phone_number.other_using_status = kwargs['other_using_status']
 
@@ -1768,6 +1768,38 @@ class PushToQueueService(BaseService):
         service.serve(request, cookies, *args, **vars(phone_number))
 
 
+class UsePhoneNumberService(BaseService):
+    def serve(self, request, cookies: Cookies, *args, **kwargs):
+        request_phone_number = request.GET.get('phone_number')
+        company_name = request.GET.get('company')
+        telco = request.GET.get('telco')
+        company = Company.objects.filter(name__iexact=company_name, deleted_at__isnull=True).first()
+        if not company:
+            return
+
+        phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, company_id=company.id,
+                                                  deleted_at__isnull=True).first()
+        if phone_number:
+            if telco == 'Viettel':
+                phone_number.viettel_using_status = 'USING'
+            if telco == 'Mobifone':
+                phone_number.mobifone_using_status = 'USING'
+            if telco == 'Vinaphone':
+                phone_number.vinaphone_using_status = 'USING'
+            if telco == 'Other':
+                phone_number.other_using_status = 'USING'
+
+            service = UpdatePhoneNumberService()
+            User = get_user_model()
+            root_user = User.objects.get(username__iexact='root')
+            request.user.is_superuser = True
+            request.user.id = root_user.id
+
+            service.serve(request, cookies, *args, **vars(phone_number))
+        else:
+            raise PhoneNumberNotFound()
+
+
 class ImportPhoneNumberService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         if not request.user.is_superuser:
@@ -2280,13 +2312,13 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         phone_number.phone_number_status = phone_number_status
         phone_number.phone_number_client = phone_number_client
         if data_record['open_provider'].lower() == 'Viettel'.lower():
-            phone_number.viettel_using_status = 'OPEN'
+            phone_number.viettel_unlocking_status = 'OPENED'
         if data_record['open_provider'].lower() == 'Mobifone'.lower():
-            phone_number.mobifone_using_status = 'OPEN'
+            phone_number.mobifone_uhlocking_status = 'OPENED'
         if data_record['open_provider'].lower() == 'Vinaphone'.lower():
-            phone_number.vinaphone_using_status = 'OPEN'
+            phone_number.vinaphone_uhlocking_status = 'OPENED'
         if data_record['open_provider'].lower() == 'Other'.lower():
-            phone_number.other_using_status = 'OPEN'
+            phone_number.other_unlocking_status = 'OPENED'
 
         service = UpdatePhoneNumberService()
         service.serve(request, cookies, *args, **vars(phone_number))
