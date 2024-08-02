@@ -1836,6 +1836,9 @@ class ImportPhoneNumberService(BaseService):
                 if type == IMPORT_TYPE.IMPORT_STATUS_FOR_TECH:
                     data_record = self.row_parser_import_status_for_tech(row)
                     error_codes = self.validate_data_import_status_for_tech(data_record, kwargs['company_id'])
+                if type == IMPORT_TYPE.IMPORT_LOCK_INFO:
+                    data_record = self.row_paser_import_lock_info(row)
+                    error_codes = self.validate_data_import_lock_info(data_record, kwargs['company_id'])
 
                 if error_codes:
                     data_record['error_codes'] = error_codes
@@ -1896,6 +1899,19 @@ class ImportPhoneNumberService(BaseService):
             'other_unlock_date': str(rows[10].value).strip(),
         }
 
+    def row_paser_import_lock_info(self, rows):
+        return {
+            'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
+            'phone_number': str(rows[1].value).strip(),
+            'using_providers': str(rows[2].value).strip(),
+            'lock_provider': str(rows[3].value).strip(),
+            'lock_date': str(rows[4].value).strip(),
+            'open_provider': str(rows[5].value).strip(),
+            'open_date': str(rows[6].value).strip(),
+            'lock_status': str(rows[7].value).strip(),
+            'send_provider_date': str(rows[8].value).strip(),
+            'cancel_date': str(rows[9].value).strip(),
+        }
     def row_parser_import_fee(self, rows):
         return {
             'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
@@ -1942,6 +1958,12 @@ class ImportPhoneNumberService(BaseService):
         error_codes.extend(self.validate_not_existed_phone(data, company_id))
         error_codes.extend(self.validate_phone_number_status(data, company_id))
         error_codes.extend(self.validate_phone_number_status_date_for_tech(data, company_id))
+        return error_codes
+
+    def validate_data_import_lock_info(self, data, company_id):
+        error_codes = []
+        error_codes.extend(self.validate_phone_format(data))
+        error_codes.extend(self.validate_not_existed_phone(data, company_id))
         return error_codes
 
     def validate_id(self, row):
@@ -2253,6 +2275,12 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                         if not error_codes:
                             self.import_status_for_tech(args, cookies, data_record, kwargs, request)
 
+                    if type == IMPORT_TYPE.IMPORT_LOCK_INFO:
+                        data_record = self.row_paser_import_lock_info(row)
+                        error_codes = self.validate_data_import_lock_info(data_record, kwargs['company_id'])
+                        if not error_codes:
+                            self.import_lock_info(args, cookies, data_record, kwargs, request)
+
         except ImportOrderRecords.DoesNotExist:
             raise ImportRecordNotFound
 
@@ -2371,6 +2399,99 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
 
         service = CheckPhoneNumberService()
         service.serve(request, cookies, *args, **payload)
+
+    def get_lock_status(self, lock_status):
+        if lock_status == 'Đã gửi nhà cung cấp' or lock_status == 'Đã gửi NCC':
+            return 'SENT_PROVIDER'
+        if lock_status == 'Đã mở':
+            return 'OPENED'
+        if lock_status == 'Nhà cung cấp báo sai':
+            return 'WRONG_REPORT'
+        return 'AVAILABLE'
+
+    def import_lock_info(self, args, cookies, data_record, kwargs, request):
+        phone_number = PhoneNumber.objects.filter(phone_number__icontains=data_record['phone_number']).first()
+        VIETTEL = 'Viettel'
+        MOBIFONE = 'Mobifone'
+        VINAPHONE = 'Vinaphone'
+        using_providers = data_record['using_providers']
+        lock_provider = data_record['lock_provider']
+        lock_date = data_record['lock_date']
+        open_provider = data_record['open_provider']
+        open_date = data_record['open_date']
+        lock_status = data_record['lock_status']
+        send_provider_date = data_record['send_provider_date']
+        cancel_date = data_record['cancel_date']
+        if phone_number:
+            with transaction.atomic():
+                if lock_provider:
+                    lock = PhoneNumberLockHistory.objects.create(company=phone_number.company,
+                                                                 phone_number=phone_number,
+                                                                 checking_lock_date=datetime.today(),
+                                                                 confirm_lock_date=datetime.today(),
+                                                                 viettel_lock_date=None,
+                                                                 mobifone_lock_date=None,
+                                                                 vinaphone_lock_date=None,
+                                                                 other_lock_date=None)
+                    if lock_provider.strip() == VIETTEL:
+                        lock.viettel_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
+                        if open_date.strip():
+                            lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
+                            phone_number.viettel_using_status = 'OPEN'
+                        else:
+                            phone_number.viettel_using_status = 'LOCK'
+                            if send_provider_date.strip():
+                                lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''),
+                                                                            '%d/%m/%Y')
+                        if lock_status:
+                            phone_number.viettel_unlocking_status = self.get_lock_status(lock_status)
+                    if lock_provider.strip() == VINAPHONE:
+                        lock.vinaphone_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
+                        if open_date.strip():
+                            lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
+                            phone_number.vinaphone_using_status = 'OPEN'
+                        else:
+                            phone_number.vinaphone_using_status = 'LOCK'
+                            if send_provider_date.strip():
+                                lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''),
+                                                                            '%d/%m/%Y')
+                        if lock_status:
+                            phone_number.vinaphone_unlocking_status = self.get_lock_status(lock_status)
+                    if lock_provider.strip() == MOBIFONE:
+                        lock.mobifone_lock_date = datetime.strptime(lock_date.strip().replace(' ', ''), '%d/%m/%Y')
+                        if open_date.strip():
+                            lock.unlock_lock_date = datetime.strptime(open_date.strip().replace(' ', ''), '%d/%m/%Y')
+                            phone_number.mobifone_using_status = 'OPEN'
+                        else:
+                            phone_number.mobifone_using_status = 'LOCK'
+                            if send_provider_date.strip():
+                                lock.send_provider_date = datetime.strptime(send_provider_date.strip().replace(' ', ''),
+                                                                            '%d/%m/%Y')
+                        if lock_status:
+                            phone_number.mobifone_unlocking_status = self.get_lock_status(lock_status)
+                    lock.save()
+
+                provider_list = using_providers.split(',')
+                for provider in provider_list:
+                    if provider.strip() == VIETTEL:
+                        phone_number.viettel_using_status = 'USING'
+                    if provider.strip() == VINAPHONE:
+                        phone_number.vinaphone_using_status = 'USING'
+                    if provider.strip() == MOBIFONE:
+                        phone_number.mobifone_using_status = 'USING'
+
+                if cancel_date:
+                    status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy', company_id=17).first()
+                    phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''), '%d/%m/%Y')
+                    if status:
+                        phone_number.phone_number_status_id = status.id
+                # if client_use_date:
+                #     phone_number.client_use_date = datetime.strptime(client_use_date.strip().replace(' ', ''), '%d/%m/%Y')
+                #     if not phone_number.active_date:
+                #         phone_number.active_date = phone_number.client_use_date
+
+                update_lock_count(phone_number)
+                phone_number.save()
 
 
 class CheckPhoneNumberService(BaseService):

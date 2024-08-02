@@ -519,7 +519,7 @@ class Command(BaseCommand):
                     phone_number.mobifone_using_status = 'USING'
 
             if cancel_date:
-                status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy').first()
+                status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy', company_id=17).first()
                 phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''), '%d/%m/%Y')
                 if status:
                     phone_number.phone_number_status_id = status.id
