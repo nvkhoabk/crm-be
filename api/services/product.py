@@ -3,6 +3,7 @@ from datetime import datetime
 
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
+from api.const import PRODUCT_DELETE_TYPE
 from api.models.organization import UserRole
 from api.models.product import Product
 from api.models.package import Package
@@ -107,10 +108,16 @@ class FilterProductService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = Product.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+        query_set = Product.objects.filter(company_id=user_roles.first().company_id)
 
-        filters = ['name', 'payment_method']
+        filters = ['name', 'payment_method', 'product_delete_type']
         params = dict(kwargs.get('filter', []))
+
+        # if params['include_deleted']:
+        #     query_set = Product.objects.filter(company_id=user_roles.first().company_id)
+        # else:
+        #     query_set = Product.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -123,6 +130,11 @@ class FilterProductService(BaseService):
             if key == 'payment_method' and value is not None:
                 query_set = query_set.filter(payment_method=value)
 
+            if key == 'product_delete_type' and value:
+                if value == PRODUCT_DELETE_TYPE.DELETED:
+                    query_set = query_set.filter(deleted_at__isnull=False)
+                elif value == PRODUCT_DELETE_TYPE.ACTIVE:
+                    query_set = query_set.filter(deleted_at__isnull=True)
 
         return query_set
 

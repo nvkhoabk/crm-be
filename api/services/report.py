@@ -50,8 +50,7 @@ class FilterReportService(BaseService):
                 orders = order_service.serve(request, cookies, *args, **{'filter': value})
                 using_product_list = False
                 if 0 not in params['product_id_list']:
-                    checked_list_id = Product.objects.filter(deleted_at__isnull=True,
-                                                             company_id=user_roles.first().company_id).values_list('id',
+                    checked_list_id = Product.objects.filter(company_id=user_roles.first().company_id).values_list('id',
                                                                                                                    flat=True)
                     for id in checked_list_id:
                         if id not in params['product_id_list']:
@@ -104,7 +103,7 @@ class FilterReportService(BaseService):
 
     def collect_order_details(self, orders, payment_from_date, payment_to_date, product_id_list, using_product_list):
         # filter deleted product
-        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, product__deleted_at__isnull=True,
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
                                                    order_id__in=orders.values_list('id', flat=True))
 
         if 0 not in product_id_list and using_product_list:
@@ -135,13 +134,13 @@ class FilterReportService(BaseService):
         if charge_from_date and charge_to_date:
             monthly_order_details = monthly_order_details.filter(month__gte=charge_from_date, month__lte=charge_to_date)
 
-        debug_monthly_order_details = monthly_order_details.values('order_detail__order_id').order_by(
-            '-order_detail__order_id').annotate(
-            charged_amount=Sum('charged_amount'), total_amount=Sum('amount'),
-            total_waiting_approval_debt=Sum('waiting_approval_amount'))
-        for r in debug_monthly_order_details:
-            if r['charged_amount']:
-                print('{}-{}'.format(r['order_detail__order_id'], r['charged_amount']))
+        # debug_monthly_order_details = monthly_order_details.values('order_detail__order_id').order_by(
+        #     '-order_detail__order_id').annotate(
+        #     charged_amount=Sum('charged_amount'), total_amount=Sum('amount'),
+        #     total_waiting_approval_debt=Sum('waiting_approval_amount'))
+        # for r in debug_monthly_order_details:
+        #     if r['charged_amount']:
+        #         print('{}-{}'.format(r['order_detail__order_id'], r['charged_amount']))
 
         monthly_order_details = monthly_order_details.values('order_detail__order__pic__username').order_by(
             'order_detail__order__pic__username').annotate(

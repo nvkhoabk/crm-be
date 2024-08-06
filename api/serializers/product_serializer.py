@@ -1,6 +1,6 @@
 import json
 
-from api.const import PRODUCT_PAYMENT_METHOD
+from api.const import PRODUCT_PAYMENT_METHOD, PRODUCT_DELETE_TYPE
 from api.models.product import Product
 from api.models.package import Package
 from api.models.param import Param
@@ -72,8 +72,14 @@ class FilterProductRequestParamSerializer(serializers.Serializer):
         ('CREDIT', 'CREDIT'),
         ('DEBIT', 'DEBIT')
     )
+    PRODUCT_DELETE_TYPE_CHOISE = (
+        (PRODUCT_DELETE_TYPE.ALL, PRODUCT_DELETE_TYPE.ALL),
+        (PRODUCT_DELETE_TYPE.DELETED, PRODUCT_DELETE_TYPE.DELETED),
+        (PRODUCT_DELETE_TYPE.ACTIVE, PRODUCT_DELETE_TYPE.ACTIVE)
+    )
     name = serializers.CharField(required=False, allow_blank=True)
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, required=False, allow_null=True)
+    product_delete_type = serializers.ChoiceField(choices=PRODUCT_DELETE_TYPE_CHOISE, default=PRODUCT_DELETE_TYPE.ALL)
 
 
 class FilterProductRequestSerializer(BasePagingSerializer):

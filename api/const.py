@@ -164,3 +164,9 @@ class PHONE_NUMBER_PROVIDER:
     MOBI = 'Mobifone'
     VINA = 'Vinaphone'
     OTHER = 'Other'
+
+
+class PRODUCT_DELETE_TYPE:
+    ALL = 'ALL'
+    DELETED = 'DELETED'
+    ACTIVE = 'ACTIVE'

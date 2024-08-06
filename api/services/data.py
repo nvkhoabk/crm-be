@@ -491,7 +491,7 @@ class FilterOrderService(BaseService):
         params = dict(kwargs.get('filter', []))
         items = params.items()
 
-        order_details = OrderDetail.objects.filter(deleted_at__isnull=True, product__deleted_at__isnull=True)
+        order_details = OrderDetail.objects.filter(deleted_at__isnull=True)
         filter_by_order_detail = False
         if 'data_from_date' in params and 'data_to_date' in params and params['data_from_date'] and params[
             'data_to_date']:
@@ -514,7 +514,7 @@ class FilterOrderService(BaseService):
             # query_set = query_set.filter(id__in=order_list)
 
         filter_by_product = False
-        products = Product.objects.filter(deleted_at__isnull=True)
+        products = Product.objects.filter()
         if 'order_types' in params and params['order_types']:
             if ORDER_DETAIL_TYPE.NEW_BUY in params['order_types'] and ORDER_DETAIL_TYPE.ANNUAL_BUY not in params[
                 'order_types']:
@@ -535,7 +535,7 @@ class FilterOrderService(BaseService):
                 # query_set = query_set.filter(id__in=order_list)
 
         if 0 not in params['product_id_list']:
-            checked_list_id = Product.objects.filter(deleted_at__isnull=True, company_id=user_roles.first().company_id).values_list('id', flat=True)
+            checked_list_id = Product.objects.filter(company_id=user_roles.first().company_id).values_list('id', flat=True)
             for id in checked_list_id:
                 if id not in params['product_id_list']:
                     products = products.filter(id__in=params['product_id_list'])
@@ -650,7 +650,7 @@ class FilterOrderService(BaseService):
             else:
                 monthly_order_details = monthly_order_details.filter(
                     order_detail__deleted_at__isnull=True,
-                    order_detail__product__deleted_at__isnull=True,
+                    #order_detail__product__deleted_at__isnull=True,
                     order_detail__order_id__in=query_set.values_list('id', flat=True))
             # if 'order_types' in params and params['order_types']:
             #     if ORDER_DETAIL_TYPE.NEW_BUY in params['order_types'] and ORDER_DETAIL_TYPE.ANNUAL_BUY not in params[
@@ -674,13 +674,9 @@ class FilterOrderService(BaseService):
         return query_set
 
     def make_monthly_order_amount_map(self, monthly_order_details):
-        res_map = dict()
-        for monthly_order_detail in monthly_order_details:
-            if monthly_order_detail.order_detail.order_id not in res_map:
-                res_map[monthly_order_detail.order_detail.order_id] = monthly_order_detail.amount
-            else:
-                res_map[monthly_order_detail.order_detail.order_id] += monthly_order_detail.amount
-        return res_map
+        agg_map = monthly_order_details.values('order_detail__order_id').order_by(
+            'order_detail__order_id').annotate(total_amount=Sum('amount'))
+        return {amount['order_detail__order_id']: amount['total_amount'] for amount in agg_map}
 
 
 class DeleteOrderService(BaseService):

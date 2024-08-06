@@ -94,8 +94,10 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
             self.lock_provider = json.dumps(current_lock)
             return
 
-
         print('Not found provider')
+
+    def reset_lock_provider(self):
+        self.lock_provider = '{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}'
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=255, db_index=True)

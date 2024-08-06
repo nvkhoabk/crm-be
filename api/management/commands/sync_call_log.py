@@ -46,7 +46,7 @@ class Command(BaseCommand):
         session = requests.Session()
         session.auth = ('ITY', 'Crm1ty@1305Fri')
 
-        url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&fromdate={}&todate={}&status=answered&accountcode={}&page=1'.format(
+        url = 'https://cc17.ity.vn/wsapi/crm_ity/ws_cdr.php?flag=all&fromdate={}&todate={}&status=answered&accountcode={}&page=1'.format(
             syncing_date.strftime('%Y-%m-%d'), syncing_date.strftime('%Y-%m-%d'), account_code)
         response = session.get(url)
         response_json = response.json()
@@ -55,7 +55,7 @@ class Command(BaseCommand):
         max_page = response_json['max_page']
         total_cdr = []
         for page in range(1, max_page + 1):
-            url = 'https://vnsale.siptrunk.vn/wsapi/crm_ity/ws_cdr.php?flag=all&fromdate={}&todate={}&status=answered&accountcode={}&page={}'.format(
+            url = 'https://cc17.ity.vn/wsapi/crm_ity/ws_cdr.php?flag=all&fromdate={}&todate={}&status=answered&accountcode={}&page={}'.format(
                 syncing_date.strftime('%Y-%m-%d'), syncing_date.strftime('%Y-%m-%d'), account_code, page)
             response = session.get(url)
             response_json = response.json()

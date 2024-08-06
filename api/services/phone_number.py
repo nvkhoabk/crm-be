@@ -37,6 +37,24 @@ from asgiref.sync import async_to_sync
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
 
+def get_new_status_after_lock(phone_number):
+    if phone_number.viettel_using_status == 'USING' or phone_number.mobifone_using_status == 'USING' or \
+            phone_number.vinaphone_using_status == 'USING' or phone_number.other_using_status == 'USING':
+        return PhoneNumberStatus.objects.get(name__iexact='Đang sử dụng',
+                                             company_id=phone_number.company_id,
+                                             deleted_at__isnull=True).id
+
+    if phone_number.viettel_using_status == 'LOCK' and phone_number.mobifone_using_status == 'LOCK' and \
+            phone_number.vinaphone_using_status == 'LOCK' and phone_number.other_using_status == 'LOCK':
+        return PhoneNumberStatus.objects.get(name__iexact='Đang bị khoá',
+                                             company_id=phone_number.company_id,
+                                             deleted_at__isnull=True).id
+
+    return PhoneNumberStatus.objects.get(name__iexact='Chưa sử dụng',
+                                         company_id=phone_number.company_id,
+                                         deleted_at__isnull=True).id
+
+
 def is_locked_phone_number(history):
     if history is None:
         return False
@@ -1789,6 +1807,19 @@ class UsePhoneNumberService(BaseService):
             if telco == 'Other':
                 phone_number.other_using_status = 'USING'
 
+            checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                            company_id=phone_number.company_id,
+                                                            deleted_at__isnull=True)
+            add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                           company_id=phone_number.company_id,
+                                                           deleted_at__isnull=True)
+            retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                          company_id=phone_number.company_id,
+                                                          deleted_at__isnull=True)
+            trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+            if phone_number.phone_number_status_id not in trigger_status_list:
+                phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
+
             service = UpdatePhoneNumberService()
             User = get_user_model()
             root_user = User.objects.get(username__iexact='root')
@@ -2604,7 +2635,7 @@ class CheckPhoneNumberService(BaseService):
                     trigger_update_phone_number_queue = True
 
                 if new_status_id == lock.id:
-                    phone_number.phone_number_status_id = self.get_new_status_after_lock(phone_number)
+                    phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
                     if old_status_id != retest_status.id:
                         trigger_update_lock_history = True
                         if phone_number.viettel_using_status == 'LOCK' and kwargs.get('viettel_lock_date',
@@ -2627,6 +2658,7 @@ class CheckPhoneNumberService(BaseService):
                             phone_number.vinaphone_using_status = 'LOCK'
                         if kwargs.get('other_lock_date', None):
                             phone_number.other_using_status = 'LOCK'
+                        phone_number.reset_lock_provider()
 
                 if old_status_id == retest_status.id and new_status_id == lock.id:
                     if phone_number.viettel_unlocking_status == 'OPENED':
@@ -2637,7 +2669,7 @@ class CheckPhoneNumberService(BaseService):
                         phone_number.vinaphone_unlocking_status = 'WRONG_REPORT'
                     if phone_number.other_unlocking_status == 'OPENED':
                         phone_number.other_unlocking_status = 'WRONG_REPORT'
-                    phone_number.phone_number_status_id = self.get_new_status_after_lock(phone_number)
+                    phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
 
                 if old_status_id == retest_status.id and new_status_id == unlock.id:
                     if phone_number.viettel_unlocking_status == 'OPENED':
@@ -2671,7 +2703,7 @@ class CheckPhoneNumberService(BaseService):
                         phone_number.other_using_status = 'OPEN'
 
                     trigger_update_lock_history = True
-                    phone_number.phone_number_status_id = self.get_new_status_after_lock(phone_number)
+                    phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
 
                 if new_status_id == false_positive.id:
                     if phone_number.viettel_using_status == 'LOCK':
@@ -2682,7 +2714,8 @@ class CheckPhoneNumberService(BaseService):
                         phone_number.vinaphone_using_status = 'OPEN'
                     if phone_number.other_using_status == 'LOCK':
                         phone_number.other_using_status = 'OPEN'
-                    phone_number.phone_number_status_id = self.get_new_status_after_lock(phone_number)
+                    phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
+                    phone_number.reset_lock_provider()
 
                 technical_activity.viettel_using_status = phone_number.viettel_using_status
                 technical_activity.mobifone_using_status = phone_number.mobifone_using_status
@@ -2710,23 +2743,6 @@ class CheckPhoneNumberService(BaseService):
             return phone_number
         except PhoneNumber.DoesNotExist:
             raise PhoneNumberNotFound()
-
-    def get_new_status_after_lock(self, phone_number):
-        if phone_number.viettel_using_status == 'USING' or phone_number.mobifone_using_status == 'USING' or \
-                phone_number.vinaphone_using_status == 'USING' or phone_number.other_using_status == 'USING':
-            return PhoneNumberStatus.objects.get(name__iexact='Đang sử dụng',
-                                                 company_id=phone_number.company_id,
-                                                 deleted_at__isnull=True).id
-
-        if phone_number.viettel_using_status == 'LOCK' and phone_number.mobifone_using_status == 'LOCK' and \
-                phone_number.vinaphone_using_status == 'LOCK' and phone_number.other_using_status == 'LOCK':
-            return PhoneNumberStatus.objects.get(name__iexact='Đang bị khoá',
-                                                 company_id=phone_number.company_id,
-                                                 deleted_at__isnull=True).id
-
-        return PhoneNumberStatus.objects.get(name__iexact='Chưa sử dụng',
-                                             company_id=phone_number.company_id,
-                                             deleted_at__isnull=True).id
 
     def trigger_update_phone_number_queue(self):
         channel_layer = get_channel_layer()
