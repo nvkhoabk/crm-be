@@ -72,14 +72,14 @@ class FilterProductRequestParamSerializer(serializers.Serializer):
         ('CREDIT', 'CREDIT'),
         ('DEBIT', 'DEBIT')
     )
-    PRODUCT_DELETE_TYPE_CHOISE = (
+    PRODUCT_DELETE_TYPE_CHOICES = (
         (PRODUCT_DELETE_TYPE.ALL, PRODUCT_DELETE_TYPE.ALL),
         (PRODUCT_DELETE_TYPE.DELETED, PRODUCT_DELETE_TYPE.DELETED),
         (PRODUCT_DELETE_TYPE.ACTIVE, PRODUCT_DELETE_TYPE.ACTIVE)
     )
     name = serializers.CharField(required=False, allow_blank=True)
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, required=False, allow_null=True)
-    product_delete_type = serializers.ChoiceField(choices=PRODUCT_DELETE_TYPE_CHOISE, default=PRODUCT_DELETE_TYPE.ALL)
+    product_delete_type = serializers.ChoiceField(choices=PRODUCT_DELETE_TYPE_CHOICES, default=PRODUCT_DELETE_TYPE.ALL)
 
 
 class FilterProductRequestSerializer(BasePagingSerializer):

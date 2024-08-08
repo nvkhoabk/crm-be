@@ -1452,9 +1452,9 @@ class FilterPaymentService(BaseService):
         }
         user_roles = UserRole.objects.filter(**filter)
 
-        query_set = Payment.objects.filter(company_id=user_roles.first().company_id)
+        query_set = Payment.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
 
-        filters = ['order_id', 'type', 'status', 'order']
+        filters = ['order_id', 'type', 'status', 'order', 'has_order_detail_payment']
         params = dict(kwargs.get('filter', []))
         for key, value in params.items():
             if key not in filters:
@@ -1474,6 +1474,10 @@ class FilterPaymentService(BaseService):
 
             if key == 'type' and value is not None:
                 query_set = query_set.filter(type=value)
+
+            if key == 'has_order_detail_payment':
+                if not value:
+                    query_set = query_set.filter(order_detail_payments__isnull=True)
 
         return query_set.order_by('-id')
 

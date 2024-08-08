@@ -383,7 +383,7 @@ class ImportOrderRecords(BaseModel):
 
 class OrderDetailPayment(BaseModel):
     order_detail = models.ForeignKey(OrderDetail, on_delete=models.CASCADE)
-    payment = models.ForeignKey(Payment, on_delete=models.CASCADE)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='order_detail_payments')
     value = models.BigIntegerField(default=0)
 
     class Meta:

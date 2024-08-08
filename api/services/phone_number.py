@@ -1249,7 +1249,10 @@ class FilterPhoneNumberService(BaseService):
                 query_set = query_set.filter(legal_id__in=value)
 
             if key == 'phone_number_client_list' and value is not None and value:
-                query_set = query_set.filter(phone_number_client_id__in=value)
+                if None in value:
+                    query_set = query_set.filter(Q(phone_number_client_id__isnull=True) | Q(phone_number_client_id__in=value))
+                else:
+                    query_set = query_set.filter(phone_number_client_id__in=value)
 
             if key == 'phone_number_status_id_list' and value is not None and value:
                 query_set = query_set.filter(phone_number_status_id__in=value)

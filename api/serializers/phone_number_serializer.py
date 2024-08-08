@@ -531,7 +531,7 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
     main_phone_number_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     provider_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     legal_id_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
-    phone_number_client_list = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
+    phone_number_client_list = serializers.ListField(child=serializers.IntegerField(allow_null=True), required=False, allow_null=True)
     phone_number_status_id_list = serializers.ListField(child=serializers.IntegerField(), required=False,
                                                         allow_null=True)
     phone_number_avg_age = serializers.FloatField(required=False, allow_null=True)
