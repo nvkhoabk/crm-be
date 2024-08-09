@@ -667,6 +667,7 @@ class BulkUpdatePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
 class UpdateListPhoneNumberStatusRequestSerializer(serializers.Serializer):
     phone_number_id_list = serializers.ListField(child=serializers.IntegerField())
     phone_number_status_id = serializers.IntegerField()
+    mark_delete = serializers.BooleanField(default=False)
 
 
 class UpdateListPhoneNumberStatusResponseSerializer(BaseResponseSerializer):

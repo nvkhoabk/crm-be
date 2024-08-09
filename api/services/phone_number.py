@@ -769,6 +769,9 @@ class FilterPhoneNumberStatusService(BaseService):
                     name__icontains=value,
                 )
 
+        if user_roles.first().department and user_roles.first().role:
+            query_set = query_set.exclude(name__icontains='Đánh dấu xóa')
+
         return query_set
 
 
@@ -922,6 +925,15 @@ class CreatePhoneNumberService(BaseService):
             client_use_date = kwargs.get('client_use_date', None)
             if client_use_date is not None:
                 kwargs['active_date'] = client_use_date
+
+            mark_delete = PhoneNumberStatus.objects.get(name__iexact='Đánh dấu xóa',
+                                                        company_id=user_roles.first().company_id,
+                                                        deleted_at__isnull=True)
+
+            if PhoneNumber.objects.filter(deleted_at__isnull=True,
+                                          phone_number__icontains=kwargs['phone_number']).exclude(
+                    phone_number_status_id=mark_delete.id).first():
+                raise PhoneNumberDuplicated()
 
             return PhoneNumber.objects.create(
                 **kwargs
@@ -1156,6 +1168,9 @@ class FilterPhoneNumberService(BaseService):
         user_roles = UserRole.objects.filter(**filter)
 
         query_set = PhoneNumber.objects.filter(company_id=user_roles.first().company_id, deleted_at__isnull=True)
+
+        if user_roles.first().department and user_roles.first().role:
+            query_set = query_set.exclude(phone_number_status__name__icontains='Đánh dấu xóa')
 
         params = dict(kwargs.get('filter', []))
 
@@ -1609,11 +1624,17 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                 provider_cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã gửi nhà cung cấp hủy',
                                                               company_id=phone_numbers.first().company_id,
                                                               deleted_at__isnull=True)
+                mark_delete = PhoneNumberStatus.objects.get(name__iexact='Đánh dấu xóa',
+                                                            company_id=phone_numbers.first().company_id,
+                                                            deleted_at__isnull=True)
+
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
 
                 for phone_number in phone_numbers:
                     old_status_id = phone_number.phone_number_status_id
                     new_status_id = kwargs.get('phone_number_status_id')
+                    if kwargs.get('mark_delete', None) and mark_delete:
+                        new_status_id = mark_delete.id
                     if old_status_id == new_status_id and old_status_id == checking_status.id:
                         trigger_update_phone_number_queue = True
                     else:
@@ -2031,7 +2052,8 @@ class ImportPhoneNumberService(BaseService):
 
         entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
         if entity is not None:
-            return [vec.PhoneNumberDuplicated.code]
+            if entity.phone_number_status.name != 'Đánh dấu xóa':
+                return [vec.PhoneNumberDuplicated.code]
 
         return []
 
@@ -2039,7 +2061,7 @@ class ImportPhoneNumberService(BaseService):
         phone = str(row['phone_number']).strip()
 
         entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
-        if entity is None:
+        if entity is None or entity.phone_number_status.name != 'Đánh dấu xóa':
             return [vec.PhoneNumberIsNotFound.code]
 
         return []

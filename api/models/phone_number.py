@@ -151,7 +151,6 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
 
     class Meta:
         db_table = 'phone_numbers'
-        unique_together = ('company', 'phone_number')
 
 
 class PhoneNumberLockHistory(BaseModel):
