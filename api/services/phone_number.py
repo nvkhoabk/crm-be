@@ -1,5 +1,8 @@
 import json
 from datetime import datetime, date as date_type
+
+from django.db.models import Case, When, F, ExpressionWrapper, IntegerField, Value, Sum
+from django.db.models.functions import Coalesce
 from pytz import timezone
 import pandas as pd
 import xlrd
@@ -1245,7 +1248,7 @@ class FilterPhoneNumberService(BaseService):
                     query_set = query_set.filter(
                         phone_number_client_id__in=phone_numeber_clients.values_list('id', flat=True))
 
-            if key == 'phone_number':
+            if key == 'phone_number' and value:
                 query_set = query_set.filter(
                     phone_number__icontains=value,
                 )
@@ -1593,6 +1596,79 @@ class GetStatisticPhoneNumberService(BaseService):
 
         return res
 
+
+    # def serve(self, request, cookies: Cookies, *args, **kwargs):
+    #     filter = {
+    #         'user': request.user,
+    #         'deleted_at__isnull': True
+    #     }
+    #     user_roles = UserRole.objects.filter(**filter)
+    #
+    #     service = FilterPhoneNumberService()
+    #     phone_numbers = service.serve(request, cookies, *args, **kwargs)
+    #
+    #     res = {
+    #         'age_avg': 0,
+    #         'total_init_fee': 0,
+    #         'total_operate_fee': 0,
+    #         'total_open_fee': 0,
+    #         'total_other_fee': 0,
+    #         'technical_staff': []
+    #     }
+    #
+    #     technical_staff_statistic = {}
+    #
+    #     departments = Department.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+    #                                             department_name='Phòng Kỹ Thuật');
+    #     if departments:
+    #         roles = Role.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+    #                                     department=departments.first())
+    #         user_roles = UserRole.objects.filter(deleted_at__isnull=True, company=user_roles.first().company,
+    #                                              role_id__in=roles.values_list('id', flat=True))
+    #         for user_role in user_roles:
+    #             technical_staff_statistic[user_role.user.username] = 0
+    #
+    #     today = datetime.today().date()
+    #     age = phone_numbers.annotate(
+    #         last_date=Coalesce('cancel_date', Value(today)),
+    #         age=Case(
+    #             When(active_date__isnull=True, then=Value(0)),
+    #             default=DateDiff(F('last_date'), F('active_date')) + Value(1),
+    #             output_field=IntegerField()
+    #         )
+    #     )
+    #     for x in age:
+    #         print(x.age)
+    #     print(age)
+    #     res['age_avg'] = age['age']
+    #
+    #     total_fees = phone_numbers.annotate(
+    #         total_init_fee=Sum('init_fee'), total_operate_fee=Sum('operate_fee'),
+    #         total_open_fee=Sum('open_fee'), total_other_fee=Sum('other_fee'))
+    #     res['total_init_fee'] = total_fees['total_init_fee']
+    #     res['total_operate_fee'] = total_fees['total_operate_fee']
+    #     res['total_open_fee'] = total_fees['total_open_fee']
+    #     res['total_other_fee'] = total_fees['total_other_fee']
+    #
+    #     for phone_number in phone_numbers:
+    #         if phone_number.pic and phone_number.pic.username in technical_staff_statistic:
+    #             technical_staff_statistic[phone_number.pic.username] += 1
+    #         res['total_init_fee'] += phone_number.init_fee
+    #         res['total_operate_fee'] += phone_number.operate_fee
+    #         res['total_open_fee'] += phone_number.open_fee
+    #         res['total_other_fee'] += phone_number.other_fee
+    #         res['age_avg'] += self.calculate_age(phone_number)
+    #
+    #     if res['age_avg']:
+    #         res['age_avg'] = res['age_avg'] / len(phone_numbers)
+    #     for key, value in technical_staff_statistic.items():
+    #         res['technical_staff'].append({
+    #             'user': key,
+    #             'count': value
+    #         })
+    #
+    #     return res
+
     def calculate_age(self, phone_number):
         if not phone_number.active_date:
             return 0
@@ -1881,7 +1957,7 @@ class ImportPhoneNumberService(BaseService):
                 error_codes = []
                 if type == IMPORT_TYPE.IMPORT_NEW:
                     data_record = self.rowParser(row)
-                    error_codes = self.validate_data(data_record, kwargs['company_id'])
+                    error_codes, _ = self.validate_data(data_record, kwargs['company_id'])
                 if type == IMPORT_TYPE.IMPORT_STATUS:
                     data_record = self.row_parser_import_status(row)
                     error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
@@ -1928,6 +2004,7 @@ class ImportPhoneNumberService(BaseService):
             'other_payment_date': str(rows[17].value).strip(),
             'note': str(rows[18].value).strip(),
             'client_use_date': str(rows[19].value).strip(),
+            'open_provider': str(rows[20].value).strip(),
         }
 
     def row_parser_import_status(self, rows):
@@ -1936,7 +2013,8 @@ class ImportPhoneNumberService(BaseService):
             'phone_number': str(rows[1].value).strip(),
             'phone_number_status': str(rows[2].value).strip(),
             'phone_number_client': str(rows[3].value).strip(),
-            'open_provider': str(rows[4].value).strip()
+            'open_provider': str(rows[4].value).strip(),
+            'client_use_date': str(rows[5].value).strip()
         }
 
     def row_parser_import_status_for_tech(self, rows):
@@ -1981,15 +2059,20 @@ class ImportPhoneNumberService(BaseService):
         error_codes = []
         error_codes.extend(self.validate_id(data))
         error_codes.extend(self.validate_phone_format(data))
-        error_codes.extend(self.validate_existed_phone(data, company_id))
-        error_codes.extend(self.validate_main_phone_number(data, company_id))
-        error_codes.extend(self.validate_provider(data, company_id))
-        error_codes.extend(self.validate_legal(data, company_id))
-        error_codes.extend(self.validate_phone_number_client(data, company_id))
-        error_codes.extend(self.validate_phone_number_status(data, company_id))
-        error_codes.extend(self.validate_date(data))
-        error_codes.extend(self.validate_fee(data))
-        return error_codes
+        existed = self.validate_existed_phone(data, company_id)
+        if not existed:
+            error_codes.extend(self.validate_main_phone_number(data, company_id))
+            error_codes.extend(self.validate_provider(data, company_id))
+            error_codes.extend(self.validate_legal(data, company_id))
+            error_codes.extend(self.validate_phone_number_client(data, company_id))
+            error_codes.extend(self.validate_phone_number_status(data, company_id))
+            error_codes.extend(self.validate_date(data))
+            error_codes.extend(self.validate_fee(data))
+        else:
+            error_codes.extend(self.validate_phone_number_status(data, company_id))
+            error_codes.extend(self.validate_phone_number_client(data, company_id))
+            error_codes.extend(self.validate_client_use_date(data))
+        return error_codes, existed
 
     def validate_data_import_fee(self, data, company_id):
         error_codes = []
@@ -2005,6 +2088,7 @@ class ImportPhoneNumberService(BaseService):
         error_codes.extend(self.validate_not_existed_phone(data, company_id))
         error_codes.extend(self.validate_phone_number_status(data, company_id))
         error_codes.extend(self.validate_phone_number_client(data, company_id))
+        error_codes.extend(self.validate_client_use_date(data))
         return error_codes
 
     def validate_data_import_status_for_tech(self, data, company_id):
@@ -2061,7 +2145,7 @@ class ImportPhoneNumberService(BaseService):
         phone = str(row['phone_number']).strip()
 
         entity = PhoneNumber.objects.filter(phone_number=phone, company_id=company_id, deleted_at__isnull=True).first()
-        if entity is None or entity.phone_number_status.name != 'Đánh dấu xóa':
+        if entity is None or entity.phone_number_status.name == 'Đánh dấu xóa':
             return [vec.PhoneNumberIsNotFound.code]
 
         return []
@@ -2095,6 +2179,12 @@ class ImportPhoneNumberService(BaseService):
         if entity is None:
             return [vec.LegalNotFound.code]
 
+        return []
+
+    def validate_client_use_date(self, row):
+        client_use_date = row['client_use_date']
+        if client_use_date and not self.validate_date_format_YYYYMMDD(client_use_date):
+            return [vec.ClientUseDateWrongFormat.code]
         return []
 
     def validate_phone_number_client(self, row, company_id):
@@ -2301,6 +2391,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
 
             create_phone_number_service = CreatePhoneNumberService()
             create_fee_service = CreatePhoneNumberMonthlyFeeService()
+            update_service = UpdatePhoneNumberService()
             with record.file.open('r') as excel_file:
                 workbook = xlrd.open_workbook(excel_file.path, encoding_override='utf-8')
                 worksheet = workbook.sheet_by_index(0)
@@ -2311,9 +2402,14 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                     row = worksheet.row(curr_row)
                     if type == IMPORT_TYPE.IMPORT_NEW:
                         data_record = self.rowParser(row)
-                        error_codes = self.validate_data(data_record, kwargs['company_id'])
+                        error_codes, existed = self.validate_data(data_record, kwargs['company_id'])
                         if not error_codes:
-                            self.import_new(args, cookies, create_phone_number_service, data_record, kwargs, request)
+                            if not existed:
+                                self.import_new(args, cookies, create_phone_number_service, data_record, kwargs,
+                                                request)
+                            else:
+                                self.import_status(args, cookies, data_record, kwargs, request, update_service)
+
                     if type == IMPORT_TYPE.IMPORT_STATUS:
                         data_record = self.row_parser_import_status(row)
                         error_codes = self.validate_data_import_status(data_record, kwargs['company_id'])
@@ -2382,7 +2478,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         create_phone_number_service.serve(request, cookies, *args,
                                           **CreatePhoneNumberRequestSerializer(phone_number).data)
 
-    def import_status(self, args, cookies, data_record, kwargs, request):
+    def import_status(self, args, cookies, data_record, kwargs, request, service):
         phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
                                                                deleted_at__isnull=True,
                                                                company_id=kwargs['company_id']).first()
@@ -2395,16 +2491,31 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                                                company_id=kwargs['company_id'])
         phone_number.phone_number_status = phone_number_status
         phone_number.phone_number_client = phone_number_client
-        if data_record['open_provider'].lower() == 'Viettel'.lower():
-            phone_number.viettel_unlocking_status = 'OPENED'
-        if data_record['open_provider'].lower() == 'Mobifone'.lower():
-            phone_number.mobifone_uhlocking_status = 'OPENED'
-        if data_record['open_provider'].lower() == 'Vinaphone'.lower():
-            phone_number.vinaphone_uhlocking_status = 'OPENED'
-        if data_record['open_provider'].lower() == 'Other'.lower():
-            phone_number.other_unlocking_status = 'OPENED'
+        if data_record['client_use_date']:
+            phone_number.client_use_date = datetime.strptime(data_record['client_use_date'], "%Y-%m-%d").strftime('%Y-%m-%d')
+        if data_record['open_provider'].lower():
+            if data_record['open_provider'].lower() == 'Viettel'.lower():
+                phone_number.viettel_unlocking_status = 'OPENED'
+            if data_record['open_provider'].lower() == 'Mobifone'.lower():
+                phone_number.mobifone_uhlocking_status = 'OPENED'
+            if data_record['open_provider'].lower() == 'Vinaphone'.lower():
+                phone_number.vinaphone_uhlocking_status = 'OPENED'
+            if data_record['open_provider'].lower() == 'Other'.lower():
+                phone_number.other_unlocking_status = 'OPENED'
 
-        service = UpdatePhoneNumberService()
+            checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                            company_id=phone_number.company_id,
+                                                            deleted_at__isnull=True)
+            add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                           company_id=phone_number.company_id,
+                                                           deleted_at__isnull=True)
+            retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                           company_id=phone_number.company_id,
+                                                           deleted_at__isnull=True)
+            trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+            if phone_number.phone_number_status_id not in trigger_status_list:
+                phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
+
         service.serve(request, cookies, *args, **vars(phone_number))
 
     def import_fee(self, args, cookies, create_montly_fee_service, data_record, kwargs, request):

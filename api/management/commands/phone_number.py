@@ -29,7 +29,8 @@ class Command(BaseCommand):
 
     def delete_phone_number(self, processing_date):
         delete_date = processing_date - relativedelta(days=NUMBER_OF_DAY_DELETE)
-        phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True, updated_at__lte=delete_date)
+        phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True, updated_at__lte=delete_date,
+                                                   phone_number_status__name__icontains='Đánh dấu xóa')
         for phone_number in phone_numbers:
             phone_number.deleted_at = datetime.now(timezone(TIME_ZONE))
             self.logger.info('Deleting phone number {}'.format(phone_number.phone_number.__str__()))

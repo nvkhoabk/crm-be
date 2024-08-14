@@ -15,13 +15,13 @@ def extract_phone(data):
 
 
 def classify_telecom_number(dstchannel):
-    if 'VTL' in dstchannel:
+    if 'VTL' in dstchannel.upper():
         return TELECOM_NUMBER.VIETTEL
-    if 'VMS' in dstchannel:
+    if 'VMS' in dstchannel.upper():
         return TELECOM_NUMBER.MOBI
-    if 'VNP' in dstchannel:
+    if 'VNP' in dstchannel.upper():
         return TELECOM_NUMBER.VINA
-    if 'OTHER' in dstchannel:
+    if 'OTHER' in dstchannel.upper():
         return TELECOM_NUMBER.OTHER
 
     return TELECOM_NUMBER.OTHER
