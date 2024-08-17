@@ -1955,18 +1955,20 @@ class ExportOrderService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         order_service = FilterOrderService()
         orders = order_service.serve(request, cookies, *args, **{'filter': kwargs})
-        order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
-                                                   order_id__in=orders.values_list('id', flat=True)).order_by(
-            'order_id')
-        orders = orders.filter(due_date__isnull=True, annual_due_date__isnull=True, deleted_at__isnull=True).order_by(
-            'id')
+        # order_details = OrderDetail.objects.filter(deleted_at__isnull=True,
+        #                                            order_id__in=orders.values_list('id', flat=True)).order_by(
+        #     'order_id')
+        # orders = orders.filter(due_date__isnull=True, annual_due_date__isnull=True, deleted_at__isnull=True).order_by(
+        #     'id')
         export_request = ExportOrderRequest.objects.create()
         file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(
             export_request.created_at.timestamp()) + '.xls'
 
         export_data = []
-        for order_detail in order_details:
-            export_data.append(self.normalize_detail_row(order_detail))
+        print(len(orders))
+        # print(len(order_details))
+        # for order_detail in order_details:
+        #     export_data.append(self.normalize_detail_row(order_detail))
         for order in orders:
             export_data.append(self.normalize_order_row(order))
 

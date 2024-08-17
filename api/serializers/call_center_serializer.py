@@ -232,6 +232,7 @@ class GetCompanyCallHistoryRequestParam(serializers.Serializer):
     to_date = serializers.DateField(required=False)
     number = serializers.CharField(required=False)
     user_id = serializers.IntegerField(required=False, allow_null=True)
+    call_status = serializers.CharField(required=False, allow_null=True)
 
 
 class GetCompanyCallHistoryRequestSerializer(BasePagingSerializer):
@@ -262,6 +263,7 @@ class CallReportSerializer(serializers.Serializer):
 class GetCallReportRequestParamSerializer(serializers.Serializer):
     from_date = serializers.DateField(required=True)
     to_date = serializers.DateField(required=True)
+    call_status = serializers.CharField(required=False, allow_null=True)
 
 
 class GetCallReportRequestSerializer(BasePagingSerializer):

@@ -1190,10 +1190,15 @@ class FilterPhoneNumberService(BaseService):
         if 'lock_date_from' in params and 'lock_date_to' in params and params['lock_date_from'] and params[
             'lock_date_to']:
             lock_id_list = PhoneNumberLockHistory.objects.filter(company_id=user_roles.first().company_id,
-                                                                 deleted_at__isnull=True,
-                                                                 confirm_lock_date__gte=params['lock_date_from'],
-                                                                 confirm_lock_date__lte=params[
-                                                                     'lock_date_to']).values_list(
+                                                                 deleted_at__isnull=True)
+            lock_id_list = lock_id_list.filter(Q(Q(viettel_lock_date__gte=params['lock_date_from']) & Q(
+                                                   viettel_lock_date__lte=params['lock_date_to'])) |
+                                               Q(Q(mobifone_lock_date__gte=params['lock_date_from']) & Q(
+                                                   mobifone_lock_date__lte=params['lock_date_to'])) |
+                                               Q(Q(vinaphone_lock_date__gte=params['lock_date_from']) & Q(
+                                                   vinaphone_lock_date__lte=params['lock_date_to'])) |
+                                               Q(Q(other_lock_date__gte=params['lock_date_from']) & Q(
+                                                   other_lock_date__lte=params['lock_date_to']))).values_list(
                 'phone_number_id', flat=True)
             query_set = query_set.filter(id__in=lock_id_list)
 
@@ -1352,7 +1357,7 @@ class FilterPhoneNumberTechnicalActivityService(BaseService):
             query_set = query_set.filter(created_at__gte=params['created_at_from'],
                                          created_at__lte=params['created_at_to'])
 
-        filters = ['user_id_list', 'phone_number']
+        filters = ['pics', 'phone_number']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -1362,8 +1367,14 @@ class FilterPhoneNumberTechnicalActivityService(BaseService):
                     phone_number__phone_number__icontains=value
                 )
 
-            if key == 'user_id_list' and value is not None and value:
-                query_set = query_set.filter(main_phone_number_id__in=value)
+            if key == 'pics' and value is not None and value:
+                if None in value:
+                    query_set = query_set.filter(Q(user_id__isnull=True) | Q(user_id__in=value))
+                else:
+                    query_set = query_set.filter(user_id__in=value)
+
+            # if key == 'pics' and value is not None and value:
+            #     query_set = query_set.filter(main_phone_number_id__in=value)
 
         order_by = kwargs.get('order_by', None)
         if order_by:
@@ -1441,6 +1452,10 @@ class RevertPhoneNumberTechnicalActivityService(BaseService):
                     lock.save()
 
         update_lock_count(phone_number)
+        phone_number.updated_at = datetime.now()
+        if phone_number.has_changed:
+            PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
+                                               user_id=request.user.id, diff=phone_number.diff)
         phone_number.save()
         self.trigger_update_phone_number_queue()
         return phone_number
@@ -3030,7 +3045,16 @@ class BulkUpdateStatusForTechService(BaseService):
         return payload
 
     def get_unlock_date(self, phone_number, type):
-        return datetime.today().strftime('%Y-%m-%d')
+        if type == PHONE_NUMBER_PROVIDER.VIETTEL and phone_number.viettel_unlocking_status == 'OPENED':
+            return datetime.today().strftime('%Y-%m-%d')
+        if type == PHONE_NUMBER_PROVIDER.MOBI and phone_number.mobifone_unlocking_status == 'OPENED':
+            return datetime.today().strftime('%Y-%m-%d')
+        if type == PHONE_NUMBER_PROVIDER.VINA and phone_number.vinaphone_unlocking_status == 'OPENED':
+            return datetime.today().strftime('%Y-%m-%d')
+        if type == PHONE_NUMBER_PROVIDER.OTHER and phone_number.other_unlocking_status == 'OPENED':
+            return datetime.today().strftime('%Y-%m-%d')
+
+        return None
 
     def get_lock_date(self, phone_number, type):
         lock_provider_json = {}

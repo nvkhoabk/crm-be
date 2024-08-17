@@ -328,6 +328,8 @@ class GetCompanyCallHistoryService(BaseService):
                     )
 
             call_logs = call_logs.filter(extension__in=call_agents.values_list('name', flat=True))
+            if 'call_status' in params and params['call_status']:
+                call_logs = call_logs.filter(status__icontains=params['call_status'])
 
             call_history_list = []
             for call_log in call_logs:
@@ -400,6 +402,8 @@ class GetCallReportService(BaseService):
 
         call_logs = CallLog.objects.filter(extension__in=call_agents.values_list('name', flat=True),
                                            created_at__gte=from_date, created_at__lt=to_date, status__isnull=False)
+        if 'call_status' in kwargs['filter'] and kwargs['filter']['call_status']:
+            call_logs = call_logs.filter(status__icontains=kwargs['filter']['call_status'])
 
         call_history_list = []
         for call_log in call_logs:

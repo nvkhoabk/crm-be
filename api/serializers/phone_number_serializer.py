@@ -764,12 +764,12 @@ class CheckPhoneNumberResponseSerializer(BaseResponseSerializer):
 class FilterPhoneNumberTechnicalActivityParamSerializer(serializers.Serializer):
     created_at_from = serializers.DateTimeField(required=False, allow_null=True)
     created_at_to = serializers.DateTimeField(required=False, allow_null=True)
-    user_id_list = serializers.ListField(child=serializers.IntegerField())
+    pics = serializers.ListField(child=serializers.IntegerField(allow_null=True))
     phone_number = serializers.CharField(max_length=1024, required=False, allow_null=True, allow_blank=True)
 
 
 class FilterPhoneNumberTechnicalActivityRequestParamSerializer(BasePagingSerializer):
-    filter = FilterPhoneNumberRequestParamSerializer()
+    filter = FilterPhoneNumberTechnicalActivityParamSerializer()
 
 
 class FilterPhoneNumberTechnicalActivityResponseSerializer(BaseResponseSerializer):

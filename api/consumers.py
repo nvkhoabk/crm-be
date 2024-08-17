@@ -77,6 +77,8 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
             await self.unlock_number(content)
         elif message_type == 'echo_message':
             await self.echo_message(content)
+        elif message_type == 'ping':
+            await self.pong()
 
     async def take_number(self, message):
         data = message.get('data', None)
@@ -128,6 +130,12 @@ class CrmConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_send(group=WS_USER_GROUP.PHONE_NUMBER_MANAGE, message={
             "type": "update_phone_number_to_client",
             "data": phone_number_dict
+        })
+
+    async def pong(self):
+            await self.send_json({
+            "type": "pong",
+            "data": ''
         })
 
     async def update_phone_number_to_client(self, message):
