@@ -19,7 +19,7 @@ from api.models.phone_number import PhoneNumber, PhoneNumberLockHistory, PhoneNu
 from api.models.system_configuration import DataStatus, DataChannel
 from api.services.data import create_order_detail_history, recalculate_order, recalculate_order_details_by_payment, \
     recalculate_payment_order_detail
-from api.services.phone_number import calculate_lock_information, update_lock_count
+from api.services.phone_number import calculate_lock_information, update_lock_count, calculate_last_lock_information
 from api.utils.date import get_last_of_month, get_first_of_month
 from api.utils.order_detail import update_charge_date_order_detail, recalcuate_monthly_order_detail_by_payment
 from api.utils.phone import classify_telecom_number
@@ -620,7 +620,15 @@ class Command(BaseCommand):
             except Exception as e:
                 print('Exception: ' + str(e))
 
-
+    def update_last_lock_info_phone_number(self):
+        from django.db.models import Q
+        phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True).filter(
+            Q(viettel_lock_count__gt=0) | Q(mobifone_lock_count__gt=0) | Q(vinaphone_lock_count__gt=0) | Q(
+                other_lock_count__gt=0))
+        for phone_number in phone_numbers:
+            print('Updating: ' + phone_number.phone_number)
+            calculate_last_lock_information(phone_number)
+            phone_number.save()
 
 
     def handle(self, *args, **options):
@@ -632,6 +640,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        # self.update_last_lock_info_phone_number()
         # self.migrate_phone_number()
         # self.fix_montly_order_detail()
         # self.fix_call_log_wrong()

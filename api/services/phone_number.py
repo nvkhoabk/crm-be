@@ -210,6 +210,149 @@ def calculate_lock_information(phone_number, params):
         update_unlock_information(phone_number, viettel_unlock_date, mobifone_unlock_date, vinaphone_unlock_date,
                                   other_unlock_date)
 
+    calculate_last_lock_information(phone_number)
+
+
+def calculate_last_lock_information(phone_number):
+    # last viettel lock date, unlock date, send provider date
+    last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number, viettel_lock_date__isnull=False).order_by('-id')
+    if last_lock.first():
+        phone_number.last_viettel_lock_date = last_lock.first().viettel_lock_date
+
+    last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                        viettel_lock_date__isnull=False,
+                                                        unlock_lock_date__isnull=False).order_by('-id')
+    if last_unlock.first():
+        phone_number.last_viettel_unlock_date = last_unlock.first().unlock_lock_date
+
+    last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                               viettel_lock_date__isnull=False,
+                                                               send_provider_date__isnull=False).order_by('-id')
+    if last_send_provider.first():
+        phone_number.last_viettel_send_provider_date = last_send_provider.first().send_provider_date
+
+    # last mobifone lock date, unlock date, send provider date
+    last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                      mobifone_lock_date__isnull=False).order_by('-id')
+    if last_lock.first():
+        phone_number.last_mobifone_lock_date = last_lock.first().mobifone_lock_date
+
+    last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                        mobifone_lock_date__isnull=False,
+                                                        unlock_lock_date__isnull=False).order_by('-id')
+    if last_unlock.first():
+        phone_number.last_mobifone_unlock_date = last_unlock.first().unlock_lock_date
+
+    last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                               mobifone_lock_date__isnull=False,
+                                                               send_provider_date__isnull=False).order_by('-id')
+    if last_send_provider.first():
+        phone_number.last_mobifone_send_provider_date = last_send_provider.first().send_provider_date
+
+    # last vinaphone lock date, unlock date, send provider date
+    last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                      vinaphone_lock_date__isnull=False).order_by('-id')
+    if last_lock.first():
+        phone_number.last_vinaphone_lock_date = last_lock.first().vinaphone_lock_date
+
+    last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                        vinaphone_lock_date__isnull=False,
+                                                        unlock_lock_date__isnull=False).order_by('-id')
+    if last_unlock.first():
+        phone_number.last_vinaphone_unlock_date = last_unlock.first().unlock_lock_date
+
+    last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                               vinaphone_lock_date__isnull=False,
+                                                               send_provider_date__isnull=False).order_by('-id')
+    if last_send_provider.first():
+        phone_number.last_vinaphone_send_provider_date = last_send_provider.first().send_provider_date
+
+    # last other lock date, unlock date, send provider date
+    last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                      other_lock_date__isnull=False).order_by('-id')
+    if last_lock.first():
+        phone_number.last_other_lock_date = last_lock.first().other_lock_date
+
+    last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                        other_lock_date__isnull=False,
+                                                        unlock_lock_date__isnull=False).order_by('-id')
+    if last_unlock.first():
+        phone_number.last_other_unlock_date = last_unlock.first().unlock_lock_date
+
+    last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number,
+                                                               other_lock_date__isnull=False,
+                                                               send_provider_date__isnull=False).order_by('-id')
+    if last_send_provider.first():
+        phone_number.last_other_send_provider_date = last_send_provider.first().send_provider_date
+#
+# def calculate_last_lock_information(phone_number):
+#     # last viettel lock date, unlock date, send provider date
+#     last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         viettel_lock_date__isnull=True).order_by('-id')
+#     if last_lock.first():
+#         phone_number.last_viettel_lock_date = last_lock.first().viettel_lock_date
+#
+#     last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         viettel_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+#     if last_unlock.first():
+#         phone_number.last_viettel_unlock_date = last_unlock.first().unlock_lock_date
+#
+#     last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+#                                                                phone_number=phone_number).exclude(
+#         viettel_lock_date__isnull=True).exclude(send_provider_date__isnull=True).order_by('-id')
+#     if last_send_provider.first():
+#         phone_number.last_viettel_unlock_date = last_send_provider.first().send_provider_date
+#
+#     # last mobifone lock date, unlock date, send provider date
+#     last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         mobifone_lock_date__isnull=True).order_by('-id')
+#     if last_lock.first():
+#         phone_number.last_mobifone_lock_date = last_lock.first().mobifone_lock_date
+#
+#     last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         mobifone_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+#     if last_unlock.first():
+#         phone_number.last_mobifone_unlock_date = last_unlock.first().unlock_lock_date
+#
+#     last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+#                                                                phone_number=phone_number).exclude(
+#         mobifone_lock_date__isnull=True).exclude(send_provider_date__isnull=True).order_by('-id')
+#     if last_send_provider.first():
+#         phone_number.last_mobifone_unlock_date = last_send_provider.first().send_provider_date
+#
+#     # last vinaphone lock date, unlock date, send provider date
+#     last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         vinaphone_lock_date__isnull=True).order_by('-id')
+#     if last_lock.first():
+#         phone_number.last_vinaphone_lock_date = last_lock.first().vinaphone_lock_date
+#
+#     last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         vinaphone_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+#     if last_unlock.first():
+#         phone_number.last_vinaphone_unlock_date = last_unlock.first().unlock_lock_date
+#
+#     last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+#                                                                phone_number=phone_number).exclude(
+#         vinaphone_lock_date__isnull=True).exclude(send_provider_date__isnull=True).order_by('-id')
+#     if last_send_provider.first():
+#         phone_number.last_vinaphone_unlock_date = last_send_provider.first().send_provider_date
+#
+#     # last other lock date, unlock date, send provider date
+#     last_lock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         other_lock_date__isnull=True).order_by('-id')
+#     if last_lock.first():
+#         phone_number.last_other_lock_date = last_lock.first().other_lock_date
+#
+#     last_unlock = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True, phone_number=phone_number).exclude(
+#         other_lock_date__isnull=True).exclude(unlock_lock_date__isnull=True).order_by('-id')
+#     if last_unlock.first():
+#         phone_number.last_other_unlock_date = last_unlock.first().unlock_lock_date
+#
+#     last_send_provider = PhoneNumberLockHistory.objects.filter(deleted_at__isnull=True,
+#                                                                phone_number=phone_number).exclude(
+#         other_lock_date__isnull=True).exclude(send_provider_date__isnull=True).order_by('-id')
+#     if last_send_provider.first():
+#         phone_number.last_other_unlock_date = last_send_provider.first().send_provider_date
 
 class CreateMainPhoneNumberService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
@@ -935,7 +1078,7 @@ class CreatePhoneNumberService(BaseService):
 
             if PhoneNumber.objects.filter(deleted_at__isnull=True,
                                           phone_number__icontains=kwargs['phone_number']).exclude(
-                    phone_number_status_id=mark_delete.id).first():
+                phone_number_status_id=mark_delete.id).first():
                 raise PhoneNumberDuplicated()
 
             return PhoneNumber.objects.create(
@@ -1192,7 +1335,7 @@ class FilterPhoneNumberService(BaseService):
             lock_id_list = PhoneNumberLockHistory.objects.filter(company_id=user_roles.first().company_id,
                                                                  deleted_at__isnull=True)
             lock_id_list = lock_id_list.filter(Q(Q(viettel_lock_date__gte=params['lock_date_from']) & Q(
-                                                   viettel_lock_date__lte=params['lock_date_to'])) |
+                viettel_lock_date__lte=params['lock_date_to'])) |
                                                Q(Q(mobifone_lock_date__gte=params['lock_date_from']) & Q(
                                                    mobifone_lock_date__lte=params['lock_date_to'])) |
                                                Q(Q(vinaphone_lock_date__gte=params['lock_date_from']) & Q(
@@ -1230,7 +1373,8 @@ class FilterPhoneNumberService(BaseService):
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
                    'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
                    'pics', 'lock_count_type', 'viettel_using_status', 'mobifone_using_status', 'vinaphone_using_status',
-                   'other_using_status', 'sale_pics']
+                   'other_using_status', 'sale_pics', 'viettel_unlocking_status', 'mobifone_unlocking_status',
+                   'vinaphone_unlocking_status', 'other_unlocking_status']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -1273,7 +1417,8 @@ class FilterPhoneNumberService(BaseService):
 
             if key == 'phone_number_client_list' and value is not None and value:
                 if None in value:
-                    query_set = query_set.filter(Q(phone_number_client_id__isnull=True) | Q(phone_number_client_id__in=value))
+                    query_set = query_set.filter(
+                        Q(phone_number_client_id__isnull=True) | Q(phone_number_client_id__in=value))
                 else:
                     query_set = query_set.filter(phone_number_client_id__in=value)
 
@@ -1331,6 +1476,18 @@ class FilterPhoneNumberService(BaseService):
 
             if key == 'other_using_status' and value:
                 query_set = query_set.filter(other_using_status=value)
+
+            if key == 'viettel_unlocking_status' and value:
+                query_set = query_set.filter(viettel_unlocking_status=value)
+
+            if key == 'mobifone_unlocking_status' and value:
+                query_set = query_set.filter(mobifone_unlocking_status=value)
+
+            if key == 'vinaphone_unlocking_status' and value:
+                query_set = query_set.filter(vinaphone_unlocking_status=value)
+
+            if key == 'other_unlocking_status' and value:
+                query_set = query_set.filter(other_unlocking_status=value)
 
         order_by = kwargs.get('order_by', None)
         if order_by:
@@ -1495,8 +1652,11 @@ class BulkUpdateStatusService(UpdatePhoneNumberService):
                                                       company_id=phone_numbers.first().company_id,
                                                       deleted_at__isnull=True)
         provider_cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã gửi nhà cung cấp hủy',
-                                                      company_id=phone_numbers.first().company_id,
-                                                      deleted_at__isnull=True)
+                                                               company_id=phone_numbers.first().company_id,
+                                                               deleted_at__isnull=True)
+        using_status = PhoneNumberStatus.objects.get(name__iexact='Đang sử dụng',
+                                                     company_id=phone_numbers.first().company_id,
+                                                     deleted_at__isnull=True)
         trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
 
         for phone_number in phone_numbers:
@@ -1516,6 +1676,24 @@ class BulkUpdateStatusService(UpdatePhoneNumberService):
                 phone_number.cancel_date = datetime.today()
             if new_status_id == provider_cancel_status.id:
                 phone_number.provider_cancel_date = datetime.today()
+            if new_status_id == checking_status.id:
+                if 'Viettel'.lower() in kwargs.get('telco_list', []):
+                    phone_number.viettel_using_status = 'LOCK'
+                if 'Mobifone'.lower() in kwargs.get('telco_list', []):
+                    phone_number.mobifone_using_status = 'LOCK'
+                if 'Vinaphone'.lower() in kwargs.get('telco_list', []):
+                    phone_number.vinaphone_using_status = 'LOCK'
+                if 'Other'.lower() in kwargs.get('telco_list', []):
+                    phone_number.other_using_status = 'LOCK'
+            if new_status_id == using_status.id:
+                if 'Viettel'.lower() in kwargs.get('telco_list', []):
+                    phone_number.viettel_using_status = 'USING'
+                if 'Mobifone'.lower() in kwargs.get('telco_list', []):
+                    phone_number.mobifone_using_status = 'USING'
+                if 'Vinaphone'.lower() in kwargs.get('telco_list', []):
+                    phone_number.vinaphone_using_status = 'USING'
+                if 'Other'.lower() in kwargs.get('telco_list', []):
+                    phone_number.other_using_status = 'USING'
 
             phone_number.phone_number_status_id = status
             phone_number.updated_at = datetime.now()
@@ -1610,7 +1788,6 @@ class GetStatisticPhoneNumberService(BaseService):
             })
 
         return res
-
 
     # def serve(self, request, cookies: Cookies, *args, **kwargs):
     #     filter = {
@@ -1713,8 +1890,8 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                                                               company_id=phone_numbers.first().company_id,
                                                               deleted_at__isnull=True)
                 provider_cancel_status = PhoneNumberStatus.objects.get(name__iexact='Đã gửi nhà cung cấp hủy',
-                                                              company_id=phone_numbers.first().company_id,
-                                                              deleted_at__isnull=True)
+                                                                       company_id=phone_numbers.first().company_id,
+                                                                       deleted_at__isnull=True)
                 mark_delete = PhoneNumberStatus.objects.get(name__iexact='Đánh dấu xóa',
                                                             company_id=phone_numbers.first().company_id,
                                                             deleted_at__isnull=True)
@@ -2019,7 +2196,18 @@ class ImportPhoneNumberService(BaseService):
             'other_payment_date': str(rows[17].value).strip(),
             'note': str(rows[18].value).strip(),
             'client_use_date': str(rows[19].value).strip(),
-            'open_provider': str(rows[20].value).strip(),
+            'opened_telco': str(rows[20].value).strip(),
+            'send_provider': str(rows[21].value).strip(),
+            'wrong_report': str(rows[22].value).strip(),
+            'open_telco': str(rows[23].value).strip(),
+            'lock_telco': str(rows[24].value).strip(),
+            'using_telco': str(rows[25].value).strip(),
+            'unset_opened_telco': str(rows[26].value).strip(),
+            'unset_send_provider': str(rows[27].value).strip(),
+            'unset_wrong_report': str(rows[28].value).strip(),
+            'unset_open_telco': str(rows[29].value).strip(),
+            'unset_lock_telco': str(rows[30].value).strip(),
+            'unset_using_telco': str(rows[31].value).strip(),
         }
 
     def row_parser_import_status(self, rows):
@@ -2060,6 +2248,7 @@ class ImportPhoneNumberService(BaseService):
             'send_provider_date': str(rows[8].value).strip(),
             'cancel_date': str(rows[9].value).strip(),
         }
+
     def row_parser_import_fee(self, rows):
         return {
             'id': '' if str(rows[0].value).strip() == '' else str(int(rows[0].value)),
@@ -2215,11 +2404,12 @@ class ImportPhoneNumberService(BaseService):
 
     def validate_phone_number_status(self, row, company_id):
         phone_number_status = str(row['phone_number_status']).strip()
-        entity = PhoneNumberStatus.objects.filter(name__iexact=phone_number_status,
-                                                  company_id=company_id).first()
+        if phone_number_status:
+            entity = PhoneNumberStatus.objects.filter(name__iexact=phone_number_status,
+                                                      company_id=company_id).first()
 
-        if entity is None:
-            return [vec.PhoneNumberStatusNotFound.code]
+            if entity is None:
+                return [vec.PhoneNumberStatusNotFound.code]
 
         return []
 
@@ -2504,34 +2694,75 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
 
         phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
                                                company_id=kwargs['company_id'])
-        phone_number.phone_number_status = phone_number_status
-        phone_number.phone_number_client = phone_number_client
-        if data_record['client_use_date']:
-            phone_number.client_use_date = datetime.strptime(data_record['client_use_date'], "%Y-%m-%d").strftime('%Y-%m-%d')
-        if data_record['open_provider'].lower():
-            if data_record['open_provider'].lower() == 'Viettel'.lower():
-                phone_number.viettel_unlocking_status = 'OPENED'
-            if data_record['open_provider'].lower() == 'Mobifone'.lower():
-                phone_number.mobifone_uhlocking_status = 'OPENED'
-            if data_record['open_provider'].lower() == 'Vinaphone'.lower():
-                phone_number.vinaphone_uhlocking_status = 'OPENED'
-            if data_record['open_provider'].lower() == 'Other'.lower():
-                phone_number.other_unlocking_status = 'OPENED'
+        if phone_number_status:
+            phone_number.phone_number_status = phone_number_status
+        if phone_number_client:
+            phone_number.phone_number_client = phone_number_client
 
-            checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
-                                                            company_id=phone_number.company_id,
-                                                            deleted_at__isnull=True)
-            add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
-                                                           company_id=phone_number.company_id,
-                                                           deleted_at__isnull=True)
-            retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
-                                                           company_id=phone_number.company_id,
-                                                           deleted_at__isnull=True)
-            trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
-            if phone_number.phone_number_status_id not in trigger_status_list:
-                phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
+        if data_record['client_use_date']:
+            phone_number.client_use_date = datetime.strptime(data_record['client_use_date'], "%Y-%m-%d").strftime(
+                '%Y-%m-%d')
+        if data_record['opened_telco'].lower():
+            self.set_unlocking_status(phone_number, data_record['opened_telco'].lower(), 'OPENED')
+        if data_record['send_provider'].lower():
+            self.set_unlocking_status(phone_number, data_record['send_provider'].lower(), 'SENT_PROVIDER')
+        if data_record['wrong_report'].lower():
+            self.set_unlocking_status(phone_number, data_record['wrong_report'].lower(), 'WRONG_REPORT')
+        if data_record['open_telco'].lower():
+            self.set_using_status(phone_number, data_record['open_telco'].lower(), 'OPEN')
+        if data_record['lock_telco'].lower():
+            self.set_using_status(phone_number, data_record['lock_telco'].lower(), 'LOCK')
+        if data_record['using_telco'].lower():
+            self.set_using_status(phone_number, data_record['using_telco'].lower(), 'USING')
+        if data_record['unset_opened_telco'].lower():
+            self.set_unlocking_status(phone_number, data_record['unset_opened_telco'].lower(), 'AVAILABLE')
+        if data_record['unset_send_provider'].lower():
+            self.set_unlocking_status(phone_number, data_record['unset_send_provider'].lower(), 'AVAILABLE')
+        if data_record['unset_wrong_report'].lower():
+            self.set_unlocking_status(phone_number, data_record['unset_wrong_report'].lower(), 'AVAILABLE')
+        if data_record['unset_open_telco'].lower():
+            self.set_using_status(phone_number, data_record['unset_open_telco'].lower(), 'IN_QUEUE')
+        if data_record['unset_lock_telco'].lower():
+            self.set_using_status(phone_number, data_record['unset_lock_telco'].lower(), 'IN_QUEUE')
+        if data_record['unset_using_telco'].lower():
+            self.set_using_status(phone_number, data_record['unset_using_telco'].lower(), 'IN_QUEUE')
+
+        checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                        company_id=phone_number.company_id,
+                                                        deleted_at__isnull=True)
+        add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                       company_id=phone_number.company_id,
+                                                       deleted_at__isnull=True)
+        retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                      company_id=phone_number.company_id,
+                                                      deleted_at__isnull=True)
+        trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+        if phone_number.phone_number_status_id not in trigger_status_list:
+            phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
 
         service.serve(request, cookies, *args, **vars(phone_number))
+
+    def set_unlocking_status(self, phone_number, telco, status):
+        split_telco = telco.lower().split(',')
+        if 'Viettel'.lower() in split_telco:
+            phone_number.viettel_unlocking_status = status
+        if 'Mobifone'.lower() in split_telco:
+            phone_number.mobifone_unlocking_status = status
+        if 'Vinaphone'.lower() in split_telco:
+            phone_number.vinaphone_unlocking_status = status
+        if 'Other'.lower() in split_telco:
+            phone_number.other_unlocking_status = status
+
+    def set_using_status(self, phone_number, telco, status):
+        split_telco = telco.lower().split(',')
+        if 'Viettel'.lower() in split_telco:
+            phone_number.viettel_using_status = status
+        if 'Mobifone'.lower() in split_telco:
+            phone_number.mobifone_using_status = status
+        if 'Vinaphone'.lower() in split_telco:
+            phone_number.vinaphone_using_status = status
+        if 'Other'.lower() in split_telco:
+            phone_number.other_using_status = status
 
     def import_fee(self, args, cookies, create_montly_fee_service, data_record, kwargs, request):
         phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
@@ -2664,7 +2895,8 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
 
                 if cancel_date:
                     status = PhoneNumberStatus.objects.filter(name__iexact='Đã hủy', company_id=17).first()
-                    phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''), '%d/%m/%Y')
+                    phone_number.provider_cancel_date = datetime.strptime(cancel_date.strip().replace(' ', ''),
+                                                                          '%d/%m/%Y')
                     if status:
                         phone_number.phone_number_status_id = status.id
                 # if client_use_date:
@@ -2945,7 +3177,20 @@ class ExportPhoneNumberService(BaseService):
                                                 'Số lần khóa Ngoại mạng',
                                                 'Ngày đầu khách lấy',
                                                 'Ngày báo NCC hủy',
-                                                'Thời gian tạo'])
+                                                'Thời gian tạo',
+                                                'Ngày gửi NCC Viettel',
+                                                'Ngày khóa Viettel',
+                                                'Ngày mở Viettel',
+                                                'Ngày gửi NCC Mobifone',
+                                                'Ngày khóa Mobifone',
+                                                'Ngày mở Mobifone',
+                                                'Ngày gửi NCC Vinaphone',
+                                                'Ngày khóa Vinaphone',
+                                                'Ngày mở Vinaphone',
+                                                'Ngày gửi NCC Ngoại mạng',
+                                                'Ngày khóa Ngoại mạng',
+                                                'Ngày mở Ngoại mạng',
+                                                ])
         df.to_excel(file_path, index=False, header=True)
         export_request.file.name = file_path[len(MEDIA_ROOT):]
         export_request.save()
@@ -2981,7 +3226,20 @@ class ExportPhoneNumberService(BaseService):
             phone_number.other_lock_count.__str__(),
             phone_number.active_date.__str__() if phone_number.active_date is not None else '',
             phone_number.provider_cancel_date.__str__() if phone_number.provider_cancel_date is not None else '',
-            phone_number.created_at.astimezone(timezone(TIME_ZONE)).__str__()]
+            phone_number.created_at.astimezone(timezone(TIME_ZONE)).__str__(),
+            phone_number.last_viettel_send_provider_date.__str__() if phone_number.last_viettel_send_provider_date is not None else '',
+            phone_number.last_viettel_lock_date.__str__() if phone_number.last_viettel_lock_date is not None else '',
+            phone_number.last_viettel_unlock_date.__str__() if phone_number.last_viettel_unlock_date is not None else '',
+            phone_number.last_mobifone_send_provider_date.__str__() if phone_number.last_mobifone_send_provider_date is not None else '',
+            phone_number.last_mobifone_lock_date.__str__() if phone_number.last_mobifone_lock_date is not None else '',
+            phone_number.last_mobifone_unlock_date.__str__() if phone_number.last_mobifone_unlock_date is not None else '',
+            phone_number.last_vinaphone_send_provider_date.__str__() if phone_number.last_vinaphone_send_provider_date is not None else '',
+            phone_number.last_vinaphone_lock_date.__str__() if phone_number.last_vinaphone_lock_date is not None else '',
+            phone_number.last_vinaphone_unlock_date.__str__() if phone_number.last_vinaphone_unlock_date is not None else '',
+            phone_number.last_other_send_provider_date.__str__() if phone_number.last_other_send_provider_date is not None else '',
+            phone_number.last_other_lock_date.__str__() if phone_number.last_other_lock_date is not None else '',
+            phone_number.last_other_unlock_date.__str__() if phone_number.last_other_unlock_date is not None else ''
+        ]
 
 
 class CopyPhoneNumberService(BaseService):

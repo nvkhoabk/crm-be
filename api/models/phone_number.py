@@ -148,6 +148,18 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     other_unlocking_status = models.CharField(max_length=512, default='')
     provider_cancel_date = models.DateField(null=True)
     last_technical_activity_id = models.IntegerField(default=0)
+    last_viettel_lock_date = models.DateField(null=True)
+    last_viettel_unlock_date = models.DateField(null=True)
+    last_viettel_send_provider_date = models.DateField(null=True)
+    last_mobifone_lock_date = models.DateField(null=True)
+    last_mobifone_unlock_date = models.DateField(null=True)
+    last_mobifone_send_provider_date = models.DateField(null=True)
+    last_vinaphone_lock_date = models.DateField(null=True)
+    last_vinaphone_unlock_date = models.DateField(null=True)
+    last_vinaphone_send_provider_date = models.DateField(null=True)
+    last_other_lock_date = models.DateField(null=True)
+    last_other_unlock_date = models.DateField(null=True)
+    last_other_send_provider_date = models.DateField(null=True)
 
     class Meta:
         db_table = 'phone_numbers'
