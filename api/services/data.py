@@ -1995,7 +1995,8 @@ class ExportOrderService(BaseService):
                                                 'Tổng tiền cần thanh toán (VNĐ)',
                                                 'Ngày thanh toán',
                                                 'Hạn thanh toán',
-                                                'Ngày tái tục'])
+                                                'Ngày tái tục',
+                                                'Doanh thu phân bổ'])
         df.to_excel(file_path, index=False, header=True)
         export_request.file.name = file_path[len(MEDIA_ROOT):]
         export_request.save()
@@ -2033,4 +2034,4 @@ class ExportOrderService(BaseService):
             order.data_status.name if order.data_status is not None else '',
             order.data_sub_status.name if order.data_sub_status is not None else '',
             order.pic.username if order.pic is not None else '',
-            '', order.debt_status, '', '', '', '', '', '', '', '', '', '', '']
+            '', order.debt_status, '', '', '', '', '', '', '', '', '', '', '', order.monthly_order_amount]
