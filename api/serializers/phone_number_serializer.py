@@ -666,7 +666,7 @@ class FilterPhoneNumberLockHistoryResponseSerializer(BaseResponseSerializer):
 class BulkUpdatePhoneNumberStatusRequestSerializer(BasePagingSerializer):
     filter = FilterPhoneNumberRequestParamSerializer()
     status = serializers.IntegerField()
-    telco_list = serializers.ListField(child=serializers.CharField())
+    telco_list = serializers.ListField(child=serializers.CharField(), default=[])
 
 
 class BulkUpdatePhoneNumberStatusResponseSerializer(BaseResponseSerializer):
@@ -677,7 +677,7 @@ class UpdateListPhoneNumberStatusRequestSerializer(serializers.Serializer):
     phone_number_id_list = serializers.ListField(child=serializers.IntegerField())
     phone_number_status_id = serializers.IntegerField()
     mark_delete = serializers.BooleanField(default=False)
-    telco_list = serializers.ListField(child=serializers.CharField())
+    telco_list = serializers.ListField(child=serializers.CharField(), default=[])
 
 
 class UpdateListPhoneNumberStatusResponseSerializer(BaseResponseSerializer):

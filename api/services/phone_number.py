@@ -37,6 +37,7 @@ import re
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+from api.services.manage import is_technical_staff
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
 
@@ -1370,6 +1371,9 @@ class FilterPhoneNumberService(BaseService):
                 'phone_number_id', flat=True)
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
+        if async_to_sync(is_technical_staff)(request.user):
+            query_set = query_set.filter(phone_number_client__isnull=False)
+
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
                    'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
                    'pics', 'lock_count_type', 'viettel_using_status', 'mobifone_using_status', 'vinaphone_using_status',
@@ -1677,22 +1681,23 @@ class BulkUpdateStatusService(UpdatePhoneNumberService):
             if new_status_id == provider_cancel_status.id:
                 phone_number.provider_cancel_date = datetime.today()
             if new_status_id == checking_status.id:
-                if 'Viettel'.lower() in kwargs.get('telco_list', []):
+                if 'Viettel' in kwargs.get('telco_list', []):
                     phone_number.viettel_using_status = 'LOCK'
-                if 'Mobifone'.lower() in kwargs.get('telco_list', []):
+                if 'Mobifone' in kwargs.get('telco_list', []):
                     phone_number.mobifone_using_status = 'LOCK'
-                if 'Vinaphone'.lower() in kwargs.get('telco_list', []):
+                if 'Vinaphone' in kwargs.get('telco_list', []):
                     phone_number.vinaphone_using_status = 'LOCK'
-                if 'Other'.lower() in kwargs.get('telco_list', []):
+                if 'Other' in kwargs.get('telco_list', []):
                     phone_number.other_using_status = 'LOCK'
+
             if new_status_id == using_status.id:
-                if 'Viettel'.lower() in kwargs.get('telco_list', []):
+                if 'Viettel' in kwargs.get('telco_list', []):
                     phone_number.viettel_using_status = 'USING'
-                if 'Mobifone'.lower() in kwargs.get('telco_list', []):
+                if 'Mobifone' in kwargs.get('telco_list', []):
                     phone_number.mobifone_using_status = 'USING'
-                if 'Vinaphone'.lower() in kwargs.get('telco_list', []):
+                if 'Vinaphone' in kwargs.get('telco_list', []):
                     phone_number.vinaphone_using_status = 'USING'
-                if 'Other'.lower() in kwargs.get('telco_list', []):
+                if 'Other' in kwargs.get('telco_list', []):
                     phone_number.other_using_status = 'USING'
 
             phone_number.phone_number_status_id = status
@@ -1896,6 +1901,14 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                                                             company_id=phone_numbers.first().company_id,
                                                             deleted_at__isnull=True)
 
+                using_status = PhoneNumberStatus.objects.get(name__iexact='Đang sử dụng',
+                                                             company_id=phone_numbers.first().company_id,
+                                                             deleted_at__isnull=True)
+
+                not_using_status = PhoneNumberStatus.objects.get(name__iexact='Chưa sử dụng',
+                                                             company_id=phone_numbers.first().company_id,
+                                                             deleted_at__isnull=True)
+
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
 
                 for phone_number in phone_numbers:
@@ -1917,6 +1930,37 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                         phone_number.cancel_date = datetime.today()
                     if new_status_id == provider_cancel_status.id:
                         phone_number.provider_cancel_date = datetime.today()
+
+
+                    if new_status_id == checking_status.id:
+                        if 'Viettel' in kwargs.get('telco_list', []):
+                            phone_number.viettel_using_status = 'LOCK'
+                        if 'Mobifone' in kwargs.get('telco_list', []):
+                            phone_number.mobifone_using_status = 'LOCK'
+                        if 'Vinaphone' in kwargs.get('telco_list', []):
+                            phone_number.vinaphone_using_status = 'LOCK'
+                        if 'Other' in kwargs.get('telco_list', []):
+                            phone_number.other_using_status = 'LOCK'
+
+                    if new_status_id == using_status.id:
+                        if 'Viettel' in kwargs.get('telco_list', []):
+                            phone_number.viettel_using_status = 'USING'
+                        if 'Mobifone' in kwargs.get('telco_list', []):
+                            phone_number.mobifone_using_status = 'USING'
+                        if 'Vinaphone' in kwargs.get('telco_list', []):
+                            phone_number.vinaphone_using_status = 'USING'
+                        if 'Other' in kwargs.get('telco_list', []):
+                            phone_number.other_using_status = 'USING'
+
+                    if new_status_id == not_using_status.id:
+                        if phone_number.viettel_using_status == 'USING':
+                            phone_number.viettel_using_status = 'AVAILABLE'
+                        if phone_number.mobifone_using_status == 'USING':
+                            phone_number.mobifone_using_status = 'AVAILABLE'
+                        if phone_number.vinaphone_using_status == 'USING':
+                            phone_number.vinaphone_using_status = 'AVAILABLE'
+                        if phone_number.other_using_status == 'USING':
+                            phone_number.other_using_status = 'AVAILABLE'
 
                     phone_number.phone_number_status_id = new_status_id
                     phone_number.updated_at = datetime.now()
@@ -2692,8 +2736,8 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
                                                                deleted_at__isnull=True,
                                                                company_id=kwargs['company_id']).first()
 
-        phone_number = PhoneNumber.objects.get(phone_number__iexact=data_record['phone_number'],
-                                               company_id=kwargs['company_id'])
+        phone_number = PhoneNumber.objects.filter(phone_number__iexact=data_record['phone_number'], deleted_at__isnull=True,
+                                               company_id=kwargs['company_id']).order_by('-id').first()
         if phone_number_status:
             phone_number.phone_number_status = phone_number_status
         if phone_number_client:
@@ -2736,8 +2780,11 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
                                                       company_id=phone_number.company_id,
                                                       deleted_at__isnull=True)
+        qualified_status = PhoneNumberStatus.objects.get(name__iexact='Số đạt',
+                                                      company_id=phone_number.company_id,
+                                                      deleted_at__isnull=True)
         trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
-        if phone_number.phone_number_status_id not in trigger_status_list:
+        if phone_number.phone_number_status_id not in trigger_status_list and phone_number.phone_number_status_id != qualified_status.id:
             phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
 
         service.serve(request, cookies, *args, **vars(phone_number))
@@ -2752,6 +2799,27 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             phone_number.vinaphone_unlocking_status = status
         if 'Other'.lower() in split_telco:
             phone_number.other_unlocking_status = status
+        if status == 'SENT_PROVIDER':
+            if 'Viettel'.lower() in split_telco:
+                lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.viettel_lock_history_id).first()
+                if lock:
+                    lock.send_provider_date = datetime.today()
+                    lock.save()
+            if 'Mobifone'.lower() in split_telco:
+                lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.mobifone_lock_history_id).first()
+                if lock:
+                    lock.send_provider_date = datetime.today()
+                    lock.save()
+            if 'Vinaphone'.lower() in split_telco:
+                lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.vinaphone_lock_history_id).first()
+                if lock:
+                    lock.send_provider_date = datetime.today()
+                    lock.save()
+            if 'Other'.lower() in split_telco:
+                lock = PhoneNumberLockHistory.objects.filter(pk=phone_number.other_lock_history_id).first()
+                if lock:
+                    lock.send_provider_date = datetime.today()
+                    lock.save()
 
     def set_using_status(self, phone_number, telco, status):
         split_telco = telco.lower().split(',')
