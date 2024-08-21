@@ -1372,7 +1372,18 @@ class FilterPhoneNumberService(BaseService):
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
         if async_to_sync(is_technical_staff)(request.user):
-            query_set = query_set.filter(phone_number_client__isnull=False)
+            checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
+                                                            company_id=user_roles.first().company_id,
+                                                            deleted_at__isnull=True)
+            add_new_status = PhoneNumberStatus.objects.get(name__iexact='Số mới nhập',
+                                                           company_id=user_roles.first().company_id,
+                                                           deleted_at__isnull=True)
+            retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
+                                                          company_id=user_roles.first().company_id,
+                                                          deleted_at__isnull=True)
+            trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+            query_set = query_set.filter(
+                Q(phone_number_client__isnull=False) | Q(phone_number_status_id__in=trigger_status_list))
 
         filters = ['phone_number', 'main_phone_number_id_list', 'provider_id_list', 'legal_id_list',
                    'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
@@ -1670,7 +1681,8 @@ class BulkUpdateStatusService(UpdatePhoneNumberService):
                 trigger_update_phone_number_queue = True
             else:
                 if old_status_id in trigger_status_list:
-                    phone_number.pic = request.user
+                    if async_to_sync(is_technical_staff)(request.user):
+                        phone_number.pic = request.user
 
                     if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
                         trigger_update_phone_number_queue = True
