@@ -1,13 +1,18 @@
 import json
-from datetime import datetime, date as date_type
+import re
+from datetime import datetime
 
-from django.db.models import Case, When, F, ExpressionWrapper, IntegerField, Value, Sum
-from django.db.models.functions import Coalesce
-from pytz import timezone
 import pandas as pd
 import xlrd
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
 from django.db.models import Q
+from pytz import timezone
+from rest_framework.exceptions import PermissionDenied
 
+import api.services.validate_error_code as vec
 from api.common.base_service import BaseService
 from api.common.cookies import Cookies
 from api.const import IMPORT_TYPE, PHONE_NUMBER_PROVIDER
@@ -15,29 +20,18 @@ from api.models.data import ImportOrderRecords, ExportOrderRequest
 from api.models.organization import UserRole, Company, Department, Role
 from api.models.phone_number import MainPhoneNumber, Provider, Legal, PhoneNumberClient, PhoneNumberStatus, \
     PhoneNumberMonthlyFee, PhoneNumber, PhoneNumberActivity, PhoneNumberLockHistory, PhoneNumberTechnicalActivity
-from api.models.product import Product
-from api.models.package import Package
-from api.models.param import Param
-from api.serializers.phone_number_serializer import CreatePhoneNumberRequestSerializer, \
-    CreatePhoneNumberMonthlyFeeRequestSerializer, CheckPhoneNumberRequestSerializer
-from api.services import utils
-from rest_framework.exceptions import PermissionDenied
-from api.services.exceptions import (ProductNotFound, ProductDuplicated, MainPhoneNumberDuplicated,
+
+import api.serializers.phone_number_serializer as pn_serializer
+from api.services.exceptions import (MainPhoneNumberDuplicated,
                                      MainPhoneNumberNotFound, ProviderNotFound, ProviderDuplicated, LegalNotFound,
                                      LegalDuplicated, PhoneNumberClientNotFound, PhoneNumberClientDuplicated,
                                      PhoneNumberStatusNotFound, PhoneNumberStatusDuplicated,
                                      PhoneNumberMonthlyFeeNotFound, PhoneNumberMonthlyFeeDuplicated,
                                      PhoneNumberNotFound, PhoneNumberDuplicated, ImportRecordNotFound,
                                      InvalidInpputDate, InvalidPhoneNumberStatus, )
-from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.db import IntegrityError, transaction
-from groups_manager.models import Group, GroupType, Member
-import api.services.validate_error_code as vec
-import re
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-
-from api.services.manage import is_technical_staff
+import api.services.manage as manage
+import api.tasks as tasks
+from api.utils import cache
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
 
@@ -1170,7 +1164,8 @@ class UpdatePhoneNumberService(BaseService):
                     trigger_update_phone_number_queue = True
                 else:
                     if old_status_id in trigger_status_list:
-                        phone_number.pic = request.user
+                        if async_to_sync(manage.is_technical_staff)(request.user):
+                            phone_number.pic = request.user
 
                         if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
                             trigger_update_phone_number_queue = True
@@ -1223,22 +1218,26 @@ class UpdatePhoneNumberService(BaseService):
 
             if kwargs.get('viettel_using_status', None) != phone_number.viettel_using_status:
                 if kwargs.get('viettel_using_status', None) == 'USING' and not request.user.is_superuser:
-                    phone_number.pic = request.user
+                    if async_to_sync(manage.is_technical_staff)(request.user):
+                        phone_number.pic = request.user
                 phone_number.viettel_using_status = kwargs['viettel_using_status']
 
             if kwargs.get('mobifone_using_status', None) != phone_number.mobifone_using_status:
                 if kwargs.get('mobifone_using_status', None) == 'USING' and not request.user.is_superuser:
-                    phone_number.pic = request.user
+                    if async_to_sync(manage.is_technical_staff)(request.user):
+                        phone_number.pic = request.user
                 phone_number.mobifone_using_status = kwargs['mobifone_using_status']
 
             if kwargs.get('vinaphone_using_status', None) != phone_number.vinaphone_using_status:
                 if kwargs.get('vinaphone_using_status', None) == 'USING' and not request.user.is_superuser:
-                    phone_number.pic = request.user
+                    if async_to_sync(manage.is_technical_staff)(request.user):
+                        phone_number.pic = request.user
                 phone_number.vinaphone_using_status = kwargs['vinaphone_using_status']
 
             if kwargs.get('other_using_status', None) != phone_number.other_using_status:
                 if kwargs.get('other_using_status', None) == 'USING' and not request.user.is_superuser:
-                    phone_number.pic = request.user
+                    if async_to_sync(manage.is_technical_staff)(request.user):
+                        phone_number.pic = request.user
                 phone_number.other_using_status = kwargs['other_using_status']
 
             if kwargs.get('viettel_unlocking_status', None) and kwargs.get('viettel_unlocking_status',
@@ -1371,7 +1370,7 @@ class FilterPhoneNumberService(BaseService):
                 'phone_number_id', flat=True)
             query_set = query_set.filter(id__in=monthly_fee_id_list)
 
-        if async_to_sync(is_technical_staff)(request.user):
+        if async_to_sync(manage.is_technical_staff)(request.user):
             checking_status = PhoneNumberStatus.objects.get(name__iexact='Đang nghi ngờ',
                                                             company_id=user_roles.first().company_id,
                                                             deleted_at__isnull=True)
@@ -1681,7 +1680,7 @@ class BulkUpdateStatusService(UpdatePhoneNumberService):
                 trigger_update_phone_number_queue = True
             else:
                 if old_status_id in trigger_status_list:
-                    if async_to_sync(is_technical_staff)(request.user):
+                    if async_to_sync(manage.is_technical_staff)(request.user):
                         phone_number.pic = request.user
 
                     if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
@@ -1932,7 +1931,8 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                         trigger_update_phone_number_queue = True
                     else:
                         if old_status_id in trigger_status_list:
-                            phone_number.pic = request.user
+                            if async_to_sync(manage.is_technical_staff)(request.user):
+                                phone_number.pic = request.user
 
                             if old_status_id in trigger_status_list or new_status_id in trigger_status_list:
                                 trigger_update_phone_number_queue = True
@@ -1947,22 +1947,38 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                     if new_status_id == checking_status.id:
                         if 'Viettel' in kwargs.get('telco_list', []):
                             phone_number.viettel_using_status = 'LOCK'
+                        elif phone_number.viettel_using_status == 'LOCK':
+                            phone_number.viettel_using_status = 'AVAILABLE'
                         if 'Mobifone' in kwargs.get('telco_list', []):
                             phone_number.mobifone_using_status = 'LOCK'
+                        elif phone_number.mobifone_using_status == 'LOCK':
+                            phone_number.mobifone_using_status = 'AVAILABLE'
                         if 'Vinaphone' in kwargs.get('telco_list', []):
                             phone_number.vinaphone_using_status = 'LOCK'
+                        elif phone_number.vinaphone_using_status == 'LOCK':
+                            phone_number.vinaphone_using_status = 'AVAILABLE'
                         if 'Other' in kwargs.get('telco_list', []):
                             phone_number.other_using_status = 'LOCK'
+                        elif phone_number.other_using_status == 'LOCK':
+                            phone_number.other_using_status = 'AVAILABLE'
 
                     if new_status_id == using_status.id:
                         if 'Viettel' in kwargs.get('telco_list', []):
                             phone_number.viettel_using_status = 'USING'
+                        elif phone_number.viettel_using_status == 'USING':
+                            phone_number.viettel_using_status = 'AVAILABLE'
                         if 'Mobifone' in kwargs.get('telco_list', []):
                             phone_number.mobifone_using_status = 'USING'
+                        elif phone_number.mobifone_using_status == 'USING':
+                            phone_number.mobifone_using_status = 'AVAILABLE'
                         if 'Vinaphone' in kwargs.get('telco_list', []):
                             phone_number.vinaphone_using_status = 'USING'
+                        elif phone_number.vinaphone_using_status == 'USING':
+                            phone_number.vinaphone_using_status = 'AVAILABLE'
                         if 'Other' in kwargs.get('telco_list', []):
                             phone_number.other_using_status = 'USING'
+                        elif phone_number.other_using_status == 'USING':
+                            phone_number.other_using_status = 'AVAILABLE'
 
                     if new_status_id == not_using_status.id:
                         if phone_number.viettel_using_status == 'USING':
@@ -2061,77 +2077,19 @@ class FilterPhoneNumberLockHistoryService(BaseService):
 
 class PushToQueueService(BaseService):
     def serve(self, request, cookies: Cookies, *args, **kwargs):
-        request_phone_number = request.GET.get('phone_number')
-        company_name = request.GET.get('company')
-        number_in_distributor = request.GET.get('number_in_distributor')
-        number_left = request.GET.get('number_left')
-        distributor_name = request.GET.get('distributor_name')
-        lock_telco = request.GET.get('lock_telco')
-        proxy = request.GET.get('proxy')
-        company = Company.objects.filter(name__iexact=company_name, deleted_at__isnull=True).first()
-        if not company:
-            return
+        try:
+            request_phone_number = request.GET.get('phone_number')
+            company_name = request.GET.get('company')
+            number_in_distributor = request.GET.get('number_in_distributor')
+            number_left = request.GET.get('number_left')
+            distributor_name = request.GET.get('distributor_name')
+            lock_telco = request.GET.get('lock_telco')
+            proxy = request.GET.get('proxy')
 
-        phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, company_id=company.id,
-                                                  deleted_at__isnull=True).first()
-        if not phone_number:
-            main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định', company_id=company.id,
-                                                               deleted_at__isnull=True).first()
-            provider = Provider.objects.filter(name__iexact='Không xác định', company_id=company.id,
-                                               deleted_at__isnull=True).first()
-            legal = Legal.objects.filter(name__iexact='Không xác định', company_id=company.id,
-                                         deleted_at__isnull=True).first()
-            phone_number_client = PhoneNumberClient.objects.filter(name__iexact='Không xác định', company_id=company.id,
-                                                                   deleted_at__isnull=True).first()
-            phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Không xác định', company_id=company.id,
-                                                                   deleted_at__isnull=True).first()
-
-            if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
-                return
-
-            phone_number = PhoneNumber.objects.create(company=company,
-                                                      phone_number=request_phone_number,
-                                                      main_phone_number=main_phone_number,
-                                                      provider=provider,
-                                                      legal=legal,
-                                                      phone_number_client=phone_number_client,
-                                                      phone_number_status=phone_number_status,
-                                                      pickup_date=datetime.now(),
-                                                      brand='',
-                                                      lock_provider='{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}',
-                                                      lock_count=0,
-                                                      phone_number_avg_age=0,
-                                                      cancel_date=None,
-                                                      init_payment_date=None,
-                                                      open_payment_date=None,
-                                                      operate_payment_date=None,
-                                                      other_payment_date=None,
-                                                      number_in_distributor=number_in_distributor,
-                                                      number_left=number_left,
-                                                      distributor_name=distributor_name,
-                                                      lock_telco=lock_telco,
-                                                      proxy=proxy)
-        else:
-            phone_number.number_in_distributor = number_in_distributor
-            phone_number.number_left = number_left
-            phone_number.distributor_name = distributor_name
-            phone_number.lock_telco = lock_telco
-            phone_number.proxy = proxy
-
-        phone_number.set_lock_provider(lock_telco)
-        phone_number.save()
-        phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,
-                                                               deleted_at__isnull=True).first()
-        if not phone_number_status:
-            return
-        phone_number.phone_number_status = phone_number_status
-        service = UpdatePhoneNumberService()
-        User = get_user_model()
-        root_user = User.objects.get(username__iexact='root')
-        request.user.is_superuser = True
-        request.user.id = root_user.id
-
-        service.serve(request, cookies, *args, **vars(phone_number))
+            tasks.insert_to_queue_phone_number.delay(request_phone_number, company_name, number_in_distributor, number_left,
+                                               distributor_name, lock_telco, proxy)
+        except Exception as e:
+            cache.log_error(request.GET.get('phone_number', 'None_PN') + '_' + str(e))
 
 
 class UsePhoneNumberService(BaseService):
@@ -2737,7 +2695,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             company_id=kwargs['company_id'],
             created_at=datetime.today().date())
         create_phone_number_service.serve(request, cookies, *args,
-                                          **CreatePhoneNumberRequestSerializer(phone_number).data)
+                                          **pn_serializer.CreatePhoneNumberRequestSerializer(phone_number).data)
 
     def import_status(self, args, cookies, data_record, kwargs, request, service):
         phone_number_status = PhoneNumberStatus.objects.filter(name=data_record['phone_number_status'],
@@ -2792,10 +2750,19 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
                                                       company_id=phone_number.company_id,
                                                       deleted_at__isnull=True)
+        wait_cancel = PhoneNumberStatus.objects.get(name__iexact='Chờ hủy',
+                                                    company_id=phone_number.company_id,
+                                                    deleted_at__isnull=True)
+        not_use = PhoneNumberStatus.objects.get(name__iexact='Không được sử dụng',
+                                                company_id=phone_number.company_id,
+                                                deleted_at__isnull=True)
         qualified_status = PhoneNumberStatus.objects.get(name__iexact='Số đạt',
                                                       company_id=phone_number.company_id,
                                                       deleted_at__isnull=True)
-        trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
+        canceled = PhoneNumberStatus.objects.get(name__iexact='Đã hủy',
+                                                    company_id=phone_number.company_id,
+                                                    deleted_at__isnull=True)
+        trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id, wait_cancel.id, not_use.id, canceled.id]
         if phone_number.phone_number_status_id not in trigger_status_list and phone_number.phone_number_status_id != qualified_status.id:
             phone_number.phone_number_status_id = get_new_status_after_lock(phone_number)
 
@@ -2857,7 +2824,7 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
         )
 
         create_montly_fee_service.serve(request, cookies, *args,
-                                        **CreatePhoneNumberMonthlyFeeRequestSerializer(new_fee).data)
+                                        **pn_serializer.CreatePhoneNumberMonthlyFeeRequestSerializer(new_fee).data)
 
     def import_status_for_tech(self, args, cookies, data_record, kwargs, request):
 
@@ -3094,7 +3061,8 @@ class CheckPhoneNumberService(BaseService):
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id, wait_cancel.id,
                                        not_use.id]
                 if old_status_id in trigger_status_list:
-                    phone_number.pic = request.user
+                    if async_to_sync(manage.is_technical_staff)(request.user):
+                        phone_number.pic = request.user
                     trigger_update_phone_number_queue = True
 
                 if new_status_id == lock.id:
@@ -3345,7 +3313,7 @@ class BulkUpdateStatusForTechService(BaseService):
 
                 payload = self.create_payload(phone_number, status)
                 if payload:
-                    serializer = CheckPhoneNumberRequestSerializer(data=payload)
+                    serializer = pn_serializer.CheckPhoneNumberRequestSerializer(data=payload)
                     serializer.is_valid()
                     service.serve(request, cookies, *args, **serializer.validated_data)
 
@@ -3490,7 +3458,7 @@ class UpdateListPhoneNumberStatusForTechService(BulkUpdateStatusForTechService):
 
                     payload = self.create_payload(phone_number, kwargs.get('phone_number_status_id'))
                     if payload:
-                        serializer = CheckPhoneNumberRequestSerializer(data=payload)
+                        serializer = pn_serializer.CheckPhoneNumberRequestSerializer(data=payload)
                         serializer.is_valid()
                         service.serve(request, cookies, *args, **serializer.validated_data)
 

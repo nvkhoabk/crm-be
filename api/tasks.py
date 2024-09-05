@@ -9,6 +9,8 @@ import requests
 from celery import shared_task
 from celery.result import AsyncResult
 from celery.signals import worker_ready
+from django.contrib.auth import get_user_model
+
 import api.utils.cache as cache
 from api.common.cookies import Cookies
 
@@ -16,6 +18,8 @@ from api.const import CALL_DIRECTION
 from api.models.call_center import CallLog, CallCenter, CallAgent
 from api.models.organization import Company
 import api.utils.call_center as call_center_utils
+from api.models.phone_number import PhoneNumberStatus, PhoneNumber, PhoneNumberClient, Legal, Provider, MainPhoneNumber
+import api.services.phone_number as update_phone_number
 from api.utils.phone import classify_telecom_number
 from crm import settings
 import redis
@@ -32,11 +36,14 @@ CALL_LOG_CACHE_NAME = 'call_log_cache'
 
 
 class FakeRequest:
+    user = None
+
     class FakeUser:
         def __int__(self):
             self.is_superuser = True
 
     def __int__(self):
+        print('Calling user')
         self.user = FakeRequest.FakeUser()
 
 
@@ -123,6 +130,85 @@ def insert_call_answered(phone, extension, calldate, duration, status, recording
 
     if call_log.direction == CALL_DIRECTION.OUTGOING and call_log.chargeable_time > 0:
         cache.update_call_center_month_minute(call_log)
+
+
+@shared_task
+def insert_to_queue_phone_number(request_phone_number, company_name, number_in_distributor, number_left,
+                                 distributor_name, lock_telco, proxy):
+    company = Company.objects.filter(name__iexact=company_name, deleted_at__isnull=True).first()
+    if not company:
+        return
+
+    phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, company_id=company.id,
+                                              deleted_at__isnull=True).first()
+    if not phone_number:
+        main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                           deleted_at__isnull=True).first()
+        provider = Provider.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                           deleted_at__isnull=True).first()
+        legal = Legal.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                     deleted_at__isnull=True).first()
+        phone_number_client = PhoneNumberClient.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                               deleted_at__isnull=True).first()
+        phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Không xác định', company_id=company.id,
+                                                               deleted_at__isnull=True).first()
+
+        if not main_phone_number or not provider or not legal or not phone_number_client or not phone_number_status:
+            return
+
+        phone_number = PhoneNumber.objects.create(company=company,
+                                                  phone_number=request_phone_number,
+                                                  main_phone_number=main_phone_number,
+                                                  provider=provider,
+                                                  legal=legal,
+                                                  phone_number_client=phone_number_client,
+                                                  phone_number_status=phone_number_status,
+                                                  pickup_date=datetime.now(),
+                                                  brand='',
+                                                  lock_provider='{"Viettel": false, "Mobifone": false, "Vinaphone": false, "Other": false}',
+                                                  lock_count=0,
+                                                  phone_number_avg_age=0,
+                                                  cancel_date=None,
+                                                  init_payment_date=None,
+                                                  open_payment_date=None,
+                                                  operate_payment_date=None,
+                                                  other_payment_date=None,
+                                                  number_in_distributor=number_in_distributor,
+                                                  number_left=number_left,
+                                                  distributor_name=distributor_name,
+                                                  lock_telco=lock_telco,
+                                                  proxy=proxy)
+    else:
+        phone_number.number_in_distributor = number_in_distributor
+        phone_number.number_left = number_left
+        phone_number.distributor_name = distributor_name
+        phone_number.lock_telco = lock_telco
+        phone_number.proxy = proxy
+
+    phone_number.set_lock_provider(lock_telco)
+    phone_number.save()
+    phone_number_status = PhoneNumberStatus.objects.filter(name__iexact='Đang nghi ngờ', company_id=company.id,
+                                                           deleted_at__isnull=True).first()
+    if not phone_number_status:
+        return
+    phone_number.phone_number_status = phone_number_status
+    request = FakeRequest()
+    User = get_user_model()
+    root_user = User.objects.get(username__iexact='root')
+    if request.user is None:
+        request.user = root_user
+    else:
+        request.user.is_superuser = True
+        request.user.id = root_user.id
+    service = update_phone_number.UpdatePhoneNumberService()
+
+    cookies = Cookies()
+    # User = get_user_model()
+    # root_user = User.objects.get(username__iexact='root')
+    # request.user.is_superuser = True
+    # request.user.id = root_user.id
+
+    service.serve(request, cookies, *vars(phone_number), **vars(phone_number))
 
 
 @shared_task

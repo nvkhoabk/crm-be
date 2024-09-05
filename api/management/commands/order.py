@@ -640,7 +640,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
-        # self.update_last_lock_info_phone_number()
+        #self.update_last_lock_info_phone_number()
         # self.migrate_phone_number()
         # self.fix_montly_order_detail()
         # self.fix_call_log_wrong()

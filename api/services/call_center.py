@@ -28,7 +28,7 @@ from api.services.exceptions import (CallCenterDuplicated, CallCenterNotFound, M
                                      AgentRegisterNotFound, CallLogNotFound, CallCenterPaymentNotDue,
                                      ReportNotFound, NumberAgentRegisterNotMatch, TrialExpired)
 import api.services.manage as manage
-from api.tasks import insert_call_answered, fetch_call_log_data
+import api.tasks as tasks
 import api.utils.call_center as call_center_utils
 from api.utils.date import get_first_of_month, get_last_of_month
 from api.utils.order_detail import floor_rate
@@ -636,7 +636,7 @@ class CallAnsweredService(BaseService):
             userfield = parse.unquote(request.GET.get('userfield', ''))
             callid = request.GET.get('callid', '')
 
-            insert_call_answered.delay(phone, extension, calldate, duration, status, recording, billsec, accountcode,
+            tasks.insert_call_answered.delay(phone, extension, calldate, duration, status, recording, billsec, accountcode,
                                        ip, dstchannel, userfield, callid)
         except Exception as e:
             cache.log_error(request.GET.get('callid', 'None_callid') + '_' + str(e))
@@ -653,7 +653,7 @@ class CallAnsweredService(BaseService):
                 # call_log.chargeable_time = self.calculate_chargeable_time(call_log)
                 # call_log.save()
 
-            insert_call_answered.delay(kwargs.get('phone', None), kwargs.get('extension', None),
+            tasks.insert_call_answered.delay(kwargs.get('phone', None), kwargs.get('extension', None),
                                         kwargs.get('calldate', None), kwargs.get('duration', None),
                                         kwargs.get('status', None), kwargs.get('recording', None),
                                         kwargs.get('billsec', 0), kwargs.get('accountcode', ''),
@@ -830,7 +830,7 @@ class EndCallOutService(BaseService):
         if phone and ext:
             call_log = CallLog.objects.filter(phone=phone, extension=ext.first().name).order_by('-id')
             if call_log and call_log.first().status is None:
-                fetch_call_log_data.delay(call_log.first().id)
+                tasks.fetch_call_log_data.delay(call_log.first().id)
 
 
 class DownloadExtFileService(BaseService):

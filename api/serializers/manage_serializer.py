@@ -6,12 +6,17 @@ from api.models.organization import Company, Department, Permission, Role, UserR
 from api.models.package import Package
 from api.models.param import Param
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
-from api.serializers.call_center_serializer import CallCenterSerializer
 from api.utils import validate
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['id', 'name', 'phone', 'address', 'email', 'company_id']
 
 
 class ParamSerializer(serializers.ModelSerializer):
@@ -146,9 +151,10 @@ class CompanySerializer(serializers.ModelSerializer):
     use_package = serializers.SerializerMethodField()
 
     def get_call_center(self, company):
+        import api.serializers.call_center_serializer as ce_serializer
         call_center = CallCenter.objects.filter(company_id=company.id)
         if call_center:
-            return CallCenterSerializer(call_center.first()).data
+            return ce_serializer.CallCenterSerializer(call_center.first()).data
 
         return None
 
@@ -585,12 +591,6 @@ class GetUserRoleRequestSerializer(serializers.Serializer):
 
 class GetUserRoleResponseSerializer(BaseResponseSerializer):
     data = serializers.ListField(child=UserRoleSerializer())
-
-
-class CustomerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Customer
-        fields = ['id', 'name', 'phone', 'address', 'email', 'company_id']
 
 
 class CreateCustomerRequestSerializer(serializers.Serializer):

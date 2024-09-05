@@ -16,7 +16,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price', 'payment_method', 'period_fee', 'date_in_month_payment',
-                  'number_of_date_notify', 'company']
+                  'number_of_date_notify', 'company', 'deleted_at']
 
 
 class CreateProductRequestSerializer(serializers.Serializer):
@@ -79,7 +79,8 @@ class FilterProductRequestParamSerializer(serializers.Serializer):
     )
     name = serializers.CharField(required=False, allow_blank=True)
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES, required=False, allow_null=True)
-    product_delete_type = serializers.ChoiceField(choices=PRODUCT_DELETE_TYPE_CHOICES, default=PRODUCT_DELETE_TYPE.ALL)
+    product_delete_type = serializers.ChoiceField(choices=PRODUCT_DELETE_TYPE_CHOICES,
+                                                  default=PRODUCT_DELETE_TYPE.ACTIVE)
 
 
 class FilterProductRequestSerializer(BasePagingSerializer):

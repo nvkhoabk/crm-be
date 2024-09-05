@@ -5,7 +5,7 @@ from api.models.data import CrawlData, Order, OrderDetail, Customer, FBPage, FBU
     ExportOrderRequest, OrderDetailPayment
 from api.models.system_configuration import DataChannel
 from api.serializers.base import BasePagingSerializer, BaseResponseSerializer
-from api.serializers.manage_serializer import CustomerSerializer
+import api.serializers.manage_serializer as mn_serializer
 from api.serializers.product_serializer import ProductSerializer
 from api.serializers.system_configuration_serializer import DataStatusSerializer, DataSubStatusSerializer, \
     DataSourceSerializer, DataChannelSerializer
@@ -59,7 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
             return None
         return User.objects.get(pk=order.pic_id).username
 
-    customer = CustomerSerializer()
+    customer = mn_serializer.CustomerSerializer()
     data_status = DataStatusSerializer()
     data_sub_status = DataSubStatusSerializer()
     data_source = DataSourceSerializer()
