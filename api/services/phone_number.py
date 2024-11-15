@@ -1216,6 +1216,12 @@ class UpdatePhoneNumberService(BaseService):
             if kwargs.get('other_payment_date'):
                 phone_number.other_payment_date = kwargs['other_payment_date']
 
+            if kwargs.get('device'):
+                phone_number.device = kwargs['device']
+
+            if kwargs.get('port'):
+                phone_number.port = kwargs['port']
+
             if kwargs.get('viettel_using_status', None) != phone_number.viettel_using_status:
                 if kwargs.get('viettel_using_status', None) == 'USING' and not request.user.is_superuser:
                     if async_to_sync(manage.is_technical_staff)(request.user):
@@ -1388,7 +1394,7 @@ class FilterPhoneNumberService(BaseService):
                    'phone_number_client_list', 'phone_number_status_id_list', 'phone_number_avg_age',
                    'pics', 'lock_count_type', 'viettel_using_status', 'mobifone_using_status', 'vinaphone_using_status',
                    'other_using_status', 'sale_pics', 'viettel_unlocking_status', 'mobifone_unlocking_status',
-                   'vinaphone_unlocking_status', 'other_unlocking_status']
+                   'vinaphone_unlocking_status', 'other_unlocking_status', 'device', 'port']
         for key, value in params.items():
             if key not in filters:
                 continue
@@ -1438,6 +1444,12 @@ class FilterPhoneNumberService(BaseService):
 
             if key == 'phone_number_status_id_list' and value is not None and value:
                 query_set = query_set.filter(phone_number_status_id__in=value)
+
+            if key == 'device' and value is not None and value:
+                query_set = query_set.filter(device__icontains=value)
+
+            if key == 'port' and value is not None and value:
+                query_set = query_set.filter(port=value)
 
             if key == 'lock_count_type' and value:
                 lock_count = params.get('lock_count', None)
@@ -1948,47 +1960,47 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
                         if 'Viettel' in kwargs.get('telco_list', []):
                             phone_number.viettel_using_status = 'LOCK'
                         elif phone_number.viettel_using_status == 'LOCK':
-                            phone_number.viettel_using_status = 'AVAILABLE'
+                            phone_number.viettel_using_status = 'IN_QUEUE'
                         if 'Mobifone' in kwargs.get('telco_list', []):
                             phone_number.mobifone_using_status = 'LOCK'
                         elif phone_number.mobifone_using_status == 'LOCK':
-                            phone_number.mobifone_using_status = 'AVAILABLE'
+                            phone_number.mobifone_using_status = 'IN_QUEUE'
                         if 'Vinaphone' in kwargs.get('telco_list', []):
                             phone_number.vinaphone_using_status = 'LOCK'
                         elif phone_number.vinaphone_using_status == 'LOCK':
-                            phone_number.vinaphone_using_status = 'AVAILABLE'
+                            phone_number.vinaphone_using_status = 'IN_QUEUE'
                         if 'Other' in kwargs.get('telco_list', []):
                             phone_number.other_using_status = 'LOCK'
                         elif phone_number.other_using_status == 'LOCK':
-                            phone_number.other_using_status = 'AVAILABLE'
+                            phone_number.other_using_status = 'IN_QUEUE'
 
                     if new_status_id == using_status.id:
                         if 'Viettel' in kwargs.get('telco_list', []):
                             phone_number.viettel_using_status = 'USING'
                         elif phone_number.viettel_using_status == 'USING':
-                            phone_number.viettel_using_status = 'AVAILABLE'
+                            phone_number.viettel_using_status = 'IN_QUEUE'
                         if 'Mobifone' in kwargs.get('telco_list', []):
                             phone_number.mobifone_using_status = 'USING'
                         elif phone_number.mobifone_using_status == 'USING':
-                            phone_number.mobifone_using_status = 'AVAILABLE'
+                            phone_number.mobifone_using_status = 'IN_QUEUE'
                         if 'Vinaphone' in kwargs.get('telco_list', []):
                             phone_number.vinaphone_using_status = 'USING'
                         elif phone_number.vinaphone_using_status == 'USING':
-                            phone_number.vinaphone_using_status = 'AVAILABLE'
+                            phone_number.vinaphone_using_status = 'IN_QUEUE'
                         if 'Other' in kwargs.get('telco_list', []):
                             phone_number.other_using_status = 'USING'
                         elif phone_number.other_using_status == 'USING':
-                            phone_number.other_using_status = 'AVAILABLE'
+                            phone_number.other_using_status = 'IN_QUEUE'
 
                     if new_status_id == not_using_status.id:
                         if phone_number.viettel_using_status == 'USING':
-                            phone_number.viettel_using_status = 'AVAILABLE'
+                            phone_number.viettel_using_status = 'IN_QUEUE'
                         if phone_number.mobifone_using_status == 'USING':
-                            phone_number.mobifone_using_status = 'AVAILABLE'
+                            phone_number.mobifone_using_status = 'IN_QUEUE'
                         if phone_number.vinaphone_using_status == 'USING':
-                            phone_number.vinaphone_using_status = 'AVAILABLE'
+                            phone_number.vinaphone_using_status = 'IN_QUEUE'
                         if phone_number.other_using_status == 'USING':
-                            phone_number.other_using_status = 'AVAILABLE'
+                            phone_number.other_using_status = 'IN_QUEUE'
 
                     phone_number.phone_number_status_id = new_status_id
                     phone_number.updated_at = datetime.now()
@@ -2285,7 +2297,7 @@ class ImportPhoneNumberService(BaseService):
             error_codes.extend(self.validate_phone_number_client(data, company_id))
             error_codes.extend(self.validate_phone_number_status(data, company_id))
             error_codes.extend(self.validate_date(data))
-            error_codes.extend(self.validate_fee(data))
+            #error_codes.extend(self.validate_fee(data))
         else:
             error_codes.extend(self.validate_phone_number_status(data, company_id))
             error_codes.extend(self.validate_phone_number_client(data, company_id))
@@ -2342,7 +2354,7 @@ class ImportPhoneNumberService(BaseService):
         phone.replace(' ', '')
         phone.replace('.', '')
         phone.replace('+', '')
-        path = r'([\+84|84|0]+(3|5|7|8|9|1[2|6|8|9]))+([0-9]{8})\b'
+        path = r'([\+84|84|0]+(2|3|5|7|8|9|1[2|6|8|9]))+([0-9]{7,8})\b'
 
         if re.match(path, phone):
             return []
@@ -2391,8 +2403,9 @@ class ImportPhoneNumberService(BaseService):
 
     def validate_legal(self, row, company_id):
         legal = str(row['legal']).strip()
-        entity = Legal.objects.filter(name__iexact=legal,
-                                      company_id=company_id).first()
+        query = Legal.objects.filter(name__iexact=legal,
+                                      company_id=company_id)
+        entity = query.first()
 
         if entity is None:
             return [vec.LegalNotFound.code]

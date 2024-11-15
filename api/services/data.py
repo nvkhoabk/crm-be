@@ -41,6 +41,20 @@ from api.utils.phone import extract_phone
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
 
+def is_approved_payment(order_detail_payment):
+    payment = order_detail_payment.payment
+    if payment.status != ORDER_PAYMENT_STATUS.APPROVED:
+        return False
+    correct_list = json.loads(payment.auto_picked_order_details)
+    if order_detail_payment.order_detail_id in correct_list:
+        diff = datetime.now(timezone(TIME_ZONE)) - order_detail_payment.created_at
+        hours = diff.total_seconds() / (60 * 60)
+        if hours <= 24:
+            return False
+
+    return True
+
+
 def create_order_detail_history(order_detail):
     OrderDetailHistory.objects.create(company_id=order_detail.company_id, order_id=order_detail.order_id,
                                       order_detail_id=order_detail.id,
@@ -802,7 +816,7 @@ class UpdateOrderDetailService(BaseService):
             order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
                                                                       order_detail_id=order_detail.id)
             for order_detail_payment in order_detail_payments:
-                if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                if is_approved_payment(order_detail_payment):
                     raise DeleteApprovedOrderDetail()
 
             if kwargs.get('product_id'):
@@ -882,6 +896,7 @@ class UpdateOrderDetailService(BaseService):
 
 
 class DeleteOrderDetailService(BaseService):
+
     def serve(self, request, cookies: Cookies, *args, **kwargs):
         try:
             filter = {
@@ -899,7 +914,7 @@ class DeleteOrderDetailService(BaseService):
                 order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True,
                                                                           order_detail_id=order_detail.id)
                 for order_detail_payment in order_detail_payments:
-                    if order_detail_payment.payment.status == ORDER_PAYMENT_STATUS.APPROVED:
+                    if is_approved_payment(order_detail_payment):
                         raise DeleteApprovedOrderDetail()
                     else:
                         payment = order_detail_payment.payment
@@ -1327,6 +1342,8 @@ class ApprovePaymentService(BaseService):
             with transaction.atomic():
                 payment.status = ORDER_PAYMENT_STATUS.APPROVED
                 payment.accountant_note = kwargs.get('accountant_note')
+                payment.approved_at = datetime.now()
+                payment.approver_id = request.user.id
                 payment.save()
 
                 order_detail_payments = OrderDetailPayment.objects.filter(deleted_at__isnull=True, payment=payment)

@@ -160,6 +160,8 @@ class PhoneNumber(BaseModel, ModelDiffMixin):
     last_other_lock_date = models.DateField(null=True)
     last_other_unlock_date = models.DateField(null=True)
     last_other_send_provider_date = models.DateField(null=True)
+    device = models.CharField(max_length=512, default='')
+    port = models.IntegerField(null=True)
 
     class Meta:
         db_table = 'phone_numbers'

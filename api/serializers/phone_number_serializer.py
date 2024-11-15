@@ -376,7 +376,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
                   'last_other_unlock_date', 'last_viettel_lock_date', 'last_mobifone_lock_date',
                   'last_vinaphone_lock_date', 'last_other_lock_date', 'last_viettel_send_provider_date',
                   'last_mobifone_send_provider_date', 'last_vinaphone_send_provider_date',
-                  'last_other_send_provider_date']
+                  'last_other_send_provider_date', 'device', 'port']
 
 
 class PhoneNumberTechnicalActivitySerializer(serializers.ModelSerializer):
@@ -445,6 +445,8 @@ class CreatePhoneNumberRequestSerializer(serializers.Serializer):
     vinaphone_unlocking_status = serializers.ChoiceField(choices=UNLOCKING_STATUS_CHOICES, default='AVAILABLE')
     other_unlocking_status = serializers.ChoiceField(choices=UNLOCKING_STATUS_CHOICES, default='AVAILABLE')
     provider_cancel_date = serializers.DateField(allow_null=True, required=False)
+    device = serializers.CharField(max_length=512, default='')
+    port = serializers.IntegerField(allow_null=True, required=False)
 
 
 class CreatePhoneNumberResponseSerializer(BaseResponseSerializer):
@@ -513,6 +515,8 @@ class UpdatePhoneNumberRequestSerializer(serializers.Serializer):
     vinaphone_unlocking_status = serializers.ChoiceField(choices=UNLOCKING_STATUS_CHOICES, required=False)
     other_unlocking_status = serializers.ChoiceField(choices=UNLOCKING_STATUS_CHOICES, required=False)
     provider_cancel_date = serializers.DateField(allow_null=True, required=False)
+    device = serializers.CharField(allow_null=True, required=False, allow_blank=True)
+    port = serializers.IntegerField(allow_null=True, required=False)
 
 
 class UpdatePhoneNumberResponseSerializer(BaseResponseSerializer):
@@ -552,6 +556,8 @@ class FilterPhoneNumberRequestParamSerializer(serializers.Serializer):
     vinaphone_unlocking_status = serializers.CharField(max_length=100, required=False, allow_null=True,
                                                        allow_blank=True)
     other_unlocking_status = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
+    device = serializers.CharField(allow_null=True, required=False, allow_blank=True)
+    port = serializers.IntegerField(allow_null=True, required=False)
 
 
 class FilterPhoneNumberRequestSerializer(BasePagingSerializer):
