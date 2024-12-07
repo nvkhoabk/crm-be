@@ -52,6 +52,7 @@ class FilterReportService(BaseService):
                 if 0 not in params['product_id_list']:
                     checked_list_id = Product.objects.filter(company_id=user_roles.first().company_id).values_list('id',
                                                                                                                    flat=True)
+
                     for id in checked_list_id:
                         if id not in params['product_id_list']:
                             filter_by_product = OrderDetail.objects.filter(deleted_at__isnull=True,

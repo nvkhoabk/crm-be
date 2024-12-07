@@ -11,6 +11,7 @@ from api.views import report
 from api.views import system_configuration
 from api.views import notification
 from api.views import phone_number
+from api.views import webhooks
 from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import (
@@ -21,6 +22,8 @@ from rest_framework_simplejwt.views import (
 from api.views.auth import AuthLoginView
 
 urlpatterns = [
+    path('webhooks/verify/', webhooks.VerifyWebhooksView.as_view(), name='manage.create_param'),
+
     path('manage/create_param/', manage.CreateParamView.as_view(), name='manage.create_param'),
     path('manage/get_param/', manage.GetParamView.as_view(), name='manage.get_param'),
     path('manage/update_param/', manage.UpdateParamView.as_view(), name='manage.update_param'),

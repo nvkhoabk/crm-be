@@ -2234,6 +2234,8 @@ class ImportPhoneNumberService(BaseService):
             'unset_open_telco': str(rows[29].value).strip(),
             'unset_lock_telco': str(rows[30].value).strip(),
             'unset_using_telco': str(rows[31].value).strip(),
+            'device': str(rows[32].value).strip() if len(rows) >= 33 else '',
+            'port': str(rows[33].value).strip() if len(rows) >= 34 else '',
         }
 
     def row_parser_import_status(self, rows):
@@ -2706,6 +2708,8 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             client_use_date=data_record['client_use_date'],
             note=data_record['note'],
             company_id=kwargs['company_id'],
+            device=data_record['device'],
+            port=int(data_record['port']) if data_record['port'].isdigit() else None,
             created_at=datetime.today().date())
         create_phone_number_service.serve(request, cookies, *args,
                                           **pn_serializer.CreatePhoneNumberRequestSerializer(phone_number).data)
@@ -2725,6 +2729,12 @@ class ConfirmImportPhoneNumberService(ImportPhoneNumberService):
             phone_number.phone_number_status = phone_number_status
         if phone_number_client:
             phone_number.phone_number_client = phone_number_client
+
+        if data_record['device']:
+            phone_number.device = data_record['device']
+
+        if data_record['port'].isdigit():
+            phone_number.port = int(data_record['port'])
 
         if data_record['client_use_date']:
             phone_number.client_use_date = datetime.strptime(data_record['client_use_date'], "%Y-%m-%d").strftime(
