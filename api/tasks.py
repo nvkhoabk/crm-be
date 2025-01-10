@@ -96,16 +96,23 @@ def insert_start_call(type, callid, phone, extension):
 
 @shared_task
 def insert_call_answered(phone, extension, calldate, duration, status, recording, billsec, accountcode, ip, dstchannel,
-                         userfield, callid):
+                         userfield, callid, direction):
+    print('Running: {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}'.format(phone, extension, calldate, duration, status, recording,
+                                                             billsec, accountcode, ip, dstchannel, direction))
+
     call_log = CallLog.objects.filter(callid=callid, phone=phone,
                                       deleted_at__isnull=True).order_by('-created_at')
     if not call_log:
-        print('Call log not found')
-        return
+        call_log = CallLog()
+    else:
+        call_log = call_log.first()
 
-    print('Running: {}-{}-{}-{}-{}-{}-{}-{}-{}-{}'.format(phone, extension, calldate, duration, status, recording, billsec, accountcode, ip, dstchannel))
-    call_log = call_log.first()
+    if direction == CALL_DIRECTION.OUTGOING:
+        call_log.direction = CALL_DIRECTION.OUTGOING
+    else:
+        call_log.direction = CALL_DIRECTION.INCOMING
 
+    call_log.callid = callid
     call_log.calldate = make_aware(datetime.strptime(calldate, '%Y-%m-%d %H:%M:%S'))
     call_log.duration = int(duration)
     call_log.status = status

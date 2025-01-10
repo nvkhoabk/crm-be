@@ -23,6 +23,12 @@ def classify_telecom_number(dstchannel):
         return TELECOM_NUMBER.VINA
     if 'OTHER' in dstchannel.upper():
         return TELECOM_NUMBER.OTHER
+    if 'VINAPHONE' in dstchannel.upper():
+        return TELECOM_NUMBER.VINA
+    if 'MOBIFONE' in dstchannel.upper():
+        return TELECOM_NUMBER.MOBI
+    if 'VIETTEL' in dstchannel.upper():
+        return TELECOM_NUMBER.VIETTEL
 
     return TELECOM_NUMBER.OTHER
 

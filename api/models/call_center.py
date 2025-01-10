@@ -66,6 +66,7 @@ class CallAgent(BaseModel):
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     agent_register = models.ForeignKey(AgentRegister, null=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=256)
+    tenant = models.CharField(max_length=256)
 
     class Meta:
         db_table = 'call_agent'

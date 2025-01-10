@@ -17,7 +17,8 @@ class Const:
     FILE_ROOT = "files/"
 
     # Sip server
-    SIP_SERVER = "wss://cc17.ity.vn:58089/ws"
+    SIP_SERVER = "wss://vpbx.ity.vn:7443"
+    # SIP_SERVER = "wss://cc17.ity.vn:58089/ws"
 
     FB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 

@@ -144,6 +144,7 @@ class AuthGetUserInfoService(BaseService):
                     response['call_center']['ext'] = call_agent.name
                     response['call_center']['secret'] = call_agent.secret
                     response['call_center']['sip_server'] = Const.SIP_SERVER
+                    response['call_center']['tenant'] = call_agent.tenant
         except CallAgent.DoesNotExist:
             pass
 

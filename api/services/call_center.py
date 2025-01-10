@@ -635,9 +635,10 @@ class CallAnsweredService(BaseService):
             dstchannel = parse.unquote(request.GET.get('dstchannel', ''))
             userfield = parse.unquote(request.GET.get('userfield', ''))
             callid = request.GET.get('callid', '')
+            direction = request.GET.get('direction', '')
 
             tasks.insert_call_answered.delay(phone, extension, calldate, duration, status, recording, billsec, accountcode,
-                                       ip, dstchannel, userfield, callid)
+                                       ip, dstchannel, userfield, callid, direction)
         except Exception as e:
             cache.log_error(request.GET.get('callid', 'None_callid') + '_' + str(e))
 
@@ -864,6 +865,7 @@ class UploadExtFileService(BaseService):
                         call_agent = CallAgent(company_id=serializer_class.data['company_id'], name=row[1],
                                                secret=row[2],
                                                agent_register_id=serializer_class.data['agent_register_id'],
+                                               tenant=(row[3] if len(row) > 2 else ''),
                                                status=CALL_AGENT_STATUS.ACTIVE)
                         if not self.exists_call_agent(existed_call_agents=existed_call_agents, ext_name=row[1]):
                             call_agents.append(call_agent)
