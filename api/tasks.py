@@ -103,7 +103,9 @@ def insert_call_answered(phone, extension, calldate, duration, status, recording
     call_log = CallLog.objects.filter(callid=callid, phone=phone,
                                       deleted_at__isnull=True).order_by('-created_at')
     if not call_log:
-        call_log = CallLog()
+        call_log = CallLog.objects.create()
+        call_log.phone = phone
+        call_log.extension = extension
     else:
         call_log = call_log.first()
 
