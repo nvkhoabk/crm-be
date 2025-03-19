@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 
 from crm.settings import LOG_ROOT, LOG_LEVEL
 
-NUMBER_OF_DAY_DELETE = 3
+NUMBER_OF_DAY_DELETE = 0
 
 
 class Command(BaseCommand):
@@ -28,7 +28,8 @@ class Command(BaseCommand):
         self.logger = logging.getLogger(__name__)
 
     def delete_phone_number(self, processing_date):
-        delete_date = processing_date - relativedelta(days=NUMBER_OF_DAY_DELETE)
+        #delete_date = processing_date - relativedelta(days=NUMBER_OF_DAY_DELETE)
+        delete_date = processing_date
         phone_numbers = PhoneNumber.objects.filter(deleted_at__isnull=True, updated_at__lte=delete_date,
                                                    phone_number_status__name__icontains='Đánh dấu xóa')
         for phone_number in phone_numbers:
