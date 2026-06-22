@@ -149,7 +149,7 @@ def insert_to_queue_phone_number(request_phone_number, company_name, number_in_d
         return
 
     phone_number = PhoneNumber.objects.filter(phone_number__iexact=request_phone_number, company_id=company.id,
-                                              deleted_at__isnull=True).first()
+                                              deleted_at__isnull=True).order_by('-id').first()
     if not phone_number:
         main_phone_number = MainPhoneNumber.objects.filter(name__iexact='Không xác định', company_id=company.id,
                                                            deleted_at__isnull=True).first()

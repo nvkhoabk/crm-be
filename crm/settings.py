@@ -103,10 +103,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'crm_db',
-        'HOST': '103.252.0.165',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
         'USER': 'crm_be',
-        'PASSWORD': '123456aA@',
+        'PASSWORD': 'cRm2025November$A@',
     }
 }
 
@@ -148,8 +148,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:8000',
     'http://115.146.123.8',
     'http://115.146.123.8:8000',
-    'http://crm.ity.vn',
-    'https://crm.ity.vn',
+    'http://crm-v1.ity.vn:8443',
     'https://103.229.40.142'
 ]
 CORS_ALLOWED_ORIGINS = [
@@ -158,8 +157,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8080',
     'http://115.146.123.8',
     'http://115.146.123.8:8000',
-    'http://crm.ity.vn',
-    'https://crm.ity.vn',
+    'http://crm-v1.ity.vn',
+    'https://crm-v1.ity.vn:8443',
     'https://115.146.123.8',
     'https://103.229.40.142'
 ]
@@ -167,7 +166,7 @@ CORS_ALLOWED_ORIGINS = [
 SESSION_COOKIE_SAMESITE = None
 CRSF_COOKIE_SAMESITE = None
 
-ALLOWED_HOSTS = ['115.146.123.8', 'localhost', '127.0.0.1', 'crm.ity.vn', '103.229.40.142']
+ALLOWED_HOSTS = ['115.146.123.8', 'localhost', '127.0.0.1', 'crm-v1.ity.vn', '103.229.40.142']
 
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
@@ -269,11 +268,11 @@ SIMPLE_JWT = {
 CORS_ALLOW_HEADERS = ('content-disposition', 'accept-encoding',
                       'content-type', 'accept', 'origin', 'authorization', 'token')
 
-CRAWLER_REDIRECT_URI = 'https://crm.ity.vn'
+CRAWLER_REDIRECT_URI = 'https://crm-v1.ity.vn'
 
 FB_APP_ID = '318537180209438'
 FB_APP_SECRET = 'c091a3a9b59e1475abc049f9b352cc72' 
-REDIRECT_URI = 'https://crm.ity.vn/api/fb/login/callback'
+REDIRECT_URI = 'https://crm-v1.ity.vn/api/fb/login/callback'
 FB_SCOPE = 'pages_show_list,pages_messaging,pages_read_engagement,pages_read_user_content'
 FB_IV = '1219164814273683'
 FB_SECRET_KEY = '1381444214459712'
@@ -281,10 +280,10 @@ FB_SECRET_KEY = '1381444214459712'
 ZALO_APP_ID = '2252452034861651725'
 ZALO_APP_SECRET = 'mNC5uCK6TN6kBgD5oqU6'
 ZALO_SECRET_KEY = 'c091a3a9b59e1475abc049f9b352cc72' 
-ZALO_REDIRECT_URI = 'https://crm.ity.vn/api/zalo/login/callback'
+ZALO_REDIRECT_URI = 'https://crm-v1.ity.vn/api/zalo/login/callback'
 
 LOG_ROOT = '/var/log/crm/'
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.ERROR
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379

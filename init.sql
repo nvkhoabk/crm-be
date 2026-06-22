@@ -1,4 +1,2 @@
-CREATE DATABASE IF NOT EXISTS crm_db;
-CREATE USER IF NOT EXISTS 'crm_be'@'%' IDENTIFIED BY '123456aA@';
-GRANT ALL PRIVILEGES ON crm_db.* TO 'crm_be'@'%';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'your_root_password';
 FLUSH PRIVILEGES;

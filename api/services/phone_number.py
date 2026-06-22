@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from datetime import datetime
 
@@ -34,6 +35,26 @@ import api.tasks as tasks
 from api.utils import cache
 from crm.settings import TIME_ZONE, MEDIA_ROOT
 
+from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+
+def append_df_to_excel(file_path, df, sheet_name='Sheet1', startrow=None, **to_excel_kwargs):
+    # If file doesn't exist, just write normally
+    if not os.path.exists(file_path):
+        df.to_excel(file_path, index=False, header=True, **to_excel_kwargs)
+        return
+
+    # File exists → append below existing data
+    book = load_workbook(file_path)
+    sheet = book[sheet_name]
+
+    if startrow is None:
+        startrow = sheet.max_row  # append after last row
+
+    for r in dataframe_to_rows(df, index=False, header=False):
+        sheet.append(r)
+
+    book.save(file_path)
 
 def get_new_status_after_lock(phone_number):
     if phone_number.viettel_using_status == 'USING' or phone_number.mobifone_using_status == 'USING' or \
@@ -1159,6 +1180,10 @@ class UpdatePhoneNumberService(BaseService):
                 retest_status = PhoneNumberStatus.objects.get(name__iexact='Test sau mở',
                                                               company_id=phone_number.company_id,
                                                               deleted_at__isnull=True)
+                mark_delete = PhoneNumberStatus.objects.get(name__iexact='Đánh dấu xóa',
+                                                              company_id=phone_number.company_id,
+                                                              deleted_at__isnull=True)
+
                 trigger_status_list = [checking_status.id, add_new_status.id, retest_status.id]
                 if old_status_id == new_status_id and old_status_id == checking_status.id:
                     trigger_update_phone_number_queue = True
@@ -1173,6 +1198,8 @@ class UpdatePhoneNumberService(BaseService):
                         trigger_update_phone_number_queue = True
                 if new_status_id == cancel_status.id:
                     phone_number.cancel_date = datetime.today()
+                if new_status_id == mark_delete.id:
+                    phone_number.deleted_at = datetime.now(timezone(TIME_ZONE))
 
             if kwargs.get('pickup_date'):
                 phone_number.pickup_date = kwargs['pickup_date']
@@ -2004,6 +2031,9 @@ class UpdateListPhoneNumberStatusService(UpdatePhoneNumberService):
 
                     phone_number.phone_number_status_id = new_status_id
                     phone_number.updated_at = datetime.now()
+                    if new_status_id == mark_delete.id:
+                        phone_number.deleted_at = datetime.now(timezone(TIME_ZONE))
+
                     if phone_number.has_changed:
                         PhoneNumberActivity.objects.create(phone_number=phone_number, company=phone_number.company,
                                                            user_id=request.user.id, diff=phone_number.diff)
@@ -2357,8 +2387,11 @@ class ImportPhoneNumberService(BaseService):
         phone.replace('.', '')
         phone.replace('+', '')
         path = r'([\+84|84|0]+(2|3|5|7|8|9|1[2|6|8|9]))+([0-9]{7,8})\b'
+        path2 = r'(02)+([0-9]{8,9})\b'
 
         if re.match(path, phone):
+            return []
+        if re.match(path2, phone):
             return []
 
         return [vec.InvalidPhoneFormat.code]
@@ -2994,7 +3027,8 @@ class CheckPhoneNumberService(BaseService):
 
                 phone_number = PhoneNumber.objects.get(
                     pk=kwargs.get('id'),
-                    company_id=user_roles.first().company_id
+                    company_id=user_roles.first().company_id,
+                    deleted_at__isnull=True
                 )
 
             if kwargs.get('viettel_lock_date', None) and phone_number.pickup_date \
@@ -3215,7 +3249,7 @@ class ExportPhoneNumberService(BaseService):
         phone_numbers = service.serve(request, cookies, *args, **{'filter': kwargs, 'order_by': 'id'})
         export_request = ExportOrderRequest.objects.create()
         file_path = MEDIA_ROOT + '/' + 'export_data' + '/' + str(export_request.id) + '_' + str(
-            export_request.created_at.timestamp()) + '.xls'
+            export_request.created_at.timestamp()) + '.csv'
 
         export_data = []
         for phone_number in phone_numbers:
@@ -3262,7 +3296,8 @@ class ExportPhoneNumberService(BaseService):
                                                 'Ngày khóa Ngoại mạng',
                                                 'Ngày mở Ngoại mạng',
                                                 ])
-        df.to_excel(file_path, index=False, header=True)
+        # df.to_excel(file_path, index=False, header=True)
+        df.to_csv(file_path, index=False, encoding='utf-8-sig')
         export_request.file.name = file_path[len(MEDIA_ROOT):]
         export_request.save()
 

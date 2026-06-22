@@ -1,29 +1,47 @@
 version: '3.8'
 
 services:
-  crm_db:
+#  crm_db:
+#    image: mysql:8.0
+#    container_name: mysql8
+#    ports:
+#      - '3306:3306'
+#    environment:
+#       MYSQL_DATABASE: 'crm_db'
+#       MYSQL_USER: 'crm_be'
+#       MYSQL_PASSWORD: 'cRm2025November$A@'
+#       MYSQL_ROOT_PASSWORD: 'cRm2025November$A@'
+#    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+#    healthcheck:
+#      test: "/usr/bin/mysql --user=root --password=cRm2025November$A@ --execute \"SHOW DATABASES;\""
+#      interval: 200s
+#      timeout: 20s
+#      retries: 10
+#    volumes:
+#      - mysql-data:/var/lib/mysql
+#      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  mysql8:
     image: mysql:8.0
     container_name: mysql8
-    ports:
-      - '3306:3306'
+    restart: unless-stopped
     environment:
-       MYSQL_DATABASE: 'crm_db'
-       MYSQL_USER: 'crm_be'
-       MYSQL_PASSWORD: '123456aA@'
-       MYSQL_ROOT_PASSWORD: '123456aA@'
-    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
-    healthcheck:
-      test: "/usr/bin/mysql --user=root --password=123456aA@ --execute \"SHOW DATABASES;\""
-      interval: 200s
-      timeout: 20s
-      retries: 10
+      MYSQL_ROOT_PASSWORD: 'cRm2025November$A@'
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init:/docker-entrypoint-initdb.d         # Folder for initialization scripts
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
       image: redis:7
       ports:
-        - "6379:6379"
+        - "127.0.0.1:6379:6379"
 volumes:
   mysql-data:
   # web:

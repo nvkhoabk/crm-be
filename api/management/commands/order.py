@@ -11,7 +11,7 @@ from pytz import timezone
 
 from api.const import ORDER_DETAIL_TYPE, ORDER_PAYMENT_STATUS, DEBT_STATUS, NOTIFICATION_TYPE, PHONE_NUMBER_PROVIDER, \
     CALL_DIRECTION
-from api.models.call_center import CallLog
+from api.models.call_center import CallLog, CallAgent
 from api.models.data import AnnualOrder, OrderDetail, AnnualOrderHistory, OrderDetailHistory, Order, Payment, \
     OrderDetailPayment
 from api.models.notification import Notification
@@ -381,6 +381,15 @@ class Command(BaseCommand):
             except Exception as e:
                 print('Exception: ' + str(e))
 
+    def update_ext(self):
+        import pandas as pd
+
+        records = pd.read_csv('/root/crm/ssl_ityvn_2025/TAI_KHOAN.csv', header=None).to_numpy()
+        dst_dict = dict()
+        for record in records:
+            call_agent = CallAgent.objects.filter(name=record[1]).update(secret=record[2])
+            print("update {}".format(record[1]))
+
 
     def fix_dstchannel(self):
         import pandas as pd
@@ -640,6 +649,7 @@ class Command(BaseCommand):
         self.calculate_debt_status_order(processing_date)
         self.notify_renew_date(processing_date)
 
+        #self.update_ext()
         #self.update_last_lock_info_phone_number()
         # self.migrate_phone_number()
         # self.fix_montly_order_detail()
